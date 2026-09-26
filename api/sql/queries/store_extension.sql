@@ -3,13 +3,47 @@
 -- environment scrapes themselves.
 
 -- name: GetFreshStoreExtensionSyncNames :many
--- Names among the given set whose store lookup happened within the last hour
--- (hit or miss). These do not need another sync.
+-- Names among the given set that need no sync work at all: the cheap
+-- packages.shopware.com feed pass happened within the last hour AND the
+-- rate-limited store API was probed within the last day (hit or miss).
+-- Anything else is eligible for a sync dispatch.
 SELECT extension_name FROM store_extension_sync
-WHERE extension_name = ANY($1::text[]) AND last_synced_at > NOW() - INTERVAL '1 hour';
+WHERE extension_name = ANY($1::text[])
+  AND last_synced_at > NOW() - INTERVAL '1 hour'
+  AND last_store_probe_at > NOW() - INTERVAL '24 hours';
+
+-- name: ClaimStoreExtensionProbes :many
+-- Atomically marks the given names as probed-now and returns the ones the
+-- caller actually claimed: names with no bookkeeping row, or whose last store
+-- probe is older than $2 seconds. Names probed within the window — including
+-- claims held by a concurrent sync job — are neither updated nor returned, so
+-- overlapping syncs never duplicate a rate-limited store API probe. Claims of
+-- names that end up not probed are cleared with ReleaseStoreExtensionProbes.
+INSERT INTO store_extension_sync (extension_name, last_store_probe_at)
+SELECT unnest($1::text[]), NOW()
+ON CONFLICT (extension_name) DO UPDATE
+  SET last_store_probe_at = NOW()
+  WHERE store_extension_sync.last_store_probe_at IS NULL
+     OR store_extension_sync.last_store_probe_at < NOW() - ($2::int * INTERVAL '1 second')
+RETURNING extension_name;
+
+-- name: ReleaseStoreExtensionProbes :exec
+-- Clears the probe timestamp of previously claimed names whose probe did not
+-- complete (rate-limit abort, failed batch, failed sync), so the next
+-- scheduled sync retries them instead of waiting out the claim window.
+UPDATE store_extension_sync SET last_store_probe_at = NULL
+WHERE extension_name = ANY($1::text[]);
+
+-- name: GetStoreExtensionLatestVersions :many
+-- Global latest version of each catalog member among the given names, used to
+-- detect releases the packages feed knows but the catalog has not fetched yet.
+SELECT name, latest_version FROM store_extension
+WHERE name = ANY($1::text[]);
 
 -- name: UpsertStoreExtensionSyncStates :exec
--- Marks all given names as looked up now, whether or not the store knew them.
+-- Marks all given names as feed-checked now, whether or not the store knows
+-- them. The store-probe tier is advanced separately by the probe claims
+-- (ClaimStoreExtensionProbes) for the names actually probed.
 INSERT INTO store_extension_sync (extension_name, last_synced_at)
 SELECT unnest($1::text[]), NOW()
 ON CONFLICT (extension_name) DO UPDATE SET last_synced_at = NOW();

@@ -49,9 +49,9 @@ type mockFeedVersion struct {
 // and counts requests.
 type mockStoreServer struct {
 	*httptest.Server
-	requests    atomic.Int64
+	requests     atomic.Int64
 	feedRequests atomic.Int64
-	extensions  map[string]*mockExtension
+	extensions   map[string]*mockExtension
 	// feeds maps a lowercased technical name to its package feed versions; a
 	// name absent from the map gets a 404 like a package unknown to
 	// packages.shopware.com.
@@ -223,6 +223,12 @@ func (m *mockStoreServer) seenLocales() []string {
 	return out
 }
 
+func (m *mockStoreServer) resetSeen() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.seen = nil
+}
+
 func (m *mockStoreServer) maxConcurrent() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -275,6 +281,29 @@ func seedEnvironment(t *testing.T, pool *pgxpool.Pool, name, shopwareVersion str
 	`, shopID, name, shopwareVersion).Scan(&environmentID)
 	require.NoError(t, err, "seed environment")
 	return environmentID
+}
+
+// ageSyncBookkeeping backdates the sync bookkeeping of every name, so tests
+// can simulate the feed tier (last_synced_at) and the store-probe tier
+// (last_store_probe_at) expiring independently.
+func ageSyncBookkeeping(t *testing.T, pool *pgxpool.Pool, feedAge, probeAge string) {
+	t.Helper()
+	_, err := pool.Exec(context.Background(), `
+		UPDATE store_extension_sync
+		SET last_synced_at = NOW() - $1::interval,
+		    last_store_probe_at = NOW() - $2::interval
+	`, feedAge, probeAge)
+	require.NoError(t, err, "age sync bookkeeping")
+}
+
+// storeProbeAge returns how long ago the store was probed for a name, NULL
+// when the probe claim was released or the name was never probed.
+func storeProbeAge(t *testing.T, pool *pgxpool.Pool, name string) *time.Duration {
+	t.Helper()
+	var age *time.Duration
+	require.NoError(t, pool.QueryRow(context.Background(),
+		`SELECT NOW() - last_store_probe_at FROM store_extension_sync WHERE extension_name = $1`, name).Scan(&age))
+	return age
 }
 
 func snapshotRowVersions(t *testing.T, pool *pgxpool.Pool) map[string]string {
@@ -350,9 +379,14 @@ func TestStoreExtensionSyncPersistsCatalog(t *testing.T) {
 
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools", "CustomPlugin"}, "6.5.0.0", false))
 
-	// FroshTools is feed-resolved, so the store is probed at the newest version
-	// only; the feed-missing CustomPlugin keeps per-version probing:
-	// en+de at 6.6.0.0 (both names) plus en+de at 6.5.0.0 (CustomPlugin).
+	// FroshTools is feed-resolved, so the store is probed once at the in-use
+	// version with the newest compatible release (6.6.0.0); the feed-missing
+	// CustomPlugin is confirmed with a single discovery probe at the
+	// requesting version instead of walking every in-use version.
+	assert.Equal(t, []string{
+		"en_GB@6.6.0.0", "de_DE@6.6.0.0",
+		"en_GB@6.5.0.0", "de_DE@6.5.0.0",
+	}, store.seenLocales(), "one batched probe per name, en+de each")
 	assert.Equal(t, int64(4), store.requests.Load(), "store requests")
 	assert.Equal(t, int64(2), store.feedRequests.Load(), "feed requests (FroshTools hit, CustomPlugin 404)")
 
@@ -387,6 +421,7 @@ func TestStoreExtensionSyncPersistsCatalog(t *testing.T) {
 	var missSynced int
 	require.NoError(t, pool.QueryRow(ctx, `SELECT COUNT(*) FROM store_extension_sync WHERE extension_name = 'CustomPlugin'`).Scan(&missSynced), "read sync state")
 	assert.Equal(t, 1, missSynced, "store miss recorded in sync bookkeeping")
+	require.NotNil(t, storeProbeAge(t, pool, "CustomPlugin"), "store miss records the probe time")
 }
 
 // TestStoreExtensionSyncPersistsOlderOnlyExtension is a regression test for the
@@ -401,7 +436,8 @@ func TestStoreExtensionSyncPersistsOlderOnlyExtension(t *testing.T) {
 	ctx := context.Background()
 
 	// LegacyExt only has a release compatible with 6.5.0.0, not the newer
-	// 6.6.0.0 environment that also exists.
+	// 6.6.0.0 environment that also exists. It has no packages feed, so the
+	// store probe is the only source.
 	store.extensions["LegacyExt"] = &mockExtension{
 		latestByShopwareVersion: map[string]string{"6.5.0.0": "3.4.0"},
 		changelogVersions:       []string{"3.4.0", "3.3.0"},
@@ -409,8 +445,9 @@ func TestStoreExtensionSyncPersistsOlderOnlyExtension(t *testing.T) {
 
 	require.NoError(t, h.SyncNames(ctx, []string{"LegacyExt"}, "6.5.0.0", false), "sync")
 
-	// The catalog and its changelog history are persisted despite the plugin
-	// being absent from the 6.6.0.0 probe.
+	// The catalog and its changelog history are persisted from the single
+	// discovery probe at the requesting version.
+	assert.Equal(t, []string{"en_GB@6.5.0.0", "de_DE@6.5.0.0"}, store.seenLocales(), "discovery probe at the requesting version only")
 	assert.Equal(t, 1, countRows(t, pool, "store_extension"), "catalog row")
 	assert.Equal(t, 2, countRows(t, pool, "store_extension_version"), "version rows")
 
@@ -419,25 +456,35 @@ func TestStoreExtensionSyncPersistsOlderOnlyExtension(t *testing.T) {
 	require.NotNil(t, globalLatest, "global latest")
 	assert.Equal(t, "3.4.0", *globalLatest)
 
-	// 6.5.0.0 gets a compatible latest; 6.6.0.0 records that it was checked and
-	// has no compatible release (NULL), so it is not re-probed every scrape.
+	// 6.5.0.0 gets a compatible latest from the probe. 6.6.0.0 is not probed
+	// eagerly: without a feed, compatibility for other versions is filled
+	// lazily when a scrape of an environment running them reports a gap.
 	var latest65 *string
 	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'LegacyExt' AND shopware_version = '6.5.0.0'`).Scan(&latest65), "read 6.5 compat")
 	require.NotNil(t, latest65, "6.5.0.0 compatible latest")
 	assert.Equal(t, "3.4.0", *latest65)
-
-	var latest66 *string
-	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'LegacyExt' AND shopware_version = '6.6.0.0'`).Scan(&latest66), "read 6.6 compat")
-	assert.Nil(t, latest66, "6.6.0.0 has no compatible release")
+	assert.Equal(t, 1, countRows(t, pool, "store_extension_compatibility"), "only the probed version has a row")
 
 	// It is marked synced, so the classification is stable rather than retried.
 	assert.Equal(t, 1, countRows(t, pool, "store_extension_sync"))
+
+	// A scrape of the 6.6.0.0 environment reports the same extension: the
+	// compatibility gap re-triggers a sync, which fills the gap with a single
+	// probe at 6.6.0.0 once the event claim window has passed.
+	ageSyncBookkeeping(t, pool, "61 minutes", "20 minutes")
+	store.resetSeen()
+	require.NoError(t, h.SyncNames(ctx, []string{"LegacyExt"}, "6.6.0.0", false), "gap sync")
+
+	assert.Equal(t, []string{"en_GB@6.6.0.0", "de_DE@6.6.0.0"}, store.seenLocales(), "gap probe at the requesting version")
+	var latest66 *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'LegacyExt' AND shopware_version = '6.6.0.0'`).Scan(&latest66), "read 6.6 compat")
+	assert.Nil(t, latest66, "6.6.0.0 has no compatible release")
 }
 
 // TestStoreExtensionSyncCompatibilityFromFeed: compatibility for every in-use
 // Shopware version is computed from the packages feed, so the store is probed
-// only until the extension's metadata is found (newest version, en+de) instead
-// of once per in-use version.
+// only once for the extension's metadata (at the version with the newest
+// compatible release) instead of once per in-use version.
 func TestStoreExtensionSyncCompatibilityFromFeed(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	ctx := context.Background()
@@ -445,7 +492,7 @@ func TestStoreExtensionSyncCompatibilityFromFeed(t *testing.T) {
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false))
 
 	assert.Equal(t, []string{"en_GB@6.6.0.0", "de_DE@6.6.0.0"}, store.seenLocales(),
-		"feed-resolved extension is probed at the newest version only")
+		"feed-resolved extension is probed once, at the version with the newest compatible release")
 	assert.Equal(t, int64(1), store.feedRequests.Load(), "one feed request")
 
 	// Both compatibility rows come from the feed — including 6.5.0.0, which was
@@ -460,14 +507,16 @@ func TestStoreExtensionSyncCompatibilityFromFeed(t *testing.T) {
 	// The catalog subtree is complete and nothing stays eligible for re-sync.
 	assert.Equal(t, 1, countRows(t, pool, "store_extension"))
 	assert.Equal(t, 3, countRows(t, pool, "store_extension_version"))
-	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.5.0.0")
+	needing, _, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.5.0.0")
 	require.NoError(t, err)
 	assert.Empty(t, needing, "feed-resolved sync satisfies the compatibility check")
 }
 
 // TestStoreExtensionSyncFeedFallback: when the feed cannot be used (server
-// error, or no version with an evaluable constraint), compatibility falls back
-// to probing the store once per in-use Shopware version.
+// error, or no version with an evaluable constraint), the store probe is the
+// compatibility source. The first sync discovers the extension at the
+// requesting version; other versions are filled lazily when a scrape reports
+// a compatibility gap for them.
 func TestStoreExtensionSyncFeedFallback(t *testing.T) {
 	for name, mutate := range map[string]func(*mockStoreServer){
 		"feed server error": func(store *mockStoreServer) {
@@ -484,17 +533,25 @@ func TestStoreExtensionSyncFeedFallback(t *testing.T) {
 
 			require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false))
 
-			assert.Equal(t, []string{
-				"en_GB@6.6.0.0", "de_DE@6.6.0.0",
-				"en_GB@6.5.0.0", "de_DE@6.5.0.0",
-			}, store.seenLocales(), "fallback probes every in-use version")
+			assert.Equal(t, []string{"en_GB@6.5.0.0", "de_DE@6.5.0.0"}, store.seenLocales(),
+				"discovery probe at the requesting version only, no version walk")
 
-			for swv, want := range map[string]string{"6.5.0.0": "1.1.0", "6.6.0.0": "1.2.0"} {
-				var latest *string
-				require.NoErrorf(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = $1`, swv).Scan(&latest), "read compatibility %s", swv)
-				require.NotNilf(t, latest, "compatible latest for %s", swv)
-				assert.Equalf(t, want, *latest, "compatible latest for %s", swv)
-			}
+			var latest65 *string
+			require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = '6.5.0.0'`).Scan(&latest65), "read 6.5 compat")
+			require.NotNil(t, latest65, "6.5.0.0 compatible latest")
+			assert.Equal(t, "1.1.0", *latest65, "6.5.0.0 compatible latest from the probe")
+
+			// A scrape of the 6.6.0.0 environment reports a compatibility gap;
+			// the follow-up sync fills it with a single probe at 6.6.0.0.
+			ageSyncBookkeeping(t, pool, "61 minutes", "20 minutes")
+			store.resetSeen()
+			require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false), "gap sync")
+
+			assert.Equal(t, []string{"en_GB@6.6.0.0", "de_DE@6.6.0.0"}, store.seenLocales(), "gap probe at the gap version")
+			var latest66 *string
+			require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = '6.6.0.0'`).Scan(&latest66), "read 6.6 compat")
+			require.NotNil(t, latest66, "6.6.0.0 compatible latest")
+			assert.Equal(t, "1.2.0", *latest66, "6.6.0.0 compatible latest from the gap probe")
 		})
 	}
 }
@@ -552,38 +609,166 @@ func TestLatestCompatibleVersion(t *testing.T) {
 // TestStoreExtensionSyncFreshIsNoop: a second sync right after the first must
 // be answered from the bookkeeping without any HTTP request or row write. This
 // is what collapses concurrent dispatches from many environments sharing the
-// same extensions into a single hourly fetch.
+// same extensions into a single fetch.
 func TestStoreExtensionSyncFreshIsNoop(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	ctx := context.Background()
 
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools", "CustomPlugin"}, "6.5.0.0", false), "first sync")
 	requestsAfterFirst := store.requests.Load()
+	feedRequestsAfterFirst := store.feedRequests.Load()
 	before := snapshotRowVersions(t, pool)
 
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools", "CustomPlugin"}, "6.5.0.0", false), "second sync")
 
 	assert.Equal(t, requestsAfterFirst, store.requests.Load(), "fresh re-sync must make no extra store requests")
+	assert.Equal(t, feedRequestsAfterFirst, store.feedRequests.Load(), "fresh re-sync must make no extra feed requests")
 	after := snapshotRowVersions(t, pool)
 	for key, xmin := range before {
 		assert.Equalf(t, xmin, after[key], "row %s was rewritten by a fresh re-sync", key)
 	}
 }
 
-// TestStoreExtensionSyncForceUnchangedRewritesNothing: a forced sync re-fetches
-// from the store, but identical data must not produce a single new row version
-// thanks to the change guards.
-func TestStoreExtensionSyncForceUnchangedRewritesNothing(t *testing.T) {
+// TestStoreExtensionSyncStoreTierFreshSkipsStoreProbe is the core reuse
+// guarantee: once the store was probed, the hourly feed-driven re-syncs
+// refresh compatibility from the packages feed alone and do not touch the
+// rate-limited store API again until the daily probe tier expires.
+func TestStoreExtensionSyncStoreTierFreshSkipsStoreProbe(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	ctx := context.Background()
 
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "first sync")
+	requestsAfterFirst := store.requests.Load()
 	before := snapshotRowVersions(t, pool)
+
+	// The feed tier expires (hourly), the store-probe tier does not (daily).
+	ageSyncBookkeeping(t, pool, "2 hours", "2 hours")
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "hourly re-sync")
+
+	assert.Equal(t, requestsAfterFirst, store.requests.Load(), "store-fresh re-sync must not probe the store")
+	assert.Equal(t, int64(2), store.feedRequests.Load(), "feed is re-fetched on the hourly cadence")
+
+	// Compatibility rows are refreshed in place (change-guarded), nothing else
+	// is rewritten.
+	after := snapshotRowVersions(t, pool)
+	for key, xmin := range before {
+		assert.Equalf(t, xmin, after[key], "row %s was rewritten by a store-fresh re-sync", key)
+	}
+
+	// Once the daily probe tier expires, the store is probed again.
+	ageSyncBookkeeping(t, pool, "2 hours", "25 hours")
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "daily refresh")
+	assert.Greater(t, store.requests.Load(), requestsAfterFirst, "expired probe tier re-probes the store")
+}
+
+// TestStoreExtensionSyncStoreMissCached24h: a name the store does not know (a
+// custom plugin) is confirmed with one discovery probe and then cached for a
+// day, instead of being re-probed on every hourly sync.
+func TestStoreExtensionSyncStoreMissCached24h(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+
+	require.NoError(t, h.SyncNames(ctx, []string{"CustomPlugin"}, "6.5.0.0", false), "first sync")
+	assert.Equal(t, int64(2), store.requests.Load(), "discovery probe, en+de")
+	require.NotNil(t, storeProbeAge(t, pool, "CustomPlugin"), "miss records the probe time")
+
+	// Hourly re-syncs re-check the feed but not the store.
+	ageSyncBookkeeping(t, pool, "2 hours", "2 hours")
+	require.NoError(t, h.SyncNames(ctx, []string{"CustomPlugin"}, "6.5.0.0", false), "hourly re-sync")
+	assert.Equal(t, int64(2), store.requests.Load(), "store miss is cached, no re-probe")
+
+	// After a day the miss is re-confirmed with a single probe.
+	ageSyncBookkeeping(t, pool, "2 hours", "25 hours")
+	require.NoError(t, h.SyncNames(ctx, []string{"CustomPlugin"}, "6.5.0.0", false), "daily re-check")
+	assert.Equal(t, int64(4), store.requests.Load(), "expired miss is re-confirmed once")
+	assert.Equal(t, 0, countRows(t, pool, "store_extension"), "still no catalog row")
+}
+
+// TestStoreExtensionSyncNewReleaseEventProbe: when the feed learns about a
+// release the catalog has not fetched yet, the store is probed through the
+// short event claim window even though the daily probe tier is still fresh —
+// the bilingual changelog of a new release must not wait for the daily
+// refresh.
+func TestStoreExtensionSyncNewReleaseEventProbe(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "first sync")
 	requestsAfterFirst := store.requests.Load()
 
-	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", true), "forced sync")
+	// A new release appears (in the store and in the packages feed).
+	frosh := store.extensions["FroshTools"]
+	frosh.latestByShopwareVersion["6.6.0.0"] = "1.3.0"
+	frosh.changelogVersions = append([]string{"1.3.0"}, frosh.changelogVersions...)
+	store.feeds["froshtools"] = append([]mockFeedVersion{{version: "1.3.0", constraint: "~6.6.0"}}, store.feeds["froshtools"]...)
 
-	assert.Greater(t, store.requests.Load(), requestsAfterFirst, "forced sync must hit the store")
+	// The feed tier expires (hourly); the last store probe is older than the
+	// event window but far from the daily refresh window.
+	ageSyncBookkeeping(t, pool, "2 hours", "20 minutes")
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "release sync")
+
+	assert.Greater(t, store.requests.Load(), requestsAfterFirst, "new release triggers an event probe")
+	var globalLatest *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension WHERE name = 'FroshTools'`).Scan(&globalLatest), "read catalog row")
+	require.NotNil(t, globalLatest, "global latest after release")
+	assert.Equal(t, "1.3.0", *globalLatest, "global latest after release")
+	assert.Equal(t, 4, countRows(t, pool, "store_extension_version"), "version rows")
+}
+
+// TestStoreExtensionSyncNewReleaseWithinEventWindow: a release detected
+// minutes after the last store probe does not immediately re-probe (the event
+// window deduplicates bursts), but the feed still updates the compatibility
+// rows, so update hints appear without waiting for the store probe.
+func TestStoreExtensionSyncNewReleaseWithinEventWindow(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "first sync")
+	requestsAfterFirst := store.requests.Load()
+
+	frosh := store.extensions["FroshTools"]
+	frosh.latestByShopwareVersion["6.6.0.0"] = "1.3.0"
+	frosh.changelogVersions = append([]string{"1.3.0"}, frosh.changelogVersions...)
+	store.feeds["froshtools"] = append([]mockFeedVersion{{version: "1.3.0", constraint: "~6.6.0"}}, store.feeds["froshtools"]...)
+
+	// Last probe 5 minutes ago: inside the event window, so no store probe.
+	ageSyncBookkeeping(t, pool, "2 hours", "5 minutes")
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "release sync within event window")
+
+	assert.Equal(t, requestsAfterFirst, store.requests.Load(), "event window deduplicates the probe")
+
+	// The update hint still propagates through the feed-derived compatibility
+	// row; only the changelog text waits for the next probe.
+	var latest66 *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = '6.6.0.0'`).Scan(&latest66), "read 6.6 compat")
+	require.NotNil(t, latest66, "6.6.0.0 compatible latest")
+	assert.Equal(t, "1.3.0", *latest66, "compat row updated from the feed without a store probe")
+
+	var globalLatest *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension WHERE name = 'FroshTools'`).Scan(&globalLatest), "read catalog row")
+	require.NotNil(t, globalLatest, "global latest")
+	assert.Equal(t, "1.2.0", *globalLatest, "catalog latest unchanged until the probe runs")
+}
+
+// TestStoreExtensionSyncForceDedupedByEventWindow: a forced sync right after a
+// probe must not re-fetch (a burst of scrapes updating the same extension
+// shares one probe); once the event window has passed, a forced sync
+// re-fetches but identical data must not produce a single new row version.
+func TestStoreExtensionSyncForceDedupedByEventWindow(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "first sync")
+	requestsAfterFirst := store.requests.Load()
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", true), "forced sync inside the event window")
+	assert.Equal(t, requestsAfterFirst, store.requests.Load(), "forced sync inside the event window must not re-probe")
+
+	ageSyncBookkeeping(t, pool, "0 minutes", "20 minutes")
+	before := snapshotRowVersions(t, pool)
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", true), "forced sync after the event window")
+	assert.Greater(t, store.requests.Load(), requestsAfterFirst, "forced sync past the event window must hit the store")
 	after := snapshotRowVersions(t, pool)
 	for key, xmin := range before {
 		// The catalog row itself is rewritten (last_refreshed_at), everything
@@ -610,8 +795,7 @@ func TestStoreExtensionSyncPicksUpNewRelease(t *testing.T) {
 	frosh.latestByShopwareVersion["6.6.0.0"] = "1.3.0"
 	frosh.changelogVersions = append([]string{"1.3.0"}, frosh.changelogVersions...)
 	store.feeds["froshtools"] = append([]mockFeedVersion{{version: "1.3.0", constraint: "~6.6.0"}}, store.feeds["froshtools"]...)
-	_, err := pool.Exec(ctx, `UPDATE store_extension_sync SET last_synced_at = NOW() - INTERVAL '2 days'`)
-	require.NoError(t, err, "age sync state")
+	ageSyncBookkeeping(t, pool, "2 days", "2 days")
 
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "second sync")
 
@@ -648,97 +832,124 @@ func TestNamesNeedingSyncCompatibilityGap(t *testing.T) {
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools", "CustomPlugin"}, "6.5.0.0", false), "sync")
 
 	// Known version: nothing to do.
-	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools", "CustomPlugin"}, "6.5.0.0")
+	needing, _, err := h.namesNeedingSync(ctx, []string{"FroshTools", "CustomPlugin"}, "6.5.0.0")
 	require.NoError(t, err, "namesNeedingSync")
 	assert.Empty(t, needing, "needing sync for known version")
 
 	// New version: only the store-known extension needs a compatibility probe;
 	// the store miss stays quiet until its bookkeeping ages out.
-	needing, err = h.namesNeedingSync(ctx, []string{"FroshTools", "CustomPlugin"}, "6.7.0.0")
+	needing, _, err = h.namesNeedingSync(ctx, []string{"FroshTools", "CustomPlugin"}, "6.7.0.0")
 	require.NoError(t, err, "namesNeedingSync")
 	assert.Equal(t, []string{"FroshTools"}, needing, "needing sync for new version")
 }
 
+// TestNamesNeedingSyncCompatibilityGapFilledFromFeed: a compatibility gap for
+// a feed-resolved extension is filled from the packages feed alone — no store
+// probe is needed to answer "what is the latest version compatible with this
+// Shopware version".
+func TestNamesNeedingSyncCompatibilityGapFilledFromFeed(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "sync")
+	requestsAfterFirst := store.requests.Load()
+
+	// An environment upgrades to 6.7.0.0: the gap makes the name eligible, the
+	// feed answers it, and the store is not probed again.
+	seedEnvironment(t, pool, "Upgraded", "6.7.0.0")
+	needing, _, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.7.0.0")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"FroshTools"}, needing, "gap makes the name eligible")
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.7.0.0", false), "gap sync")
+	assert.Equal(t, requestsAfterFirst, store.requests.Load(), "gap filled from the feed without a store probe")
+
+	var latest67 *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = '6.7.0.0'`).Scan(&latest67), "read 6.7 compat")
+	assert.Nil(t, latest67, "6.7.0.0 has no compatible release, recorded from the feed")
+}
+
 // TestStoreExtensionSyncSerializesLocaleProbes: en and de for a version must
-// not run concurrently, otherwise catalog sync doubles store API pressure. The
-// feed is removed so the extension keeps per-version probing, which is what
-// exercises the multi-version walk order.
+// not run concurrently, otherwise catalog sync doubles store API pressure.
 func TestStoreExtensionSyncSerializesLocaleProbes(t *testing.T) {
 	h, _, store := setupSyncTest(t)
-	delete(store.feeds, "froshtools")
 	store.handlerDelay = 30 * time.Millisecond
 
 	require.NoError(t, h.SyncNames(context.Background(), []string{"FroshTools"}, "6.5.0.0", false))
 
-	assert.Equal(t, 1, store.maxConcurrent(), "locale/version probes must be serial")
-	assert.Equal(t, []string{
-		"en_GB@6.6.0.0", "de_DE@6.6.0.0",
-		"en_GB@6.5.0.0", "de_DE@6.5.0.0",
-	}, store.seenLocales(), "versions newest-first, locales en then de")
+	assert.Equal(t, 1, store.maxConcurrent(), "locale probes must be serial")
+	assert.Equal(t, []string{"en_GB@6.6.0.0", "de_DE@6.6.0.0"}, store.seenLocales(), "one probe batch, en then de")
 }
 
-// TestStoreExtensionSyncAbortsRemainingVersionsOn429: once the store rate-limits
-// a version probe, SyncNames must stop probing further versions instead of
-// stomping through the rest of the list, leave sync bookkeeping untouched so a
-// later scheduled sync can continue, persist any versions already probed, and
-// return nil so the queue acks instead of nacking into a still-limited API.
+// addOldExt registers a second feed-resolved extension whose newest compatible
+// release is on 6.5.0.0, so a sync of both extensions probes two version
+// batches: FroshTools at 6.6.0.0, OldExt at 6.5.0.0.
+func addOldExt(store *mockStoreServer) {
+	store.extensions["OldExt"] = &mockExtension{
+		latestByShopwareVersion: map[string]string{"6.5.0.0": "2.0.0"},
+		changelogVersions:       []string{"2.0.0", "1.9.0"},
+	}
+	store.feeds["oldext"] = []mockFeedVersion{{version: "2.0.0", constraint: "~6.5.0"}}
+}
+
+// TestStoreExtensionSyncAbortsRemainingVersionsOn429: once the store
+// rate-limits a probe batch, SyncNames must stop probing further batches
+// instead of stomping through the rest of the list, release the claims of the
+// names it did not probe so a later scheduled sync can continue, persist any
+// names already probed, and return nil so the queue acks instead of nacking
+// into a still-limited API.
 func TestStoreExtensionSyncAbortsRemainingVersionsOn429(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
+	addOldExt(store)
 	ctx := context.Background()
 	collect := withStoreSyncMetrics(t)
 
-	// Without a feed the extension keeps per-version probing, so the walk
-	// reaches the rate-limited older version. Newest version (6.6.0.0)
-	// succeeds; older 6.5.0.0 is rate-limited. Probes run newest-first, so we
-	// get partial progress then abort.
-	delete(store.feeds, "froshtools")
+	// Newest batch (6.6.0.0: FroshTools) succeeds; the 6.5.0.0 batch (OldExt)
+	// is rate-limited. Batches run newest-first, so we get partial progress
+	// then abort.
 	store.rateLimitedVersions["6.5.0.0"] = true
 	h.account = fastStoreClient(store.URL)
 
-	err := h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false)
+	err := h.SyncNames(ctx, []string{"FroshTools", "OldExt"}, "6.6.0.0", false)
 	require.NoError(t, err, "rate-limit abort must not fail the job")
 	assert.Equal(t, int64(1), collect()["shopmon.store_sync.outcome|outcome=rate_limited"], "abort must record rate_limited")
 
-	// 6.6 en+de succeeded; 6.5 en hit 429 and aborted before de (and before any
-	// further versions, of which there are none).
+	// 6.6 en+de succeeded; 6.5 en hit 429 and aborted before de.
 	assert.Equal(t, []string{
 		"en_GB@6.6.0.0", "de_DE@6.6.0.0",
 		"en_GB@6.5.0.0",
 	}, store.seenLocales())
 	assert.Equal(t, int64(3), store.requests.Load())
 
-	// Partial catalog for the successful version is kept.
+	// The successfully probed extension is persisted, including its
+	// feed-derived compatibility rows.
 	assert.Equal(t, 1, countRows(t, pool, "store_extension"), "partial catalog persisted")
 	var latest66 *string
 	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = '6.6.0.0'`).Scan(&latest66))
 	require.NotNil(t, latest66)
 	assert.Equal(t, "1.2.0", *latest66)
 
-	// No compatibility row for the aborted version, and sync bookkeeping must
-	// not be advanced (otherwise the hourly freshness gate would starve retries).
-	assert.Equal(t, 1, countRows(t, pool, "store_extension_compatibility"))
-	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"), "bookkeeping not marked fresh after rate limit")
+	// The aborted name's claim is released, so it stays eligible for the next
+	// scheduled pass instead of waiting out the claim window.
+	assert.Nil(t, storeProbeAge(t, pool, "OldExt"), "aborted name's claim must be released")
+	require.NotNil(t, storeProbeAge(t, pool, "FroshTools"), "probed name keeps its claim")
 
-	// Incomplete work stays eligible for the next scheduled pass — both the
-	// aborted Shopware version (compat gap) and a fresh re-sync of the same
-	// names (bookkeeping never written).
-	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.5.0.0")
+	needing, _, err := h.namesNeedingSync(ctx, []string{"OldExt"}, "6.5.0.0")
 	require.NoError(t, err)
-	assert.Equal(t, []string{"FroshTools"}, needing, "aborted version must remain eligible")
-	needing, err = h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.6.0.0")
+	assert.Equal(t, []string{"OldExt"}, needing, "aborted name must remain eligible")
+	needing, _, err = h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.6.0.0")
 	require.NoError(t, err)
-	assert.Equal(t, []string{"FroshTools"}, needing, "partial sync must not mark the name-set fresh")
+	assert.Empty(t, needing, "fully synced name must not stay eligible")
 }
 
-// TestStoreExtensionSyncAllProbesRateLimited: when the first version is already
-// rate-limited, nothing is persisted, bookkeeping stays stale, and the job
+// TestStoreExtensionSyncAllProbesRateLimited: when the first batch is already
+// rate-limited, nothing is persisted, all claims are released, and the job
 // still succeeds so the queue does not immediately retry.
 func TestStoreExtensionSyncAllProbesRateLimited(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	ctx := context.Background()
 	collect := withStoreSyncMetrics(t)
 	store.rateLimitedVersions["6.6.0.0"] = true
-	store.rateLimitedVersions["6.5.0.0"] = true
 	h.account = fastStoreClient(store.URL)
 
 	err := h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false)
@@ -747,20 +958,20 @@ func TestStoreExtensionSyncAllProbesRateLimited(t *testing.T) {
 
 	assert.Equal(t, []string{"en_GB@6.6.0.0"}, store.seenLocales(), "must not continue after first 429")
 	assert.Equal(t, 0, countRows(t, pool, "store_extension"))
-	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"))
+	assert.Nil(t, storeProbeAge(t, pool, "FroshTools"), "claim must be released after a 429")
 
-	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.6.0.0")
+	needing, _, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.6.0.0")
 	require.NoError(t, err)
 	assert.Equal(t, []string{"FroshTools"}, needing, "unsynced names must remain eligible")
 }
 
 // TestStoreExtensionSyncNon429StillErrors: a non-429 probe failure on every
-// version is a real job error, not a graceful backoff.
+// batch is a real job error, not a graceful backoff — and the claims are
+// released so the retried job can actually re-probe.
 func TestStoreExtensionSyncNon429StillErrors(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	collect := withStoreSyncMetrics(t)
 	store.serverErrorVersions["6.6.0.0"] = true
-	store.serverErrorVersions["6.5.0.0"] = true
 	h.account = fastStoreClient(store.URL)
 
 	err := h.SyncNames(context.Background(), []string{"FroshTools"}, "6.6.0.0", false)
@@ -770,35 +981,163 @@ func TestStoreExtensionSyncNon429StillErrors(t *testing.T) {
 	assert.Equal(t, int64(1), collect()["shopmon.store_sync.outcome|outcome=error"], "non-429 must record error")
 
 	assert.Equal(t, 0, countRows(t, pool, "store_extension"))
-	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"))
+	assert.Nil(t, storeProbeAge(t, pool, "FroshTools"), "claim must be released after a failure")
+
+	// The retry re-probes instead of being swallowed by the claim window.
+	store.serverErrorVersions["6.6.0.0"] = false
+	require.NoError(t, h.SyncNames(context.Background(), []string{"FroshTools"}, "6.6.0.0", false), "retry")
+	assert.Equal(t, 1, countRows(t, pool, "store_extension"), "retry persists the catalog")
 }
 
 // TestStoreExtensionSyncRateLimitThenScheduledPass: after a 429 abort, a later
-// SyncNames (the next scheduled scrape dispatch) finishes the remaining
-// versions and only then marks bookkeeping fresh.
+// SyncNames (the next scheduled scrape dispatch) finishes the remaining names
+// without re-probing the ones that already succeeded, and only then marks
+// bookkeeping fresh.
 func TestStoreExtensionSyncRateLimitThenScheduledPass(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
+	addOldExt(store)
 	ctx := context.Background()
-	// Feed-missing, so the first pass walks into the rate-limited version.
-	delete(store.feeds, "froshtools")
 	store.rateLimitedVersions["6.5.0.0"] = true
 	h.account = fastStoreClient(store.URL)
 
-	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false), "partial abort")
-	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"))
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools", "OldExt"}, "6.6.0.0", false), "partial abort")
+	assert.Equal(t, 1, countRows(t, pool, "store_extension"), "FroshTools persisted before the abort")
 
 	store.mu.Lock()
 	store.rateLimitedVersions["6.5.0.0"] = false
 	store.seen = nil
 	store.mu.Unlock()
 
-	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false), "scheduled follow-up")
-	assert.Equal(t, 1, countRows(t, pool, "store_extension_sync"), "bookkeeping marked fresh only after a complete sync")
-	assert.Equal(t, 2, countRows(t, pool, "store_extension_compatibility"), "both versions probed")
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools", "OldExt"}, "6.6.0.0", false), "scheduled follow-up")
 
-	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.6.0.0")
+	// FroshTools was fully synced before the abort and keeps its claim, so the
+	// follow-up probes only the aborted name.
+	assert.Equal(t, []string{"en_GB@6.5.0.0", "de_DE@6.5.0.0"}, store.seenLocales(), "follow-up probes only the aborted name")
+	assert.Equal(t, 2, countRows(t, pool, "store_extension"), "both extensions persisted")
+	assert.Equal(t, 4, countRows(t, pool, "store_extension_compatibility"), "both extensions have feed-derived compat rows")
+
+	needing, _, err := h.namesNeedingSync(ctx, []string{"FroshTools", "OldExt"}, "6.6.0.0")
 	require.NoError(t, err)
 	assert.Empty(t, needing, "complete sync must satisfy freshness")
+}
+
+// TestClaimStoreExtensionProbes verifies the claim/release bookkeeping
+// primitives the sync uses to deduplicate store probes across workers.
+func TestClaimStoreExtensionProbes(t *testing.T) {
+	_, pool, _ := setupSyncTest(t)
+	ctx := context.Background()
+	q := queries.New(pool)
+
+	claim := func(names []string, windowSeconds int32) []string {
+		got, err := q.ClaimStoreExtensionProbes(ctx, queries.ClaimStoreExtensionProbesParams{Column1: names, Column2: windowSeconds})
+		require.NoError(t, err, "claim")
+		return got
+	}
+
+	// Never-probed names are claimed.
+	assert.Equal(t, []string{"FroshTools"}, claim([]string{"FroshTools"}, storeProbeRefreshWindowSeconds))
+	// Inside the window the claim is denied — this is what collapses
+	// overlapping sync jobs onto one probe.
+	assert.Empty(t, claim([]string{"FroshTools"}, storeProbeRefreshWindowSeconds))
+	// A shorter (event) window denies as well while the probe is fresher than it.
+	assert.Empty(t, claim([]string{"FroshTools"}, storeProbeEventWindowSeconds))
+
+	// A released claim can be taken again immediately (failure retry path).
+	require.NoError(t, q.ReleaseStoreExtensionProbes(ctx, []string{"FroshTools"}), "release")
+	assert.Equal(t, []string{"FroshTools"}, claim([]string{"FroshTools"}, storeProbeRefreshWindowSeconds), "released claim is claimable")
+
+	// An aged-out probe is claimable again.
+	_, err := pool.Exec(ctx, `UPDATE store_extension_sync SET last_store_probe_at = NOW() - INTERVAL '25 hours'`)
+	require.NoError(t, err, "age probe")
+	assert.Equal(t, []string{"FroshTools"}, claim([]string{"FroshTools"}, storeProbeRefreshWindowSeconds), "expired probe is claimable")
+}
+
+// TestClaimStoreExtensionProbesConcurrent: concurrent claims for the same name
+// — overlapping sync jobs on different workers — yield exactly one winner, so
+// a name is never probed twice at the same time.
+func TestClaimStoreExtensionProbesConcurrent(t *testing.T) {
+	_, pool, _ := setupSyncTest(t)
+	ctx := context.Background()
+	q := queries.New(pool)
+
+	const workers = 8
+	var wg sync.WaitGroup
+	wins := atomic.Int64{}
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			got, err := q.ClaimStoreExtensionProbes(ctx, queries.ClaimStoreExtensionProbesParams{
+				Column1: []string{"FroshTools"},
+				Column2: storeProbeRefreshWindowSeconds,
+			})
+			if err != nil {
+				t.Errorf("claim: %v", err)
+				return
+			}
+			wins.Add(int64(len(got)))
+		}()
+	}
+	wg.Wait()
+	assert.Equal(t, int64(1), wins.Load(), "exactly one concurrent claim wins")
+}
+
+// TestPlanStoreProbes unit-tests the probe planning: which store API probe (if
+// the claim lets it through) each name gets, and at which Shopware version.
+func TestPlanStoreProbes(t *testing.T) {
+	swvs := []string{"6.6.0.0", "6.5.0.0"}
+	compat := map[string]map[string]*string{
+		"FeedExt": {"6.5.0.0": new("1.1.0"), "6.6.0.0": new("1.2.0")},
+	}
+	memberLatest := map[string]*string{"FeedExt": new("1.2.0"), "FeedlessMember": new("2.0.0")}
+
+	t.Run("feed-resolved probes at the newest compatible release's version", func(t *testing.T) {
+		plan := planStoreProbes([]string{"FeedExt"}, "6.5.0.0", swvs, false, memberLatest, compat, catalogState{})
+		assert.Equal(t, probePlanEntry{shopwareVersion: "6.6.0.0"}, plan["FeedExt"], "routine refresh, probed where the newest release is compatible")
+	})
+
+	t.Run("feed-less names probe at the requesting version", func(t *testing.T) {
+		plan := planStoreProbes([]string{"CustomPlugin"}, "6.5.0.0", swvs, false, memberLatest, compat, catalogState{})
+		assert.Equal(t, probePlanEntry{shopwareVersion: "6.5.0.0"}, plan["CustomPlugin"])
+	})
+
+	t.Run("force marks probes as events", func(t *testing.T) {
+		plan := planStoreProbes([]string{"FeedExt"}, "6.5.0.0", swvs, true, memberLatest, compat, catalogState{})
+		assert.Equal(t, probePlanEntry{shopwareVersion: "6.6.0.0", event: true}, plan["FeedExt"])
+	})
+
+	t.Run("new release marks an event", func(t *testing.T) {
+		staleCatalog := map[string]*string{"FeedExt": new("1.1.0")}
+		plan := planStoreProbes([]string{"FeedExt"}, "6.5.0.0", swvs, false, staleCatalog, compat, catalogState{})
+		assert.Equal(t, probePlanEntry{shopwareVersion: "6.6.0.0", event: true}, plan["FeedExt"], "catalog behind the feed is an event probe")
+	})
+
+	t.Run("feed-less member with a compatibility gap marks an event", func(t *testing.T) {
+		plan := planStoreProbes([]string{"FeedlessMember"}, "6.5.0.0", swvs, false, memberLatest, compat, catalogState{
+			member:      map[string]bool{"FeedlessMember": true},
+			compatKnown: map[string]*string{},
+		})
+		assert.Equal(t, probePlanEntry{shopwareVersion: "6.5.0.0", event: true}, plan["FeedlessMember"])
+	})
+
+	t.Run("feed-less member without a gap is a routine refresh", func(t *testing.T) {
+		plan := planStoreProbes([]string{"FeedlessMember"}, "6.5.0.0", swvs, false, memberLatest, compat, catalogState{
+			member:      map[string]bool{"FeedlessMember": true},
+			compatKnown: map[string]*string{"FeedlessMember": new("2.0.0")},
+		})
+		assert.Equal(t, probePlanEntry{shopwareVersion: "6.5.0.0"}, plan["FeedlessMember"])
+	})
+
+	t.Run("release compatible only with unused versions is not an event", func(t *testing.T) {
+		// The feed's newest release (1.3.0) targets 6.7, which no environment
+		// runs: the store probe could not fetch it either, so it must not
+		// re-trigger an event probe on every sync.
+		futureCompat := map[string]map[string]*string{
+			"FeedExt": {"6.5.0.0": new("1.1.0"), "6.6.0.0": new("1.2.0"), "6.7.0.0": nil},
+		}
+		plan := planStoreProbes([]string{"FeedExt"}, "6.5.0.0", swvs, false, memberLatest, futureCompat, catalogState{})
+		assert.Equal(t, probePlanEntry{shopwareVersion: "6.6.0.0"}, plan["FeedExt"], "no event probe")
+	})
 }
 
 // TestOldDataCleanupRetainsCatalog verifies the catalog itself — including its
