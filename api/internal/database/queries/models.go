@@ -430,8 +430,9 @@ type StoreExtensionImage struct {
 }
 
 type StoreExtensionSync struct {
-	ExtensionName string           `json:"extension_name"`
-	LastSyncedAt  pgtype.Timestamp `json:"last_synced_at"`
+	ExtensionName    string           `json:"extension_name"`
+	LastSyncedAt     pgtype.Timestamp `json:"last_synced_at"`
+	LastStoreProbeAt pgtype.Timestamp `json:"last_store_probe_at"`
 }
 
 type StoreExtensionTranslation struct {

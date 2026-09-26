@@ -288,12 +288,17 @@ CREATE TABLE "store_extension_version_translation" (
   PRIMARY KEY ("extension_version_id", "language")
 );
 
--- store_extension_sync records when the store API was last asked about an
--- extension name, including names the store does not know (so custom plugins
--- are not re-checked on every scrape). It gates the shared catalog refresh.
+-- store_extension_sync records when an extension name was last checked,
+-- including names the store does not know (so custom plugins are not
+-- re-checked on every scrape). It gates the shared catalog refresh with two
+-- tiers: last_synced_at for the cheap packages.shopware.com feed pass
+-- (compatibility, new-release detection) and last_store_probe_at for the
+-- rate-limited api.shopware.com probes (metadata, translations, pictures,
+-- bilingual changelogs, store membership confirmation).
 CREATE TABLE "store_extension_sync" (
   "extension_name" text PRIMARY KEY NOT NULL,
-  "last_synced_at" timestamp NOT NULL DEFAULT NOW()
+  "last_synced_at" timestamp NOT NULL DEFAULT NOW(),
+  "last_store_probe_at" timestamp
 );
 
 -- store_extension_compatibility stores, per Shopware version in use by any

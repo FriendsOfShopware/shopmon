@@ -9,6 +9,47 @@ import (
 	"context"
 )
 
+const claimStoreExtensionProbes = `-- name: ClaimStoreExtensionProbes :many
+INSERT INTO store_extension_sync (extension_name, last_store_probe_at)
+SELECT unnest($1::text[]), NOW()
+ON CONFLICT (extension_name) DO UPDATE
+  SET last_store_probe_at = NOW()
+  WHERE store_extension_sync.last_store_probe_at IS NULL
+     OR store_extension_sync.last_store_probe_at < NOW() - ($2::int * INTERVAL '1 second')
+RETURNING extension_name
+`
+
+type ClaimStoreExtensionProbesParams struct {
+	Column1 []string `json:"column_1"`
+	Column2 int32    `json:"column_2"`
+}
+
+// Atomically marks the given names as probed-now and returns the ones the
+// caller actually claimed: names with no bookkeeping row, or whose last store
+// probe is older than $2 seconds. Names probed within the window — including
+// claims held by a concurrent sync job — are neither updated nor returned, so
+// overlapping syncs never duplicate a rate-limited store API probe. Claims of
+// names that end up not probed are cleared with ReleaseStoreExtensionProbes.
+func (q *Queries) ClaimStoreExtensionProbes(ctx context.Context, arg ClaimStoreExtensionProbesParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, claimStoreExtensionProbes, arg.Column1, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var extension_name string
+		if err := rows.Scan(&extension_name); err != nil {
+			return nil, err
+		}
+		items = append(items, extension_name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const cleanupOrphanedStoreExtensionSyncStates = `-- name: CleanupOrphanedStoreExtensionSyncStates :exec
 DELETE FROM store_extension_sync
 WHERE last_synced_at < NOW() - INTERVAL '7 days'
@@ -64,14 +105,18 @@ func (q *Queries) GetDistinctEnvironmentShopwareVersions(ctx context.Context) ([
 const getFreshStoreExtensionSyncNames = `-- name: GetFreshStoreExtensionSyncNames :many
 
 SELECT extension_name FROM store_extension_sync
-WHERE extension_name = ANY($1::text[]) AND last_synced_at > NOW() - INTERVAL '1 hour'
+WHERE extension_name = ANY($1::text[])
+  AND last_synced_at > NOW() - INTERVAL '1 hour'
+  AND last_store_probe_at > NOW() - INTERVAL '24 hours'
 `
 
 // Queries backing the store extension catalog sync job. The catalog is shared
 // across environments and refreshed by a dedicated queue job, never by the
 // environment scrapes themselves.
-// Names among the given set whose store lookup happened within the last hour
-// (hit or miss). These do not need another sync.
+// Names among the given set that need no sync work at all: the cheap
+// packages.shopware.com feed pass happened within the last hour AND the
+// rate-limited store API was probed within the last day (hit or miss).
+// Anything else is eligible for a sync dispatch.
 func (q *Queries) GetFreshStoreExtensionSyncNames(ctx context.Context, dollar_1 []string) ([]string, error) {
 	rows, err := q.db.Query(ctx, getFreshStoreExtensionSyncNames, dollar_1)
 	if err != nil {
@@ -172,6 +217,38 @@ func (q *Queries) GetStoreExtensionCompatibility(ctx context.Context, arg GetSto
 	return items, nil
 }
 
+const getStoreExtensionLatestVersions = `-- name: GetStoreExtensionLatestVersions :many
+SELECT name, latest_version FROM store_extension
+WHERE name = ANY($1::text[])
+`
+
+type GetStoreExtensionLatestVersionsRow struct {
+	Name          string  `json:"name"`
+	LatestVersion *string `json:"latest_version"`
+}
+
+// Global latest version of each catalog member among the given names, used to
+// detect releases the packages feed knows but the catalog has not fetched yet.
+func (q *Queries) GetStoreExtensionLatestVersions(ctx context.Context, dollar_1 []string) ([]GetStoreExtensionLatestVersionsRow, error) {
+	rows, err := q.db.Query(ctx, getStoreExtensionLatestVersions, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetStoreExtensionLatestVersionsRow{}
+	for rows.Next() {
+		var i GetStoreExtensionLatestVersionsRow
+		if err := rows.Scan(&i.Name, &i.LatestVersion); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getStoreExtensionNamesIn = `-- name: GetStoreExtensionNamesIn :many
 SELECT name FROM store_extension WHERE name = ANY($1::text[])
 `
@@ -198,6 +275,19 @@ func (q *Queries) GetStoreExtensionNamesIn(ctx context.Context, dollar_1 []strin
 	return items, nil
 }
 
+const releaseStoreExtensionProbes = `-- name: ReleaseStoreExtensionProbes :exec
+UPDATE store_extension_sync SET last_store_probe_at = NULL
+WHERE extension_name = ANY($1::text[])
+`
+
+// Clears the probe timestamp of previously claimed names whose probe did not
+// complete (rate-limit abort, failed batch, failed sync), so the next
+// scheduled sync retries them instead of waiting out the claim window.
+func (q *Queries) ReleaseStoreExtensionProbes(ctx context.Context, dollar_1 []string) error {
+	_, err := q.db.Exec(ctx, releaseStoreExtensionProbes, dollar_1)
+	return err
+}
+
 const upsertStoreExtensionCompatibility = `-- name: UpsertStoreExtensionCompatibility :exec
 INSERT INTO store_extension_compatibility (extension_name, shopware_version, latest_version)
 VALUES ($1, $2, $3)
@@ -222,7 +312,9 @@ SELECT unnest($1::text[]), NOW()
 ON CONFLICT (extension_name) DO UPDATE SET last_synced_at = NOW()
 `
 
-// Marks all given names as looked up now, whether or not the store knew them.
+// Marks all given names as feed-checked now, whether or not the store knows
+// them. The store-probe tier is advanced separately by the probe claims
+// (ClaimStoreExtensionProbes) for the names actually probed.
 func (q *Queries) UpsertStoreExtensionSyncStates(ctx context.Context, dollar_1 []string) error {
 	_, err := q.db.Exec(ctx, upsertStoreExtensionSyncStates, dollar_1)
 	return err
