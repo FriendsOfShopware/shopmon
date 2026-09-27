@@ -5,12 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand/v2"
+	"slices"
+	"sync"
+	"time"
 
 	cron "github.com/robfig/cron/v3"
 )
 
 const (
 	environmentScrapeSchedule = "0 * * * *"
+	// Planning tick only. Each environment is then delayed across
+	// sitespeedSpreadWindow so the sitespeed service is not hit all at once.
 	sitespeedScrapeSchedule   = "0 3 * * *"
 	lockCleanupSchedule       = "0 4 * * *"
 	invitationCleanupSchedule = "0 5 * * *"
@@ -21,6 +27,11 @@ const (
 	// Offset from the advisory sync so the backport map is refreshed before the
 	// next advisory pass rather than racing it.
 	securityPluginSyncSchedule = "37 * * * *"
+
+	// sitespeedSpreadWindow is how far the daily sitespeed fan-out is stretched.
+	// It stays inside the 24h cron interval so one day's jobs are due before
+	// the next 03:00 enqueue.
+	sitespeedSpreadWindow = 23 * time.Hour
 )
 
 type ScheduledEnvironment struct {
@@ -35,7 +46,7 @@ type ScheduleRepository interface {
 
 type ScheduleDispatcher interface {
 	EnqueueEnvironmentScrape(ctx context.Context, environmentID int32) error
-	EnqueueSitespeedScrape(ctx context.Context, environmentID int32) error
+	EnqueueSitespeedScrape(ctx context.Context, environmentID int32, delay time.Duration) error
 	EnqueueLockCleanup(ctx context.Context) error
 	EnqueueInvitationCleanup(ctx context.Context) error
 	EnqueueOldDataCleanup(ctx context.Context) error
@@ -53,6 +64,8 @@ type Scheduler struct {
 	repository ScheduleRepository
 	dispatcher ScheduleDispatcher
 	config     SchedulerConfig
+	randMu     sync.Mutex
+	rand       *rand.Rand
 }
 
 func NewScheduler(repository ScheduleRepository, dispatcher ScheduleDispatcher, config SchedulerConfig) (*Scheduler, error) {
@@ -68,6 +81,7 @@ func NewScheduler(repository ScheduleRepository, dispatcher ScheduleDispatcher, 
 		repository: repository,
 		dispatcher: dispatcher,
 		config:     config,
+		rand:       rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
 	}
 	if err := scheduler.register(); err != nil {
 		return nil, err
@@ -201,11 +215,66 @@ func (s *Scheduler) enqueueSitespeedScrapes(ctx context.Context) {
 		slog.ErrorContext(ctx, "failed to list environments for sitespeed scrape", "error", err)
 		return
 	}
+
+	s.randMu.Lock()
+	delays := sitespeedScrapeDelays(targets, sitespeedSpreadWindow, s.rand)
+	s.randMu.Unlock()
+
+	dispatched := 0
+	failed := 0
 	for _, environmentID := range targets {
-		if err := s.dispatcher.EnqueueSitespeedScrape(ctx, environmentID); err != nil {
-			slog.ErrorContext(ctx, "failed to dispatch sitespeed scrape", "environmentId", environmentID, "error", err)
+		delay := delays[environmentID]
+		if err := s.dispatcher.EnqueueSitespeedScrape(ctx, environmentID, delay); err != nil {
+			failed++
+			slog.ErrorContext(ctx, "failed to dispatch sitespeed scrape", "environmentId", environmentID, "delay", delay.String(), "error", err)
+			continue
 		}
+		dispatched++
 	}
+	slog.InfoContext(ctx, "enqueued sitespeed scrapes",
+		"targets", len(targets),
+		"dispatched", dispatched,
+		"failed", failed,
+		"spreadWindow", sitespeedSpreadWindow.String(),
+	)
+}
+
+// sitespeedScrapeDelays assigns each environment a delay in [0, window).
+// Slots are evenly spaced, then jittered inside the first half of the slot,
+// after a shuffle. Runs stay apart, and a shop is not measured at the same
+// time every day.
+func sitespeedScrapeDelays(environmentIDs []int32, window time.Duration, rng *rand.Rand) map[int32]time.Duration {
+	delays := make(map[int32]time.Duration, len(environmentIDs))
+	n := len(environmentIDs)
+	if n == 0 || window <= 0 || rng == nil {
+		return delays
+	}
+
+	order := slices.Clone(environmentIDs)
+	slices.Sort(order)
+	rng.Shuffle(n, func(i, j int) {
+		order[i], order[j] = order[j], order[i]
+	})
+
+	if n == 1 {
+		delays[order[0]] = time.Duration(rng.Int64N(int64(window)))
+		return delays
+	}
+
+	spacing := int64(window) / int64(n)
+	if spacing < 2 {
+		for _, id := range order {
+			delays[id] = time.Duration(rng.Int64N(int64(window)))
+		}
+		return delays
+	}
+
+	jitterMax := spacing / 2
+	for i, id := range order {
+		jitter := rng.Int64N(jitterMax)
+		delays[id] = time.Duration(int64(i)*spacing + jitter)
+	}
+	return delays
 }
 
 func (s *Scheduler) logDispatchError(ctx context.Context, job string, err error) {

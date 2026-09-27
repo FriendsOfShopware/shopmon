@@ -40,8 +40,8 @@ func (d *Dispatcher) EnqueueEnvironmentScrape(ctx context.Context, environmentID
 	return nil
 }
 
-func (d *Dispatcher) EnqueueSitespeedScrape(ctx context.Context, environmentID int32) error {
-	if err := Dispatch(ctx, d.bus, SitespeedScrape{EnvironmentID: environmentID}); err != nil {
+func (d *Dispatcher) EnqueueSitespeedScrape(ctx context.Context, environmentID int32, delay time.Duration) error {
+	if err := Dispatch(ctx, d.bus, SitespeedScrape{EnvironmentID: environmentID}, goqueue.WithDelay(delay)); err != nil {
 		return fmt.Errorf("dispatch sitespeed scrape: %w", err)
 	}
 	return nil

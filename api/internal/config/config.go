@@ -123,9 +123,9 @@ type QueueAMQPConfig struct {
 	// above the worker concurrency so workers never idle waiting for messages.
 	PrefetchCount int `env:"PREFETCH" envDefault:"10"`
 	// DelayedExchange declares the exchange as x-delayed-message so delayed jobs
-	// (post-deployment scrapes, sitespeed reruns) are held by the broker instead
-	// of being delivered immediately. Needs LavinMQ (native) or the RabbitMQ
-	// delayed-message plugin.
+	// (post-deployment scrapes and the daily sitespeed spread) are held by the
+	// broker instead of being delivered immediately. Needs LavinMQ (native) or
+	// the RabbitMQ delayed-message plugin.
 	DelayedExchange bool `env:"DELAYED_EXCHANGE" envDefault:"true"`
 }
 

@@ -114,8 +114,8 @@ func TestQueueAMQPPrefetch(t *testing.T) {
 }
 
 func TestQueueAMQPDelayedExchange(t *testing.T) {
-	// Delayed delivery is load-bearing (post-deployment scrapes, sitespeed
-	// reruns), so it may only be turned off by an explicit, parseable false.
+	// Delayed delivery is load-bearing (post-deployment scrapes and the daily
+	// sitespeed spread), so it may only be turned off by an explicit, parseable false.
 	// Anything else fails the load instead of silently picking a side.
 	tests := []struct {
 		name    string
