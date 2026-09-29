@@ -24,6 +24,10 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-lg font-semibold">{{ $t("shopDetail.performanceOverTime") }}</h2>
       <div class="flex items-center gap-2">
+        <label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+          <Switch v-model="showTrend" />
+          {{ $t("sitespeed.medianTrend") }}
+        </label>
         <Select v-model="timespan">
           <SelectTrigger class="w-44" :aria-label="$t('sitespeed.timespan')">
             <SelectValue :placeholder="$t('sitespeed.timespan')" />
@@ -204,6 +208,7 @@ import { Chart, registerables } from "chart.js";
 import annotationPlugin from "chartjs-plugin-annotation";
 import "chartjs-adapter-date-fns";
 import { formatDateTime } from "@/helpers/formatter";
+import { rollingMedian } from "@/helpers/statistics";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useI18n } from "vue-i18n";
 
@@ -215,6 +220,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import DataTable from "@/components/layout/DataTable.vue";
@@ -274,6 +280,11 @@ const visibleSitespeeds = computed(() => {
     (entry) => !isRunHidden(entry) && new Date(entry.createdAt).getTime() >= cutoff,
   );
 });
+
+// Rolling median over the last 7 runs (about a week of daily scrapes), so a
+// single outlier run does not hide whether the shop is getting slower.
+const MEDIAN_WINDOW_RUNS = 7;
+const showTrend = ref(true);
 
 // Latest entry
 const latest = computed(() => {
@@ -429,12 +440,18 @@ interface ChartConfig {
   chartInstance: Ref<Chart | null>;
   title: string;
   yAxisLabel: string;
+  roundMedian: (value: number) => number;
   datasets: Array<{
     label: string;
-    valueFormatter: (item: SitespeedDataItem) => number;
+    // null for a missing metric, so the median skips it instead of counting a 0.
+    valueFormatter: (item: SitespeedDataItem) => number | null;
     tooltipFormatter: (value: number) => string;
   }>;
 }
+
+// Explicit colors, since Chart.js would otherwise color by dataset index and the
+// median datasets would shift them. The median reuses its metric's color at ~60% alpha.
+const chartColors = ["#36a2eb", "#ff6384", "#ff9f40", "#ffcd56"];
 
 const chartConfigs: ChartConfig[] = [
   {
@@ -442,25 +459,26 @@ const chartConfigs: ChartConfig[] = [
     chartInstance: timeChartInstance,
     title: t("sitespeed.performanceOverTime"),
     yAxisLabel: t("sitespeed.timeMs"),
+    roundMedian: Math.round,
     datasets: [
       {
         label: t("sitespeed.ttfb"),
-        valueFormatter: (i) => i.ttfb ?? 0,
+        valueFormatter: (i) => i.ttfb ?? null,
         tooltipFormatter: (v) => `${v}ms`,
       },
       {
         label: t("sitespeed.fullyLoaded"),
-        valueFormatter: (i) => i.fullyLoaded ?? 0,
+        valueFormatter: (i) => i.fullyLoaded ?? null,
         tooltipFormatter: (v) => `${v}ms`,
       },
       {
         label: t("sitespeed.lcp"),
-        valueFormatter: (i) => i.largestContentfulPaint ?? 0,
+        valueFormatter: (i) => i.largestContentfulPaint ?? null,
         tooltipFormatter: (v) => `${v}ms`,
       },
       {
         label: t("sitespeed.fcp"),
-        valueFormatter: (i) => i.firstContentfulPaint ?? 0,
+        valueFormatter: (i) => i.firstContentfulPaint ?? null,
         tooltipFormatter: (v) => `${v}ms`,
       },
     ],
@@ -470,10 +488,11 @@ const chartConfigs: ChartConfig[] = [
     chartInstance: transferSizeChartInstance,
     title: t("sitespeed.transferSizeOverTime"),
     yAxisLabel: t("sitespeed.sizeKb"),
+    roundMedian: Math.round,
     datasets: [
       {
         label: t("sitespeed.transferSize"),
-        valueFormatter: (i) => (i.transferSize ? Math.round(i.transferSize / 1024) : 0),
+        valueFormatter: (i) => (i.transferSize != null ? Math.round(i.transferSize / 1024) : null),
         tooltipFormatter: (v) => `${v} KB`,
       },
     ],
@@ -483,10 +502,11 @@ const chartConfigs: ChartConfig[] = [
     chartInstance: clsChartInstance,
     title: t("sitespeed.clsOverTime"),
     yAxisLabel: t("sitespeed.clsScore"),
+    roundMedian: (v) => Math.round(v * 1000) / 1000,
     datasets: [
       {
         label: t("sitespeed.cls"),
-        valueFormatter: (i) => i.cumulativeLayoutShift ?? 0,
+        valueFormatter: (i) => i.cumulativeLayoutShift ?? null,
         tooltipFormatter: (v) => `${v}`,
       },
     ],
@@ -503,6 +523,9 @@ function createChart(config: ChartConfig) {
   const sorted = [...visibleSitespeeds.value].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
+  // Oldest first and not cut to the timespan, so the median at the left edge also
+  // has earlier runs behind it. The visible runs are its tail.
+  const history = (environment.value?.sitespeeds ?? []).filter((r) => !isRunHidden(r)).reverse();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const annotations: Record<string, any> = {};
@@ -530,13 +553,33 @@ function createChart(config: ChartConfig) {
   config.chartInstance.value = new Chart(ctx, {
     type: "line",
     data: {
-      datasets: config.datasets.map((ds) => ({
-        label: ds.label,
-        data: sorted.map((item) => ({
-          x: new Date(item.createdAt).getTime(),
-          y: ds.valueFormatter(item),
+      datasets: [
+        ...config.datasets.map((ds, i) => ({
+          label: ds.label,
+          borderColor: chartColors[i],
+          backgroundColor: chartColors[i],
+          data: sorted.map((item) => ({
+            x: new Date(item.createdAt).getTime(),
+            y: ds.valueFormatter(item) ?? 0,
+          })),
         })),
-      })),
+        ...(showTrend.value ? config.datasets : []).map((ds, i) => {
+          const medians = rollingMedian(history.map(ds.valueFormatter), MEDIAN_WINDOW_RUNS)
+            .slice(history.length - sorted.length)
+            .map((median) => (median == null ? null : config.roundMedian(median)));
+          return {
+            label: t("sitespeed.medianLabel", { label: ds.label }),
+            borderColor: chartColors[i] + "99",
+            backgroundColor: chartColors[i] + "99",
+            borderWidth: 1.5,
+            pointRadius: 0,
+            data: sorted.map((item, j) => ({
+              x: new Date(item.createdAt).getTime(),
+              y: medians[j],
+            })),
+          };
+        }),
+      ],
     },
     options: {
       responsive: true,
@@ -552,7 +595,7 @@ function createChart(config: ChartConfig) {
         tooltip: {
           callbacks: {
             label: (ctx) =>
-              `${ctx.dataset.label}: ${config.datasets[ctx.datasetIndex].tooltipFormatter(ctx.parsed.y ?? 0)}`,
+              `${ctx.dataset.label}: ${config.datasets[ctx.datasetIndex % config.datasets.length].tooltipFormatter(ctx.parsed.y ?? 0)}`,
             title: (items) =>
               items.length && items[0].parsed.x != null
                 ? new Date(items[0].parsed.x).toLocaleString()
@@ -618,5 +661,5 @@ watch(
   { deep: true },
 );
 
-watch([hiddenRuns, timespan], () => void renderCharts());
+watch([hiddenRuns, timespan, showTrend], () => void renderCharts());
 </script>
