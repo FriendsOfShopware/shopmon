@@ -85,6 +85,11 @@ function lastChartTimestamps(): number[] {
   return points.map((point) => point.x);
 }
 
+/** Dataset counts of the three charts (performance, transfer size, CLS) of the most recent render. */
+function lastRenderDatasetCounts(): number[] {
+  return chartConfigs.slice(-3).map((config) => config.data.datasets.length);
+}
+
 async function settleCharts() {
   await flushPromises();
   // Two nested requestAnimationFrame hops before the charts are created.
@@ -203,5 +208,52 @@ describe("DetailSitespeed", () => {
       new Date(secondRecentRun.createdAt).getTime(),
       new Date(recentRun.createdAt).getTime(),
     ]);
+  });
+
+  it("adds a rolling median per metric that reaches back before the timespan", async () => {
+    mountComponent();
+    await settleCharts();
+
+    expect(lastRenderDatasetCounts()).toEqual([8, 2, 2]);
+    // Only the two runs inside 30 days are plotted, but the first median also
+    // includes the 60 day old run: median(300, 200) = 250.
+    const ttfbMedian = chartConfigs[chartConfigs.length - 3].data.datasets[4];
+    expect(ttfbMedian.label).toBe("TTFB (median)");
+    expect((ttfbMedian.data as Array<{ y: number }>).map((point) => point.y)).toEqual([250, 200]);
+  });
+
+  it("leaves hidden runs out of the median", async () => {
+    const wrapper = mountComponent();
+    await settleCharts();
+
+    // The table lists every run newest first, so row 3 is the 60 day old run.
+    await wrapper.findAll('button[aria-label="Hide this run from the charts"]')[2].trigger("click");
+    await settleCharts();
+
+    const ttfbMedian = chartConfigs[chartConfigs.length - 3].data.datasets[4];
+    expect((ttfbMedian.data as Array<{ y: number }>).map((point) => point.y)).toEqual([200, 150]);
+  });
+
+  it("plots a missing metric as 0 but leaves it out of the median", async () => {
+    environment.value = {
+      ...environment.value,
+      sitespeeds: [{ ...recentRun, ttfb: null }, secondRecentRun, oldRun],
+    };
+    mountComponent();
+    await settleCharts();
+
+    const [ttfb, , , , ttfbMedian] = chartConfigs[chartConfigs.length - 3].data.datasets;
+    expect((ttfb.data as Array<{ y: number }>).map((point) => point.y)).toEqual([200, 0]);
+    expect((ttfbMedian.data as Array<{ y: number }>).map((point) => point.y)).toEqual([250, 250]);
+  });
+
+  it("drops the median lines when the trend is switched off", async () => {
+    const wrapper = mountComponent();
+    await settleCharts();
+
+    await wrapper.find('button[role="switch"]').trigger("click");
+    await settleCharts();
+
+    expect(lastRenderDatasetCounts()).toEqual([4, 1, 1]);
   });
 });

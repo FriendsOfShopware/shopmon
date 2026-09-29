@@ -910,6 +910,8 @@
     "last7Days": "Letzte 7 Tage",
     "last30Days": "Letzte 30 Tage",
     "last90Days": "Letzte 90 Tage",
+    "medianTrend": "Median-Trend",
+    "medianLabel": "{label} (Median)",
     "hideFromChart": "Diesen Lauf in den Diagrammen ausblenden",
     "showInChart": "Diesen Lauf in den Diagrammen anzeigen",
     "showAllInChart": "Alle Läufe anzeigen",
