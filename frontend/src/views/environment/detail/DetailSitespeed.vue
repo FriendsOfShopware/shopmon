@@ -492,7 +492,7 @@ const chartConfigs: ChartConfig[] = [
     datasets: [
       {
         label: t("sitespeed.transferSize"),
-        valueFormatter: (i) => (i.transferSize ? Math.round(i.transferSize / 1024) : null),
+        valueFormatter: (i) => (i.transferSize != null ? Math.round(i.transferSize / 1024) : null),
         tooltipFormatter: (v) => `${v} KB`,
       },
     ],

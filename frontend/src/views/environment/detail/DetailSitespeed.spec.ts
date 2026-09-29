@@ -220,6 +220,12 @@ describe("DetailSitespeed", () => {
     const ttfbMedian = chartConfigs[chartConfigs.length - 3].data.datasets[4];
     expect(ttfbMedian.label).toBe("TTFB (median)");
     expect((ttfbMedian.data as Array<{ y: number }>).map((point) => point.y)).toEqual([250, 200]);
+    // The median datasets come after the raw ones and reuse their metric's unit.
+    const label = chartConfigs[chartConfigs.length - 3].options?.plugins?.tooltip?.callbacks
+      ?.label as unknown as (ctx: unknown) => string;
+    expect(label({ dataset: ttfbMedian, datasetIndex: 4, parsed: { y: 250 } })).toBe(
+      "TTFB (median): 250ms",
+    );
   });
 
   it("leaves hidden runs out of the median", async () => {
@@ -237,7 +243,7 @@ describe("DetailSitespeed", () => {
   it("plots a missing metric as 0 but leaves it out of the median", async () => {
     environment.value = {
       ...environment.value,
-      sitespeeds: [{ ...recentRun, ttfb: null }, secondRecentRun, oldRun],
+      sitespeeds: [{ ...recentRun, ttfb: null, transferSize: 0 }, secondRecentRun, oldRun],
     };
     mountComponent();
     await settleCharts();
@@ -245,6 +251,9 @@ describe("DetailSitespeed", () => {
     const [ttfb, , , , ttfbMedian] = chartConfigs[chartConfigs.length - 3].data.datasets;
     expect((ttfb.data as Array<{ y: number }>).map((point) => point.y)).toEqual([200, 0]);
     expect((ttfbMedian.data as Array<{ y: number }>).map((point) => point.y)).toEqual([250, 250]);
+    // A reported 0 is a value, not a missing metric: median(3, 2, 0) KB = 2.
+    const transferMedian = chartConfigs[chartConfigs.length - 2].data.datasets[1];
+    expect((transferMedian.data as Array<{ y: number }>).map((point) => point.y)).toEqual([3, 2]);
   });
 
   it("drops the median lines when the trend is switched off", async () => {
