@@ -5,7 +5,7 @@
     >
       <div class="flex items-center gap-2 text-sm">
         <icon-fa6-solid:user-secret class="size-4" />
-        <span v-html="$t('impersonation.banner', { email: session?.user?.email })" />
+        <span>{{ $t("impersonation.banner", { email: session?.user?.email }) }}</span>
       </div>
       <Button
         size="sm"
