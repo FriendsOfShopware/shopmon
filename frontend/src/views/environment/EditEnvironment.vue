@@ -277,6 +277,8 @@
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
+import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
+import { fetchAccountShops } from "@/composables/useAccountShops";
 import {
   deleteEnvironment as apiDeleteEnvironment,
   getAccountShops,
@@ -405,17 +407,24 @@ const onSubmit = handleSubmit(async (values) => {
       if (shopUrl) {
         shopUrl = shopUrl.replace(/\/+$/, "");
       }
-      await updateEnvironment({
+      const { error: apiError } = await updateEnvironment({
         path: { environmentId: environment.value.id },
         body: {
           name: values.name,
           shopUrl,
-          clientId: values.clientId,
-          clientSecret: values.clientSecret,
+          clientId: values.clientId || undefined,
+          clientSecret: values.clientSecret || undefined,
           shopId: Number(values.shopId),
           taskGraceMinutes: values.taskGraceMinutes,
         },
       });
+
+      if (apiError) {
+        error(apiError.message);
+        return;
+      }
+
+      await Promise.all([fetchAccountShops(), fetchAccountEnvironments()]);
 
       router.push({
         name: "account.environments.detail",
@@ -432,9 +441,14 @@ const onSubmit = handleSubmit(async (values) => {
 async function deleteEnvironment() {
   if (environment.value) {
     try {
-      await apiDeleteEnvironment({
+      const { error: apiError } = await apiDeleteEnvironment({
         path: { environmentId: environment.value.id },
       });
+      if (apiError) {
+        error(apiError.message);
+        return;
+      }
+      await Promise.all([fetchAccountShops(), fetchAccountEnvironments()]);
       router.push({ name: "account.shop.list" });
     } catch (err) {
       error(err instanceof Error ? err.message : String(err));
@@ -460,13 +474,18 @@ async function onSitespeedSubmit() {
         return;
       }
 
-      await updateSitespeedSettings({
+      const { error: apiError } = await updateSitespeedSettings({
         path: { environmentId: environment.value.id },
         body: {
           enabled: sitespeedEnabled.value,
           urls: sitespeedUrls.value,
         },
       });
+
+      if (apiError) {
+        error(apiError.message);
+        return;
+      }
 
       await loadEnvironment();
       success(t("environment.sitespeedSaved"));
