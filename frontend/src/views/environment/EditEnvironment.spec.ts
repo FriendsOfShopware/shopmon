@@ -13,6 +13,7 @@ const MainContainerStub = defineComponent({
 const DeleteConfirmationModalStub = defineComponent({
   name: "DeleteConfirmationModal",
   props: ["show", "title", "entityName"],
+  emits: ["confirm"],
   template: '<div v-if="show" class="delete-modal" />',
 });
 
@@ -61,14 +62,35 @@ vi.mock("@/api/generated", async (importOriginal) => ({
   updateSitespeedSettings: vi.fn(),
 }));
 
+const { mockError, mockSuccess, mockFetchShops, mockFetchEnvironments } = vi.hoisted(() => ({
+  mockError: vi.fn(),
+  mockSuccess: vi.fn(),
+  mockFetchShops: vi.fn(),
+  mockFetchEnvironments: vi.fn(),
+}));
+
+vi.mock("@/composables/useAccountShops", () => ({
+  fetchAccountShops: mockFetchShops,
+}));
+
+vi.mock("@/composables/useAccountEnvironments", () => ({
+  fetchAccountEnvironments: mockFetchEnvironments,
+}));
+
 vi.mock("@/composables/useAlert", () => ({
   useAlert: () => ({
-    error: vi.fn(),
-    success: vi.fn(),
+    error: mockError,
+    success: mockSuccess,
   }),
 }));
 
-import { getAccountShops, getEnvironment } from "@/api/generated";
+import {
+  getAccountShops,
+  getEnvironment,
+  updateEnvironment,
+  deleteEnvironment,
+  updateSitespeedSettings,
+} from "@/api/generated";
 
 describe("EditEnvironment", () => {
   beforeEach(() => {
@@ -186,5 +208,97 @@ describe("EditEnvironment", () => {
     await flushPromises();
     const btn = wrapper.findAll("button").find((b) => b.text().includes("Delete environment"));
     expect(btn).toBeTruthy();
+  });
+
+  it("shows failed saves without navigating or refreshing the sidebar", async () => {
+    vi.mocked(updateEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "Cannot reach shop with new credentials." },
+      response: new Response(null, { status: 400 }),
+    });
+    const wrapper = mountComponent();
+    await flushPromises();
+    await wrapper.find('input[name="clientId"]').setValue("new-client");
+    await wrapper.find('input[name="clientSecret"]').setValue("new-secret");
+    await wrapper.find("form").trigger("submit");
+    await vi.waitFor(() =>
+      expect(mockError).toHaveBeenCalledWith("Cannot reach shop with new credentials."),
+    );
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockFetchEnvironments).not.toHaveBeenCalled();
+    expect(wrapper.find('input[name="clientSecret"]').element).toHaveProperty(
+      "value",
+      "new-secret",
+    );
+  });
+
+  it("preserves stored credentials when inputs are blank and refreshes after saving", async () => {
+    vi.mocked(updateEnvironment).mockResolvedValue({
+      data: undefined,
+      error: undefined,
+      response: new Response(null, { status: 204 }),
+    });
+    const wrapper = mountComponent();
+    await flushPromises();
+    await wrapper.find('input[name="clientId"]').setValue("");
+    await wrapper.find('input[name="clientSecret"]').setValue("");
+    await wrapper.find('input[name="name"]').setValue("Renamed Environment");
+    await wrapper.find("form").trigger("submit");
+    await vi.waitFor(() => expect(mockPush).toHaveBeenCalled());
+    expect(updateEnvironment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          name: "Renamed Environment",
+          clientId: undefined,
+          clientSecret: undefined,
+        }),
+      }),
+    );
+    expect(mockFetchShops).toHaveBeenCalledOnce();
+    expect(mockFetchEnvironments).toHaveBeenCalledOnce();
+  });
+
+  it("shows deletion errors and stays on the edit screen", async () => {
+    vi.mocked(deleteEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "failed to delete environment" },
+      response: new Response(null, { status: 500 }),
+    });
+    const wrapper = mountComponent();
+    await flushPromises();
+    wrapper.findComponent(DeleteConfirmationModalStub).vm.$emit("confirm");
+    await flushPromises();
+    expect(mockError).toHaveBeenCalledWith("failed to delete environment");
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockFetchEnvironments).not.toHaveBeenCalled();
+  });
+
+  it("refreshes sidebar environments after deletion", async () => {
+    vi.mocked(deleteEnvironment).mockResolvedValue({
+      data: undefined,
+      error: undefined,
+      response: new Response(null, { status: 204 }),
+    });
+    const wrapper = mountComponent();
+    await flushPromises();
+    wrapper.findComponent(DeleteConfirmationModalStub).vm.$emit("confirm");
+    await flushPromises();
+    expect(mockFetchShops).toHaveBeenCalledOnce();
+    expect(mockFetchEnvironments).toHaveBeenCalledOnce();
+    expect(mockPush).toHaveBeenCalledWith({ name: "account.shop.list" });
+  });
+
+  it("does not show success when sitespeed settings fail to save", async () => {
+    vi.mocked(updateSitespeedSettings).mockResolvedValue({
+      data: undefined,
+      error: { message: "failed to save sitespeed settings" },
+      response: new Response(null, { status: 500 }),
+    });
+    const wrapper = mountComponent();
+    await flushPromises();
+    await wrapper.findAll("form")[1]!.trigger("submit");
+    await flushPromises();
+    expect(mockError).toHaveBeenCalledWith("failed to save sitespeed settings");
+    expect(mockSuccess).not.toHaveBeenCalled();
   });
 });
