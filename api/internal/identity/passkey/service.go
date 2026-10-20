@@ -11,11 +11,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/identity"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/protocol/webauthncose"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -48,14 +50,6 @@ type StoredPasskey struct {
 	AAGUID       *string
 }
 
-type Repository interface {
-	FindUser(ctx context.Context, userID string) (User, error)
-	ListByUser(ctx context.Context, userID string) ([]StoredPasskey, error)
-	Create(ctx context.Context, passkey StoredPasskey) error
-	FindByCredentialID(ctx context.Context, credentialID string) (StoredPasskey, error)
-	UpdateCounter(ctx context.Context, passkeyID string, counter int32) error
-}
-
 type ChallengeStore interface {
 	Set(ctx context.Context, key string, value any, ttl time.Duration) error
 	Get(ctx context.Context, key string, destination any) error
@@ -73,14 +67,14 @@ type Config struct {
 
 type Service struct {
 	webauthn   *webauthn.WebAuthn
-	repository Repository
+	queries    *queries.Queries
 	challenges ChallengeStore
 	sessions   SessionIssuer
 }
 
-func NewService(config Config, repository Repository, challenges ChallengeStore, sessions SessionIssuer) (*Service, error) {
+func NewService(config Config, q *queries.Queries, challenges ChallengeStore, sessions SessionIssuer) (*Service, error) {
 	if config.RPID == "" {
-		return &Service{repository: repository, challenges: challenges, sessions: sessions}, nil
+		return &Service{queries: q, challenges: challenges, sessions: sessions}, nil
 	}
 	wan, err := webauthn.New(&webauthn.Config{
 		RPID: config.RPID, RPDisplayName: config.RPName, RPOrigins: config.RPOrigins,
@@ -88,7 +82,7 @@ func NewService(config Config, repository Repository, challenges ChallengeStore,
 	if err != nil {
 		return nil, fmt.Errorf("configure WebAuthn: %w", err)
 	}
-	return &Service{webauthn: wan, repository: repository, challenges: challenges, sessions: sessions}, nil
+	return &Service{webauthn: wan, queries: q, challenges: challenges, sessions: sessions}, nil
 }
 
 type Options struct {
@@ -154,7 +148,11 @@ func (s *Service) FinishRegistration(ctx context.Context, request *http.Request,
 		name = "Passkey"
 	}
 	stored.Name = &name
-	if err := s.repository.Create(ctx, stored); err != nil {
+	if err := s.queries.CreatePasskey(ctx, queries.CreatePasskeyParams{
+		ID: stored.ID, Name: stored.Name, PublicKey: stored.PublicKey, UserID: stored.UserID,
+		CredentialID: stored.CredentialID, Counter: stored.Counter, DeviceType: stored.DeviceType,
+		BackedUp: stored.BackedUp, Transports: stored.Transports, Aaguid: stored.AAGUID,
+	}); err != nil {
 		return Registered{}, fmt.Errorf("create passkey: %w", err)
 	}
 	return Registered{ID: stored.ID, Name: name}, nil
@@ -194,7 +192,7 @@ func (s *Service) FinishLogin(request *http.Request, challengeKey string, metada
 		if err != nil {
 			return nil, ErrNoPasskeys
 		}
-		resolved, err = s.repository.FindUser(ctx, stored.UserID)
+		resolved, err = s.findUser(ctx, stored.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -218,7 +216,7 @@ func (s *Service) FinishLogin(request *http.Request, challengeKey string, metada
 		return Authentication{}, fmt.Errorf("reload authenticated passkey: %w", err)
 	}
 	if err == nil {
-		if err := s.repository.UpdateCounter(ctx, stored.ID, int32(credential.Authenticator.SignCount)); err != nil {
+		if err := s.queries.UpdatePasskeyCounter(ctx, queries.UpdatePasskeyCounterParams{Counter: int32(credential.Authenticator.SignCount), ID: stored.ID}); err != nil {
 			return Authentication{}, fmt.Errorf("update passkey counter: %w", err)
 		}
 	}
@@ -230,11 +228,11 @@ func (s *Service) FinishLogin(request *http.Request, challengeKey string, metada
 }
 
 func (s *Service) loadUser(ctx context.Context, userID string) (*webauthnUser, error) {
-	user, err := s.repository.FindUser(ctx, userID)
+	user, err := s.findUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	stored, err := s.repository.ListByUser(ctx, userID)
+	stored, err := s.listByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -252,13 +250,64 @@ func (s *Service) loadUser(ctx context.Context, userID string) (*webauthnUser, e
 func (s *Service) findByRawCredentialID(ctx context.Context, rawID []byte) (StoredPasskey, error) {
 	var lastErr error
 	for _, encoding := range []*base64.Encoding{base64.RawURLEncoding, base64.RawStdEncoding} {
-		passkey, err := s.repository.FindByCredentialID(ctx, encoding.EncodeToString(rawID))
+		passkey, err := s.findByCredentialID(ctx, encoding.EncodeToString(rawID))
 		if err == nil {
 			return passkey, nil
 		}
 		lastErr = err
 	}
 	return StoredPasskey{}, lastErr
+}
+
+func (s *Service) findUser(ctx context.Context, userID string) (User, error) {
+	row, err := s.queries.GetUserByID(ctx, userID)
+	if err != nil {
+		return User{}, fmt.Errorf("query passkey user: %w", err)
+	}
+	var banExpires *time.Time
+	if row.BanExpires.Valid {
+		value := row.BanExpires.Time
+		banExpires = &value
+	}
+	return User{
+		ID: row.ID, Name: row.Name, Email: row.Email,
+		Ban: identity.Ban{Enabled: row.Banned != nil && *row.Banned, ExpiresAt: banExpires},
+	}, nil
+}
+
+func (s *Service) listByUser(ctx context.Context, userID string) ([]StoredPasskey, error) {
+	rows, err := s.queries.GetPasskeysByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("query user passkeys: %w", err)
+	}
+	result := make([]StoredPasskey, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, mapPasskey(row))
+	}
+	return result, nil
+}
+
+func (s *Service) findByCredentialID(ctx context.Context, credentialID string) (StoredPasskey, error) {
+	row, err := s.queries.GetPasskeyByCredentialID(ctx, credentialID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return StoredPasskey{}, ErrNotFound
+		}
+		return StoredPasskey{}, fmt.Errorf("query passkey by credential ID: %w", err)
+	}
+	return StoredPasskey{
+		ID: row.ID, Name: row.Name, PublicKey: row.PublicKey, UserID: row.UserID,
+		CredentialID: row.CredentialID, Counter: row.Counter, DeviceType: row.DeviceType,
+		BackedUp: row.BackedUp, Transports: row.Transports, AAGUID: row.Aaguid,
+	}, nil
+}
+
+func mapPasskey(row queries.Passkey) StoredPasskey {
+	return StoredPasskey{
+		ID: row.ID, Name: row.Name, PublicKey: row.PublicKey, UserID: row.UserID,
+		CredentialID: row.CredentialID, Counter: row.Counter, DeviceType: row.DeviceType,
+		BackedUp: row.BackedUp, Transports: row.Transports, AAGUID: row.Aaguid,
+	}
 }
 
 type webauthnUser struct {

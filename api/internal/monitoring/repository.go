@@ -1,4 +1,4 @@
-package postgres
+package monitoring
 
 import (
 	"context"
@@ -8,31 +8,26 @@ import (
 	"strconv"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Repository struct {
+type store struct {
 	pool    *pgxpool.Pool
 	queries *queries.Queries
 }
 
-var _ monitoring.Repository = (*Repository)(nil)
+var _ Repository = (*store)(nil)
 
-func NewRepository(pool *pgxpool.Pool, q *queries.Queries) *Repository {
-	return &Repository{pool: pool, queries: q}
-}
-
-func (r *Repository) FindShop(ctx context.Context, shopID int32) (monitoring.Shop, error) {
+func (r *store) FindShop(ctx context.Context, shopID int32) (Shop, error) {
 	row, err := r.queries.GetShopByID(ctx, shopID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return monitoring.Shop{}, monitoring.ErrShopNotFound
+			return Shop{}, ErrShopNotFound
 		}
-		return monitoring.Shop{}, fmt.Errorf("get shop: %w", err)
+		return Shop{}, fmt.Errorf("get shop: %w", err)
 	}
-	return monitoring.Shop{
+	return Shop{
 		ID:                   row.ID,
 		OrganizationID:       row.OrganizationID,
 		Name:                 row.Name,
@@ -42,23 +37,23 @@ func (r *Repository) FindShop(ctx context.Context, shopID int32) (monitoring.Sho
 	}, nil
 }
 
-func (r *Repository) FindEnvironment(ctx context.Context, environmentID int32) (monitoring.Environment, error) {
+func (r *store) FindEnvironment(ctx context.Context, environmentID int32) (Environment, error) {
 	row, err := r.queries.GetEnvironmentByID(ctx, environmentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return monitoring.Environment{}, monitoring.ErrEnvironmentNotFound
+			return Environment{}, ErrEnvironmentNotFound
 		}
-		return monitoring.Environment{}, fmt.Errorf("get environment: %w", err)
+		return Environment{}, fmt.Errorf("get environment: %w", err)
 	}
 
 	var ignores []string
 	if row.Ignores != nil {
 		if err := json.Unmarshal(row.Ignores, &ignores); err != nil {
-			return monitoring.Environment{}, fmt.Errorf("decode environment ignores: %w", err)
+			return Environment{}, fmt.Errorf("decode environment ignores: %w", err)
 		}
 	}
 
-	return monitoring.Environment{
+	return Environment{
 		ID:                    row.ID,
 		OrganizationID:        row.OrganizationID,
 		ShopID:                row.ShopID,
@@ -74,7 +69,7 @@ func (r *Repository) FindEnvironment(ctx context.Context, environmentID int32) (
 	}, nil
 }
 
-func (r *Repository) CreateShopWithEnvironment(ctx context.Context, shop monitoring.CreateShopRecord, environment monitoring.CreateEnvironmentRecord) (int32, int32, error) {
+func (r *store) CreateShopWithEnvironment(ctx context.Context, shop CreateShopRecord, environment CreateEnvironmentRecord) (int32, int32, error) {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return 0, 0, fmt.Errorf("begin create shop transaction: %w", err)
@@ -109,11 +104,11 @@ func (r *Repository) CreateShopWithEnvironment(ctx context.Context, shop monitor
 	return shopID, environmentID, nil
 }
 
-func (r *Repository) CreateEnvironment(ctx context.Context, environment monitoring.CreateEnvironmentRecord) (int32, error) {
+func (r *store) CreateEnvironment(ctx context.Context, environment CreateEnvironmentRecord) (int32, error) {
 	return createEnvironment(ctx, r.queries, environment)
 }
 
-func createEnvironment(ctx context.Context, q *queries.Queries, environment monitoring.CreateEnvironmentRecord) (int32, error) {
+func createEnvironment(ctx context.Context, q *queries.Queries, environment CreateEnvironmentRecord) (int32, error) {
 	environmentID, err := q.CreateEnvironment(ctx, queries.CreateEnvironmentParams{
 		OrganizationID:   environment.OrganizationID,
 		ShopID:           environment.ShopID,
@@ -130,7 +125,7 @@ func createEnvironment(ctx context.Context, q *queries.Queries, environment moni
 	return environmentID, nil
 }
 
-func (r *Repository) UpdateShop(ctx context.Context, shop monitoring.Shop, defaultEnvironmentID *int32) error {
+func (r *store) UpdateShop(ctx context.Context, shop Shop, defaultEnvironmentID *int32) error {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("begin update shop transaction: %w", err)
@@ -162,7 +157,7 @@ func (r *Repository) UpdateShop(ctx context.Context, shop monitoring.Shop, defau
 	return nil
 }
 
-func (r *Repository) CountShopEnvironments(ctx context.Context, shopID int32) (int32, error) {
+func (r *store) CountShopEnvironments(ctx context.Context, shopID int32) (int32, error) {
 	count, err := r.queries.CountEnvironmentsInShop(ctx, shopID)
 	if err != nil {
 		return 0, fmt.Errorf("count environments in shop: %w", err)
@@ -170,14 +165,14 @@ func (r *Repository) CountShopEnvironments(ctx context.Context, shopID int32) (i
 	return count, nil
 }
 
-func (r *Repository) DeleteShop(ctx context.Context, shopID int32, organizationID string) error {
+func (r *store) DeleteShop(ctx context.Context, shopID int32, organizationID string) error {
 	if err := r.queries.DeleteShop(ctx, queries.DeleteShopParams{ID: shopID, OrganizationID: organizationID}); err != nil {
 		return fmt.Errorf("delete shop: %w", err)
 	}
 	return nil
 }
 
-func (r *Repository) UpdateEnvironment(ctx context.Context, environment monitoring.Environment) error {
+func (r *store) UpdateEnvironment(ctx context.Context, environment Environment) error {
 	ignores, err := json.Marshal(environment.Ignores)
 	if err != nil {
 		return fmt.Errorf("encode environment ignores: %w", err)
@@ -198,7 +193,7 @@ func (r *Repository) UpdateEnvironment(ctx context.Context, environment monitori
 	return nil
 }
 
-func (r *Repository) DeleteEnvironment(ctx context.Context, environmentID int32) error {
+func (r *store) DeleteEnvironment(ctx context.Context, environmentID int32) error {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("begin delete environment transaction: %w", err)
@@ -227,7 +222,7 @@ func (r *Repository) DeleteEnvironment(ctx context.Context, environmentID int32)
 	return nil
 }
 
-func (r *Repository) ListDeploymentIDs(ctx context.Context, environmentID int32) ([]int32, error) {
+func (r *store) ListDeploymentIDs(ctx context.Context, environmentID int32) ([]int32, error) {
 	rows, err := r.queries.ListDeployments(ctx, queries.ListDeploymentsParams{
 		EnvironmentID: environmentID,
 		Limit:         1000,
@@ -243,7 +238,7 @@ func (r *Repository) ListDeploymentIDs(ctx context.Context, environmentID int32)
 	return ids, nil
 }
 
-func (r *Repository) UpdateSitespeedSettings(ctx context.Context, environmentID int32, enabled bool, urls []string) error {
+func (r *store) UpdateSitespeedSettings(ctx context.Context, environmentID int32, enabled bool, urls []string) error {
 	urlsJSON, err := json.Marshal(urls)
 	if err != nil {
 		return fmt.Errorf("encode sitespeed urls: %w", err)
@@ -258,7 +253,7 @@ func (r *Repository) UpdateSitespeedSettings(ctx context.Context, environmentID 
 	return nil
 }
 
-func (r *Repository) SubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error {
+func (r *store) SubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error {
 	if err := r.queries.SubscribeEnvironment(ctx, queries.SubscribeEnvironmentParams{
 		UserID:  userID,
 		ScopeID: strconv.Itoa(int(environmentID)),
@@ -268,7 +263,7 @@ func (r *Repository) SubscribeEnvironment(ctx context.Context, userID string, en
 	return nil
 }
 
-func (r *Repository) UnsubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error {
+func (r *store) UnsubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error {
 	if err := r.queries.UnsubscribeEnvironment(ctx, queries.UnsubscribeEnvironmentParams{
 		UserID:  userID,
 		ScopeID: strconv.Itoa(int(environmentID)),
@@ -278,7 +273,7 @@ func (r *Repository) UnsubscribeEnvironment(ctx context.Context, userID string, 
 	return nil
 }
 
-func (r *Repository) IsEnvironmentSubscribed(ctx context.Context, userID string, environmentID int32) (bool, error) {
+func (r *store) IsEnvironmentSubscribed(ctx context.Context, userID string, environmentID int32) (bool, error) {
 	subscribed, err := r.queries.IsEnvironmentSubscribed(ctx, queries.IsEnvironmentSubscribedParams{
 		UserID:  userID,
 		ScopeID: strconv.Itoa(int(environmentID)),

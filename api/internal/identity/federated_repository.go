@@ -1,4 +1,4 @@
-package postgres
+package identity
 
 import (
 	"context"
@@ -6,24 +6,17 @@ import (
 	"fmt"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/identity"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type FederatedRepository struct {
+type federatedStore struct {
 	pool    *pgxpool.Pool
 	queries *queries.Queries
 }
 
-var _ identity.FederatedRepository = (*FederatedRepository)(nil)
-
-func NewFederatedRepository(pool *pgxpool.Pool, q *queries.Queries) *FederatedRepository {
-	return &FederatedRepository{pool: pool, queries: q}
-}
-
-func (r *FederatedRepository) Provision(ctx context.Context, profile identity.FederatedProfile) (string, error) {
+func (r *federatedStore) Provision(ctx context.Context, profile FederatedProfile) (string, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return "", fmt.Errorf("begin transaction: %w", err)
@@ -60,7 +53,7 @@ func (r *FederatedRepository) Provision(ctx context.Context, profile identity.Fe
 	return userID, nil
 }
 
-func (r *FederatedRepository) resolveUser(ctx context.Context, q *queries.Queries, profile identity.FederatedProfile) (string, error) {
+func (r *federatedStore) resolveUser(ctx context.Context, q *queries.Queries, profile FederatedProfile) (string, error) {
 	account, err := q.GetAccountByProviderAndAccountID(ctx, queries.GetAccountByProviderAndAccountIDParams{
 		ProviderID: profile.Provider, AccountID: profile.AccountID,
 	})

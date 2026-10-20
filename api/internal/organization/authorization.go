@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -76,8 +79,44 @@ type Authorizer struct {
 	repository AuthorizationRepository
 }
 
-func NewAuthorizer(repository AuthorizationRepository) *Authorizer {
-	return &Authorizer{repository: repository}
+func NewAuthorizer(q *queries.Queries) *Authorizer {
+	return &Authorizer{repository: &authorizationStore{queries: q}}
+}
+
+// authorizationStore adapts sqlc queries to organization access decisions.
+type authorizationStore struct {
+	queries *queries.Queries
+}
+
+var _ AuthorizationRepository = (*authorizationStore)(nil)
+
+func (r *authorizationStore) OrganizationExists(ctx context.Context, organizationID string) (bool, error) {
+	if _, err := r.queries.GetOrganizationByID(ctx, organizationID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("get organization: %w", err)
+	}
+	return true, nil
+}
+
+func (r *authorizationStore) FindRole(ctx context.Context, userID, organizationID string) (Role, error) {
+	value, err := r.queries.GetMemberRole(ctx, queries.GetMemberRoleParams{
+		OrganizationID: organizationID,
+		UserID:         userID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", ErrMembershipNotFound
+		}
+		return "", fmt.Errorf("get member role: %w", err)
+	}
+
+	role, ok := ParseRole(value)
+	if !ok {
+		return "", fmt.Errorf("invalid organization role %q", value)
+	}
+	return role, nil
 }
 
 // RequireOrganization verifies that an organization exists.

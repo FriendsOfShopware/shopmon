@@ -24,47 +24,51 @@ func (r *stubAuthorizationRepository) FindRole(context.Context, string, string) 
 	return r.role, r.roleErr
 }
 
+func newTestAuthorizer(repository AuthorizationRepository) *Authorizer {
+	return &Authorizer{repository: repository}
+}
+
 func TestAuthorizerRequireOrganization(t *testing.T) {
 	t.Run("exists", func(t *testing.T) {
-		authorizer := NewAuthorizer(&stubAuthorizationRepository{exists: true})
+		authorizer := newTestAuthorizer(&stubAuthorizationRepository{exists: true})
 		require.NoError(t, authorizer.RequireOrganization(t.Context(), "org-1"))
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		authorizer := NewAuthorizer(&stubAuthorizationRepository{})
+		authorizer := newTestAuthorizer(&stubAuthorizationRepository{})
 		require.ErrorIs(t, authorizer.RequireOrganization(t.Context(), "missing"), ErrOrganizationNotFound)
 	})
 
 	t.Run("repository error", func(t *testing.T) {
 		repositoryErr := errors.New("database unavailable")
-		authorizer := NewAuthorizer(&stubAuthorizationRepository{existsErr: repositoryErr})
+		authorizer := newTestAuthorizer(&stubAuthorizationRepository{existsErr: repositoryErr})
 		require.ErrorIs(t, authorizer.RequireOrganization(t.Context(), "org-1"), repositoryErr)
 	})
 }
 
 func TestAuthorizerMembershipAndRole(t *testing.T) {
 	t.Run("returns membership role", func(t *testing.T) {
-		authorizer := NewAuthorizer(&stubAuthorizationRepository{role: RoleAdmin})
+		authorizer := newTestAuthorizer(&stubAuthorizationRepository{role: RoleAdmin})
 		role, err := authorizer.Membership(t.Context(), "user-1", "org-1")
 		require.NoError(t, err)
 		assert.Equal(t, RoleAdmin, role)
 	})
 
 	t.Run("preserves membership not found", func(t *testing.T) {
-		authorizer := NewAuthorizer(&stubAuthorizationRepository{roleErr: ErrMembershipNotFound})
+		authorizer := newTestAuthorizer(&stubAuthorizationRepository{roleErr: ErrMembershipNotFound})
 		_, err := authorizer.Membership(t.Context(), "user-1", "org-1")
 		require.ErrorIs(t, err, ErrMembershipNotFound)
 	})
 
 	t.Run("allows configured role", func(t *testing.T) {
-		authorizer := NewAuthorizer(&stubAuthorizationRepository{role: RoleAdmin})
+		authorizer := newTestAuthorizer(&stubAuthorizationRepository{role: RoleAdmin})
 		role, err := authorizer.RequireRole(t.Context(), "user-1", "org-1", RoleOwner, RoleAdmin)
 		require.NoError(t, err)
 		assert.Equal(t, RoleAdmin, role)
 	})
 
 	t.Run("rejects other role", func(t *testing.T) {
-		authorizer := NewAuthorizer(&stubAuthorizationRepository{role: RoleMember})
+		authorizer := newTestAuthorizer(&stubAuthorizationRepository{role: RoleMember})
 		_, err := authorizer.RequireRole(t.Context(), "user-1", "org-1", RoleOwner, RoleAdmin)
 		require.ErrorIs(t, err, ErrRoleNotAllowed)
 	})

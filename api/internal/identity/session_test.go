@@ -58,7 +58,7 @@ func TestSessionAuthenticatorBanPolicy(t *testing.T) {
 				Ban:       tt.ban,
 			}}
 
-			principal, err := NewSessionAuthenticator(repository).Authenticate(t.Context(), "token")
+			principal, err := (&SessionAuthenticator{sessions: repository}).Authenticate(t.Context(), "token")
 
 			if tt.wantError {
 				require.ErrorIs(t, err, ErrUserBanned)
@@ -79,7 +79,7 @@ func TestSessionAuthenticatorRotatesRegularSession(t *testing.T) {
 		}},
 	}}
 
-	principal, err := NewSessionAuthenticator(repository).Authenticate(t.Context(), "token-1")
+	principal, err := (&SessionAuthenticator{sessions: repository}).Authenticate(t.Context(), "token-1")
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, repository.findCalls)
@@ -101,7 +101,7 @@ func TestSessionAuthenticatorDoesNotRotateImpersonationSession(t *testing.T) {
 		}},
 	}}
 
-	principal, err := NewSessionAuthenticator(repository).Authenticate(t.Context(), "token")
+	principal, err := (&SessionAuthenticator{sessions: repository}).Authenticate(t.Context(), "token")
 
 	require.NoError(t, err)
 	assert.Equal(t, 0, repository.refreshCalls)
@@ -112,7 +112,7 @@ func TestSessionAuthenticatorWrapsRepositoryError(t *testing.T) {
 	repositoryErr := errors.New("database unavailable")
 	repository := &stubSessionRepository{findErr: repositoryErr}
 
-	principal, err := NewSessionAuthenticator(repository).Authenticate(t.Context(), "token")
+	principal, err := (&SessionAuthenticator{sessions: repository}).Authenticate(t.Context(), "token")
 
 	require.ErrorIs(t, err, repositoryErr)
 	assert.Nil(t, principal)

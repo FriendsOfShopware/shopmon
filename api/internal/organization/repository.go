@@ -1,4 +1,4 @@
-package postgres
+package organization
 
 import (
 	"context"
@@ -6,24 +6,17 @@ import (
 	"fmt"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/organization"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Repository struct {
+type store struct {
 	pool    *pgxpool.Pool
 	queries *queries.Queries
 }
 
-var _ organization.Repository = (*Repository)(nil)
-
-func NewRepository(pool *pgxpool.Pool, q *queries.Queries) *Repository {
-	return &Repository{pool: pool, queries: q}
-}
-
-func (r *Repository) CreateWithOwner(ctx context.Context, record organization.Organization, memberID, ownerID, sessionToken string) error {
+func (r *store) CreateWithOwner(ctx context.Context, record Organization, memberID, ownerID, sessionToken string) error {
 	return r.withTx(ctx, func(txq *queries.Queries) error {
 		if _, err := txq.CreateOrganization(ctx, queries.CreateOrganizationParams{
 			ID:   record.ID,
@@ -36,7 +29,7 @@ func (r *Repository) CreateWithOwner(ctx context.Context, record organization.Or
 			ID:             memberID,
 			OrganizationID: record.ID,
 			UserID:         ownerID,
-			Role:           string(organization.RoleOwner),
+			Role:           string(RoleOwner),
 		}); err != nil {
 			return fmt.Errorf("insert owner membership: %w", err)
 		}
@@ -50,15 +43,15 @@ func (r *Repository) CreateWithOwner(ctx context.Context, record organization.Or
 	})
 }
 
-func (r *Repository) Find(ctx context.Context, organizationID string) (organization.Organization, error) {
+func (r *store) Find(ctx context.Context, organizationID string) (Organization, error) {
 	row, err := r.queries.GetOrganizationByID(ctx, organizationID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return organization.Organization{}, organization.ErrOrganizationNotFound
+			return Organization{}, ErrOrganizationNotFound
 		}
-		return organization.Organization{}, fmt.Errorf("query organization: %w", err)
+		return Organization{}, fmt.Errorf("query organization: %w", err)
 	}
-	return organization.Organization{
+	return Organization{
 		ID:        row.ID,
 		Name:      row.Name,
 		Slug:      row.Slug,
@@ -67,7 +60,7 @@ func (r *Repository) Find(ctx context.Context, organizationID string) (organizat
 	}, nil
 }
 
-func (r *Repository) Update(ctx context.Context, record organization.Organization) error {
+func (r *store) Update(ctx context.Context, record Organization) error {
 	if err := r.queries.UpdateOrganization(ctx, queries.UpdateOrganizationParams{
 		Name: record.Name,
 		Slug: record.Slug,
@@ -79,14 +72,14 @@ func (r *Repository) Update(ctx context.Context, record organization.Organizatio
 	return nil
 }
 
-func (r *Repository) Delete(ctx context.Context, organizationID string) error {
+func (r *store) Delete(ctx context.Context, organizationID string) error {
 	if err := r.queries.DeleteOrganization(ctx, organizationID); err != nil {
 		return fmt.Errorf("execute organization delete: %w", err)
 	}
 	return nil
 }
 
-func (r *Repository) CreateInvitation(ctx context.Context, invitation organization.Invitation) error {
+func (r *store) CreateInvitation(ctx context.Context, invitation Invitation) error {
 	var role *string
 	if invitation.Role != nil {
 		value := string(*invitation.Role)
@@ -105,19 +98,19 @@ func (r *Repository) CreateInvitation(ctx context.Context, invitation organizati
 	return nil
 }
 
-func (r *Repository) FindInvitation(ctx context.Context, invitationID string) (organization.Invitation, error) {
+func (r *store) FindInvitation(ctx context.Context, invitationID string) (Invitation, error) {
 	row, err := r.queries.GetInvitationByID(ctx, invitationID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return organization.Invitation{}, organization.ErrInvitationNotFound
+			return Invitation{}, ErrInvitationNotFound
 		}
-		return organization.Invitation{}, fmt.Errorf("query organization invitation: %w", err)
+		return Invitation{}, fmt.Errorf("query organization invitation: %w", err)
 	}
 	role, err := parseOptionalRole(row.Role)
 	if err != nil {
-		return organization.Invitation{}, fmt.Errorf("decode organization invitation %q: %w", invitationID, err)
+		return Invitation{}, fmt.Errorf("decode organization invitation %q: %w", invitationID, err)
 	}
-	return organization.Invitation{
+	return Invitation{
 		ID:             row.ID,
 		OrganizationID: row.OrganizationID,
 		Email:          row.Email,
@@ -129,14 +122,14 @@ func (r *Repository) FindInvitation(ctx context.Context, invitationID string) (o
 	}, nil
 }
 
-func (r *Repository) UpdateInvitationStatus(ctx context.Context, invitationID, status string) error {
+func (r *store) UpdateInvitationStatus(ctx context.Context, invitationID, status string) error {
 	if err := r.queries.UpdateInvitationStatus(ctx, queries.UpdateInvitationStatusParams{Status: status, ID: invitationID}); err != nil {
 		return fmt.Errorf("execute invitation status update: %w", err)
 	}
 	return nil
 }
 
-func (r *Repository) AcceptInvitation(ctx context.Context, invitationID, memberID, organizationID, userID string, role organization.Role) error {
+func (r *store) AcceptInvitation(ctx context.Context, invitationID, memberID, organizationID, userID string, role Role) error {
 	return r.withTx(ctx, func(txq *queries.Queries) error {
 		if err := txq.CreateMember(ctx, queries.CreateMemberParams{
 			ID:             memberID,
@@ -156,7 +149,7 @@ func (r *Repository) AcceptInvitation(ctx context.Context, invitationID, memberI
 	})
 }
 
-func (r *Repository) DeleteMember(ctx context.Context, organizationID, userID string) error {
+func (r *store) DeleteMember(ctx context.Context, organizationID, userID string) error {
 	// notification_preference / user_notification reference environments by text
 	// scope_id / link params (no foreign key), so they would otherwise linger after
 	// the member is gone. Delete them in the same transaction as the membership.
@@ -183,7 +176,7 @@ func (r *Repository) DeleteMember(ctx context.Context, organizationID, userID st
 	})
 }
 
-func (r *Repository) CountOwners(ctx context.Context, organizationID string) (int32, error) {
+func (r *store) CountOwners(ctx context.Context, organizationID string) (int32, error) {
 	count, err := r.queries.CountOrgOwners(ctx, organizationID)
 	if err != nil {
 		return 0, fmt.Errorf("query owner count: %w", err)
@@ -191,7 +184,7 @@ func (r *Repository) CountOwners(ctx context.Context, organizationID string) (in
 	return count, nil
 }
 
-func (r *Repository) UpdateMemberRole(ctx context.Context, organizationID, userID string, role organization.Role) error {
+func (r *store) UpdateMemberRole(ctx context.Context, organizationID, userID string, role Role) error {
 	if err := r.queries.UpdateMemberRole(ctx, queries.UpdateMemberRoleParams{
 		Role:           string(role),
 		OrganizationID: organizationID,
@@ -202,18 +195,18 @@ func (r *Repository) UpdateMemberRole(ctx context.Context, organizationID, userI
 	return nil
 }
 
-func (r *Repository) ListMembers(ctx context.Context, organizationID string) ([]organization.Member, error) {
+func (r *store) ListMembers(ctx context.Context, organizationID string) ([]Member, error) {
 	rows, err := r.queries.ListMembers(ctx, organizationID)
 	if err != nil {
 		return nil, fmt.Errorf("query organization members: %w", err)
 	}
-	members := make([]organization.Member, 0, len(rows))
+	members := make([]Member, 0, len(rows))
 	for _, row := range rows {
-		role, ok := organization.ParseRole(row.Role)
+		role, ok := ParseRole(row.Role)
 		if !ok {
 			return nil, fmt.Errorf("decode member %q: invalid role %q", row.ID, row.Role)
 		}
-		members = append(members, organization.Member{
+		members = append(members, Member{
 			ID:        row.ID,
 			UserID:    row.UserID,
 			Role:      role,
@@ -226,18 +219,18 @@ func (r *Repository) ListMembers(ctx context.Context, organizationID string) ([]
 	return members, nil
 }
 
-func (r *Repository) ListInvitations(ctx context.Context, organizationID string) ([]organization.Invitation, error) {
+func (r *store) ListInvitations(ctx context.Context, organizationID string) ([]Invitation, error) {
 	rows, err := r.queries.ListInvitations(ctx, organizationID)
 	if err != nil {
 		return nil, fmt.Errorf("query organization invitations: %w", err)
 	}
-	invitations := make([]organization.Invitation, 0, len(rows))
+	invitations := make([]Invitation, 0, len(rows))
 	for _, row := range rows {
 		role, err := parseOptionalRole(row.Role)
 		if err != nil {
 			return nil, fmt.Errorf("decode invitation %q: %w", row.ID, err)
 		}
-		invitations = append(invitations, organization.Invitation{
+		invitations = append(invitations, Invitation{
 			ID:             row.ID,
 			OrganizationID: row.OrganizationID,
 			Email:          row.Email,
@@ -252,19 +245,19 @@ func (r *Repository) ListInvitations(ctx context.Context, organizationID string)
 	return invitations, nil
 }
 
-func (r *Repository) ListForUser(ctx context.Context, userID string) ([]organization.Membership, error) {
+func (r *store) ListForUser(ctx context.Context, userID string) ([]Membership, error) {
 	rows, err := r.queries.ListUserOrganizations(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("query organizations for user: %w", err)
 	}
-	memberships := make([]organization.Membership, 0, len(rows))
+	memberships := make([]Membership, 0, len(rows))
 	for _, row := range rows {
-		role, ok := organization.ParseRole(row.Role)
+		role, ok := ParseRole(row.Role)
 		if !ok {
 			return nil, fmt.Errorf("decode organization %q membership: invalid role %q", row.ID, row.Role)
 		}
-		memberships = append(memberships, organization.Membership{
-			Organization: organization.Organization{
+		memberships = append(memberships, Membership{
+			Organization: Organization{
 				ID:        row.ID,
 				Name:      row.Name,
 				Slug:      row.Slug,
@@ -277,14 +270,14 @@ func (r *Repository) ListForUser(ctx context.Context, userID string) ([]organiza
 	return memberships, nil
 }
 
-func (r *Repository) DeleteInvitation(ctx context.Context, invitationID string) error {
+func (r *store) DeleteInvitation(ctx context.Context, invitationID string) error {
 	if err := r.queries.DeleteInvitationByID(ctx, invitationID); err != nil {
 		return fmt.Errorf("execute invitation delete: %w", err)
 	}
 	return nil
 }
 
-func (r *Repository) SetActiveOrganization(ctx context.Context, sessionToken, organizationID string) error {
+func (r *store) SetActiveOrganization(ctx context.Context, sessionToken, organizationID string) error {
 	if err := r.queries.SetActiveOrganization(ctx, queries.SetActiveOrganizationParams{
 		ActiveOrganizationID: &organizationID,
 		Token:                sessionToken,
@@ -294,7 +287,7 @@ func (r *Repository) SetActiveOrganization(ctx context.Context, sessionToken, or
 	return nil
 }
 
-func (r *Repository) withTx(ctx context.Context, operation func(*queries.Queries) error) error {
+func (r *store) withTx(ctx context.Context, operation func(*queries.Queries) error) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
@@ -310,11 +303,11 @@ func (r *Repository) withTx(ctx context.Context, operation func(*queries.Queries
 	return nil
 }
 
-func parseOptionalRole(value *string) (*organization.Role, error) {
+func parseOptionalRole(value *string) (*Role, error) {
 	if value == nil {
 		return nil, nil
 	}
-	role, ok := organization.ParseRole(*value)
+	role, ok := ParseRole(*value)
 	if !ok {
 		return nil, fmt.Errorf("invalid role %q", *value)
 	}

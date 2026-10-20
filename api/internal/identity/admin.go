@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -95,21 +97,6 @@ type AdminUserDetail struct {
 	AuditLog      []AdminAuditEntry
 }
 
-type AdminRepository interface {
-	ListUsers(ctx context.Context, filter AdminUserFilter) ([]AdminUser, error)
-	CountUsers(ctx context.Context, filter AdminUserFilter) (int32, error)
-	FindUser(ctx context.Context, userID string) (AdminUserDetail, error)
-	ListUserAuthProviders(ctx context.Context, userID string) ([]AdminAuthProvider, error)
-	ListUserSessions(ctx context.Context, userID string) ([]AdminSession, error)
-	ListUserMemberships(ctx context.Context, userID string) ([]AdminMembership, error)
-	ListUserAuditLog(ctx context.Context, userID string, limit int32) ([]AdminAuditEntry, error)
-	SetUserRole(ctx context.Context, userID, role string) error
-	BanUserAndDeleteSessions(ctx context.Context, userID string, reason *string) error
-	UnbanUser(ctx context.Context, userID string) error
-	UserExists(ctx context.Context, userID string) (bool, error)
-	CreateImpersonationSession(ctx context.Context, session AdminImpersonationSession) error
-}
-
 type AdminImpersonationSession struct {
 	ID             string
 	Token          string
@@ -121,12 +108,12 @@ type AdminImpersonationSession struct {
 }
 
 type AdminService struct {
-	repository AdminRepository
+	repository *adminStore
 	now        func() time.Time
 }
 
-func NewAdminService(repository AdminRepository) *AdminService {
-	return &AdminService{repository: repository, now: time.Now}
+func NewAdminService(pool *pgxpool.Pool, q *queries.Queries) *AdminService {
+	return &AdminService{repository: &adminStore{pool: pool, queries: q}, now: time.Now}
 }
 
 func (s *AdminService) ListUsers(ctx context.Context, filter AdminUserFilter) (AdminUserPage, error) {

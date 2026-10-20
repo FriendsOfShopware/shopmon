@@ -2,11 +2,14 @@ package sso
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/organization"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -56,15 +59,6 @@ type Discovery struct {
 	Scopes                []string
 }
 
-type Repository interface {
-	List(ctx context.Context, organizationID string) ([]Provider, error)
-	Create(ctx context.Context, id, organizationID, providerID, issuer, domain string, configuration ProviderConfiguration) error
-	Update(ctx context.Context, organizationID, providerID, issuer, domain string, configuration ProviderConfiguration) error
-	Delete(ctx context.Context, organizationID, providerID string) error
-	FindByDomain(ctx context.Context, domain string) (Provider, error)
-	FindByID(ctx context.Context, providerID string) (Provider, error)
-}
-
 type Authorizer interface {
 	Membership(ctx context.Context, userID, organizationID string) (organization.Role, error)
 	RequireRole(ctx context.Context, userID, organizationID string, allowedRoles ...organization.Role) (organization.Role, error)
@@ -76,14 +70,14 @@ type OIDCGateway interface {
 }
 
 type Service struct {
-	repository Repository
+	queries    *queries.Queries
 	authorizer Authorizer
 	oidc       OIDCGateway
 }
 
-func NewService(repository Repository, authorizer Authorizer, oidc OIDCGateway) *Service {
+func NewService(q *queries.Queries, authorizer Authorizer, oidc OIDCGateway) *Service {
 	return &Service{
-		repository: repository,
+		queries:    q,
 		authorizer: authorizer,
 		oidc:       oidc,
 	}
@@ -94,9 +88,18 @@ func (s *Service) List(ctx context.Context, userID, organizationID string) ([]Pr
 		return nil, err
 	}
 
-	providers, err := s.repository.List(ctx, organizationID)
+	rows, err := s.queries.ListSSOProviders(ctx, &organizationID)
 	if err != nil {
 		return nil, fmt.Errorf("list SSO providers: %w", err)
+	}
+
+	providers := make([]Provider, 0, len(rows))
+	for _, row := range rows {
+		provider, err := decodeProvider(row)
+		if err != nil {
+			return nil, err
+		}
+		providers = append(providers, provider)
 	}
 	return providers, nil
 }
@@ -126,7 +129,18 @@ func (s *Service) Create(ctx context.Context, command CreateCommand) error {
 		return fmt.Errorf("validate SSO provider: %w", err)
 	}
 	providerID := "sso-" + command.Domain
-	if err := s.repository.Create(ctx, uuid.NewString(), command.OrganizationID, providerID, command.Issuer, command.Domain, command.Configuration); err != nil {
+	encoded, err := encodeConfiguration(command.Configuration)
+	if err != nil {
+		return err
+	}
+	if err := s.queries.CreateSSOProvider(ctx, queries.CreateSSOProviderParams{
+		ID:             uuid.NewString(),
+		Issuer:         command.Issuer,
+		OidcConfig:     &encoded,
+		ProviderID:     providerID,
+		OrganizationID: &command.OrganizationID,
+		Domain:         command.Domain,
+	}); err != nil {
 		return fmt.Errorf("create SSO provider: %w", err)
 	}
 	return nil
@@ -139,7 +153,17 @@ func (s *Service) Update(ctx context.Context, command UpdateCommand) error {
 	if err := s.oidc.ValidateConfiguration(command.Configuration, command.Issuer); err != nil {
 		return fmt.Errorf("validate SSO provider: %w", err)
 	}
-	if err := s.repository.Update(ctx, command.OrganizationID, command.ProviderID, command.Issuer, command.Domain, command.Configuration); err != nil {
+	encoded, err := encodeConfiguration(command.Configuration)
+	if err != nil {
+		return err
+	}
+	if err := s.queries.UpdateSSOProvider(ctx, queries.UpdateSSOProviderParams{
+		Issuer:         command.Issuer,
+		OidcConfig:     &encoded,
+		Domain:         command.Domain,
+		ProviderID:     command.ProviderID,
+		OrganizationID: &command.OrganizationID,
+	}); err != nil {
 		return fmt.Errorf("update SSO provider: %w", err)
 	}
 	return nil
@@ -149,7 +173,10 @@ func (s *Service) Delete(ctx context.Context, userID, organizationID, providerID
 	if _, err := s.authorizer.RequireRole(ctx, userID, organizationID, organization.RoleOwner, organization.RoleAdmin); err != nil {
 		return err
 	}
-	if err := s.repository.Delete(ctx, organizationID, providerID); err != nil {
+	if err := s.queries.DeleteSSOProvider(ctx, queries.DeleteSSOProviderParams{
+		ProviderID:     providerID,
+		OrganizationID: &organizationID,
+	}); err != nil {
 		return fmt.Errorf("delete SSO provider: %w", err)
 	}
 	return nil
@@ -170,17 +197,43 @@ func (s *Service) Discover(ctx context.Context, issuer string) (Discovery, error
 }
 
 func (s *Service) FindByDomain(ctx context.Context, domain string) (Provider, error) {
-	provider, err := s.repository.FindByDomain(ctx, domain)
+	row, err := s.queries.GetSSOProviderByDomain(ctx, domain)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Provider{}, ErrProviderNotFound
+		}
 		return Provider{}, fmt.Errorf("find SSO provider by domain: %w", err)
 	}
-	return provider, nil
+	return decodeProvider(row)
 }
 
 func (s *Service) FindByID(ctx context.Context, providerID string) (Provider, error) {
-	provider, err := s.repository.FindByID(ctx, providerID)
+	row, err := s.queries.GetSSOProviderByProviderID(ctx, providerID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Provider{}, ErrProviderNotFound
+		}
 		return Provider{}, fmt.Errorf("find SSO provider by ID: %w", err)
+	}
+	return decodeProvider(row)
+}
+
+func encodeConfiguration(configuration ProviderConfiguration) (string, error) {
+	encoded, err := json.Marshal(configuration)
+	if err != nil {
+		return "", fmt.Errorf("encode OIDC configuration: %w", err)
+	}
+	return string(encoded), nil
+}
+
+func decodeProvider(row queries.SsoProvider) (Provider, error) {
+	provider := Provider{
+		ID: row.ProviderID, Issuer: row.Issuer, Domain: row.Domain, OrganizationID: row.OrganizationID,
+	}
+	if row.OidcConfig != nil {
+		if err := json.Unmarshal([]byte(*row.OidcConfig), &provider.Configuration); err != nil {
+			return Provider{}, fmt.Errorf("decode OIDC configuration for provider %q: %w", row.ProviderID, err)
+		}
 	}
 	return provider, nil
 }

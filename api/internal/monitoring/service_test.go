@@ -167,12 +167,22 @@ func (d *stubJobDispatcher) DispatchSitespeedScrape(_ context.Context, environme
 	return d.sitespeedErr
 }
 
+func newTestService(repository Repository, authorizer MembershipAuthorizer, environments EnvironmentGateway, jobs JobDispatcher, outputs DeploymentOutputStore) *Service {
+	return &Service{
+		repository:   repository,
+		authorizer:   authorizer,
+		environments: environments,
+		jobs:         jobs,
+		outputs:      outputs,
+	}
+}
+
 func TestCreateShopOrchestratesLifecycle(t *testing.T) {
 	repository := &stubRepository{createShopResult: CreateShopResult{ShopID: 10, EnvironmentID: 20}}
 	authorizer := &stubAuthorizer{member: true}
 	gateway := &stubEnvironmentGateway{shopInfo: ShopInfo{Version: "6.7.0"}, encryptedSecret: "encrypted"}
 	jobs := &stubJobDispatcher{}
-	service := NewService(repository, authorizer, gateway, jobs, nil)
+	service := newTestService(repository, authorizer, gateway, jobs, nil)
 
 	result, err := service.CreateShop(t.Context(), CreateShopCommand{
 		UserID:          "user-1",
@@ -196,7 +206,7 @@ func TestCreateShopStopsBeforeSideEffectsWhenUnauthorized(t *testing.T) {
 	repository := &stubRepository{}
 	authorizer := &stubAuthorizer{}
 	gateway := &stubEnvironmentGateway{}
-	service := NewService(repository, authorizer, gateway, &stubJobDispatcher{}, nil)
+	service := newTestService(repository, authorizer, gateway, &stubJobDispatcher{}, nil)
 
 	_, err := service.CreateShop(t.Context(), CreateShopCommand{UserID: "user-1", OrganizationID: "org-1"})
 
@@ -211,7 +221,7 @@ func TestUpdateShopValidatesDefaultEnvironmentBeforeWriting(t *testing.T) {
 		shop:        Shop{ID: 10, OrganizationID: "org-1", Name: "Shop"},
 		environment: Environment{ID: defaultID, ShopID: 99, OrganizationID: "org-1"},
 	}
-	service := NewService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, &stubJobDispatcher{}, nil)
+	service := newTestService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, &stubJobDispatcher{}, nil)
 
 	err := service.UpdateShop(t.Context(), UpdateShopCommand{
 		UserID:               "user-1",
@@ -234,7 +244,7 @@ func TestUpdateEnvironmentValidatesAndEncryptsNewSecret(t *testing.T) {
 		EncryptedClientSecret: "old-encrypted",
 	}}
 	gateway := &stubEnvironmentGateway{encryptedSecret: "new-encrypted"}
-	service := NewService(repository, &stubAuthorizer{member: true}, gateway, &stubJobDispatcher{}, nil)
+	service := newTestService(repository, &stubAuthorizer{member: true}, gateway, &stubJobDispatcher{}, nil)
 	url := "https://new.example.com"
 	clientID := "new-client"
 	secret := "new-secret"
@@ -259,7 +269,7 @@ func TestDeleteShopRejectsExistingEnvironments(t *testing.T) {
 		shop:                 Shop{ID: 10, OrganizationID: "org-1"},
 		shopEnvironmentCount: 1,
 	}
-	service := NewService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, &stubJobDispatcher{}, nil)
+	service := newTestService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, &stubJobDispatcher{}, nil)
 
 	err := service.DeleteShop(t.Context(), "user-1", "org-1", 10)
 
@@ -270,7 +280,7 @@ func TestDeleteShopRejectsExistingEnvironments(t *testing.T) {
 func TestRefreshEnvironmentDispatchesRequestedJobs(t *testing.T) {
 	repository := &stubRepository{environment: Environment{ID: 20, OrganizationID: "org-1"}}
 	jobs := &stubJobDispatcher{}
-	service := NewService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, jobs, nil)
+	service := newTestService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, jobs, nil)
 
 	err := service.RefreshEnvironment(t.Context(), "user-1", 20, true)
 
@@ -283,7 +293,7 @@ func TestRefreshEnvironmentReturnsMandatoryDispatchError(t *testing.T) {
 	dispatchErr := errors.New("queue unavailable")
 	repository := &stubRepository{environment: Environment{ID: 20, OrganizationID: "org-1"}}
 	jobs := &stubJobDispatcher{scrapeErr: dispatchErr}
-	service := NewService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, jobs, nil)
+	service := newTestService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, jobs, nil)
 
 	err := service.RefreshEnvironment(t.Context(), "user-1", 20, true)
 

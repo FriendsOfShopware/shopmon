@@ -15,7 +15,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
-	jobspostgres "github.com/friendsofshopware/shopmon/api/internal/jobs/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
 	monitoringscrape "github.com/friendsofshopware/shopmon/api/internal/monitoring/scrape"
@@ -106,8 +105,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	scheduleRepository := jobspostgres.NewScheduleRepository(q)
-	scheduler, err := jobs.NewScheduler(scheduleRepository, jobDispatcher, jobs.SchedulerConfig{
+	scheduler, err := jobs.NewScheduler(q, jobDispatcher, jobs.SchedulerConfig{
 		SitespeedEnabled: cfg.SitespeedEndpoint != "" && cfg.SitespeedAPIKey != "",
 	})
 	if err != nil {

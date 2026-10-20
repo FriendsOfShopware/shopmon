@@ -1,4 +1,4 @@
-package postgres
+package identity
 
 import (
 	"context"
@@ -7,24 +7,17 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/identity"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type CredentialRepository struct {
+type credentialStore struct {
 	pool    *pgxpool.Pool
 	queries *queries.Queries
 }
 
-var _ identity.CredentialRepository = (*CredentialRepository)(nil)
-
-func NewCredentialRepository(pool *pgxpool.Pool, q *queries.Queries) *CredentialRepository {
-	return &CredentialRepository{pool: pool, queries: q}
-}
-
-func (r *CredentialRepository) EmailExists(ctx context.Context, email string) (bool, error) {
+func (r *credentialStore) EmailExists(ctx context.Context, email string) (bool, error) {
 	if _, err := r.queries.GetUserByEmail(ctx, email); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
@@ -34,7 +27,7 @@ func (r *CredentialRepository) EmailExists(ctx context.Context, email string) (b
 	return true, nil
 }
 
-func (r *CredentialRepository) CreateCredentialUser(ctx context.Context, user identity.CredentialUser, accountID, passwordHash string) error {
+func (r *credentialStore) CreateCredentialUser(ctx context.Context, user CredentialUser, accountID, passwordHash string) error {
 	return r.withTx(ctx, func(txq *queries.Queries) error {
 		if _, err := txq.CreateUser(ctx, queries.CreateUserParams{ID: user.ID, Name: user.Name, Email: user.Email}); err != nil {
 			return fmt.Errorf("insert user: %w", err)
@@ -48,41 +41,41 @@ func (r *CredentialRepository) CreateCredentialUser(ctx context.Context, user id
 	})
 }
 
-func (r *CredentialRepository) FindUserByEmail(ctx context.Context, email string) (identity.CredentialUser, error) {
+func (r *credentialStore) FindUserByEmail(ctx context.Context, email string) (CredentialUser, error) {
 	row, err := r.queries.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return identity.CredentialUser{}, identity.ErrUserNotFound
+			return CredentialUser{}, ErrUserNotFound
 		}
-		return identity.CredentialUser{}, fmt.Errorf("query user by email: %w", err)
+		return CredentialUser{}, fmt.Errorf("query user by email: %w", err)
 	}
 	var banExpires *time.Time
 	if row.BanExpires.Valid {
 		value := row.BanExpires.Time
 		banExpires = &value
 	}
-	return identity.CredentialUser{
+	return CredentialUser{
 		ID: row.ID, Name: row.Name, Email: row.Email, EmailVerified: row.EmailVerified,
 		Image: row.Image, Role: row.Role,
-		Ban: identity.Ban{Enabled: row.Banned != nil && *row.Banned, ExpiresAt: banExpires},
+		Ban: Ban{Enabled: row.Banned != nil && *row.Banned, ExpiresAt: banExpires},
 	}, nil
 }
 
-func (r *CredentialRepository) CredentialPassword(ctx context.Context, userID string) (string, error) {
+func (r *credentialStore) CredentialPassword(ctx context.Context, userID string) (string, error) {
 	account, err := r.queries.GetAccountByProviderAndUser(ctx, queries.GetAccountByProviderAndUserParams{ProviderID: "credential", UserID: userID})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", identity.ErrPasswordNotSet
+			return "", ErrPasswordNotSet
 		}
 		return "", fmt.Errorf("query credential account: %w", err)
 	}
 	if account.Password == nil {
-		return "", identity.ErrPasswordNotSet
+		return "", ErrPasswordNotSet
 	}
 	return *account.Password, nil
 }
 
-func (r *CredentialRepository) CreateVerification(ctx context.Context, verification identity.Verification) error {
+func (r *credentialStore) CreateVerification(ctx context.Context, verification Verification) error {
 	if err := r.queries.CreateVerification(ctx, queries.CreateVerificationParams{
 		ID: verification.ID, Identifier: verification.Identifier, Value: verification.Token,
 		ExpiresAt: pgtype.Timestamp{Time: verification.ExpiresAt, Valid: true},
@@ -92,18 +85,18 @@ func (r *CredentialRepository) CreateVerification(ctx context.Context, verificat
 	return nil
 }
 
-func (r *CredentialRepository) FindVerification(ctx context.Context, token string) (identity.Verification, error) {
+func (r *credentialStore) FindVerification(ctx context.Context, token string) (Verification, error) {
 	row, err := r.queries.GetVerificationByValue(ctx, token)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return identity.Verification{}, identity.ErrInvalidVerification
+			return Verification{}, ErrInvalidVerification
 		}
-		return identity.Verification{}, fmt.Errorf("query verification: %w", err)
+		return Verification{}, fmt.Errorf("query verification: %w", err)
 	}
-	return identity.Verification{ID: row.ID, Identifier: row.Identifier, Token: row.Value, ExpiresAt: row.ExpiresAt.Time}, nil
+	return Verification{ID: row.ID, Identifier: row.Identifier, Token: row.Value, ExpiresAt: row.ExpiresAt.Time}, nil
 }
 
-func (r *CredentialRepository) VerifyEmail(ctx context.Context, userID, verificationID string) error {
+func (r *credentialStore) VerifyEmail(ctx context.Context, userID, verificationID string) error {
 	return r.withTx(ctx, func(txq *queries.Queries) error {
 		if err := txq.UpdateUserEmailVerified(ctx, userID); err != nil {
 			return fmt.Errorf("mark user email verified: %w", err)
@@ -115,7 +108,7 @@ func (r *CredentialRepository) VerifyEmail(ctx context.Context, userID, verifica
 	})
 }
 
-func (r *CredentialRepository) ResetPassword(ctx context.Context, userID, verificationID, passwordHash string) error {
+func (r *credentialStore) ResetPassword(ctx context.Context, userID, verificationID, passwordHash string) error {
 	return r.withTx(ctx, func(txq *queries.Queries) error {
 		if err := txq.UpdateUserPassword(ctx, queries.UpdateUserPasswordParams{Password: &passwordHash, UserID: userID}); err != nil {
 			return fmt.Errorf("update credential password: %w", err)
@@ -130,7 +123,7 @@ func (r *CredentialRepository) ResetPassword(ctx context.Context, userID, verifi
 	})
 }
 
-func (r *CredentialRepository) withTx(ctx context.Context, operation func(*queries.Queries) error) error {
+func (r *credentialStore) withTx(ctx context.Context, operation func(*queries.Queries) error) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)

@@ -3,6 +3,8 @@ package audit
 import (
 	"context"
 	"fmt"
+
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 )
 
 type Event struct {
@@ -13,20 +15,22 @@ type Event struct {
 	IPAddress    *string
 }
 
-type Repository interface {
-	Create(ctx context.Context, event Event) error
-}
-
 type Service struct {
-	repository Repository
+	queries *queries.Queries
 }
 
-func NewService(repository Repository) *Service {
-	return &Service{repository: repository}
+func NewService(q *queries.Queries) *Service {
+	return &Service{queries: q}
 }
 
 func (s *Service) Record(ctx context.Context, event Event) error {
-	if err := s.repository.Create(ctx, event); err != nil {
+	if err := s.queries.CreateAuditLog(ctx, queries.CreateAuditLogParams{
+		ActorUserID:  event.ActorUserID,
+		Action:       event.Action,
+		TargetUserID: event.TargetUserID,
+		Detail:       event.Detail,
+		IpAddress:    event.IPAddress,
+	}); err != nil {
 		return fmt.Errorf("record audit event %q: %w", event.Action, err)
 	}
 	return nil

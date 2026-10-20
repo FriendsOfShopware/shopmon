@@ -3,6 +3,8 @@ package catalog
 import (
 	"context"
 	"fmt"
+
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 )
 
 type Extension struct {
@@ -16,21 +18,17 @@ type CompatibilityCommand struct {
 	Extensions     []Extension
 }
 
-type VersionRepository interface {
-	ListShopwareVersions(ctx context.Context) ([]string, error)
-}
-
 type CompatibilityGateway interface {
 	CheckCompatibility(ctx context.Context, command CompatibilityCommand) ([]byte, error)
 }
 
 type Service struct {
-	versions      VersionRepository
+	queries       *queries.Queries
 	compatibility CompatibilityGateway
 }
 
-func NewService(versions VersionRepository, compatibility CompatibilityGateway) *Service {
-	return &Service{versions: versions, compatibility: compatibility}
+func NewService(q *queries.Queries, compatibility CompatibilityGateway) *Service {
+	return &Service{queries: q, compatibility: compatibility}
 }
 
 func (s *Service) CheckCompatibility(ctx context.Context, command CompatibilityCommand) ([]byte, error) {
@@ -42,7 +40,7 @@ func (s *Service) CheckCompatibility(ctx context.Context, command CompatibilityC
 }
 
 func (s *Service) ListShopwareVersions(ctx context.Context) ([]string, error) {
-	versions, err := s.versions.ListShopwareVersions(ctx)
+	versions, err := s.queries.ListShopwareVersions(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list shopware versions: %w", err)
 	}

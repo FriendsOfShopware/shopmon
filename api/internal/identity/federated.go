@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -21,16 +24,12 @@ type FederatedProfile struct {
 	OrganizationID *string
 }
 
-type FederatedRepository interface {
-	Provision(ctx context.Context, profile FederatedProfile) (string, error)
-}
-
 type FederatedService struct {
-	repository FederatedRepository
+	repository *federatedStore
 }
 
-func NewFederatedService(repository FederatedRepository) *FederatedService {
-	return &FederatedService{repository: repository}
+func NewFederatedService(pool *pgxpool.Pool, q *queries.Queries) *FederatedService {
+	return &FederatedService{repository: &federatedStore{pool: pool, queries: q}}
 }
 
 func (s *FederatedService) Provision(ctx context.Context, profile FederatedProfile) (string, error) {

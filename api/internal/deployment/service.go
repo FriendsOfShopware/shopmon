@@ -12,7 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -94,20 +96,6 @@ type CreateDeploymentRecord struct {
 	Reference     *string
 }
 
-type Repository interface {
-	FindEnvironment(ctx context.Context, environmentID int32) (Environment, error)
-	OrganizationIDForShop(ctx context.Context, shopID int32) (string, error)
-	ListDeployments(ctx context.Context, environmentID, limit, offset int32) ([]Deployment, error)
-	FindDeployment(ctx context.Context, environmentID, deploymentID int32) (Deployment, error)
-	DeleteDeployment(ctx context.Context, environmentID, deploymentID int32) error
-	CreateDeployment(ctx context.Context, deployment CreateDeploymentRecord) (int32, error)
-	ListAPIKeys(ctx context.Context, shopID int32) ([]APIKey, error)
-	CreateAPIKey(ctx context.Context, key APIKey) error
-	DeleteAPIKey(ctx context.Context, shopID int32, keyID string) error
-	FindAPIKeyByTokenHash(ctx context.Context, tokenHash string) (APIKey, error)
-	TouchAPIKey(ctx context.Context, keyID string) error
-}
-
 type MembershipAuthorizer interface {
 	IsMember(ctx context.Context, userID, organizationID string) (bool, error)
 }
@@ -123,7 +111,7 @@ type PostDeploymentDispatcher interface {
 }
 
 type Service struct {
-	repository  Repository
+	repository  *store
 	authorizer  MembershipAuthorizer
 	outputs     OutputStore
 	dispatcher  PostDeploymentDispatcher
@@ -131,9 +119,9 @@ type Service struct {
 	scrapeDelay time.Duration
 }
 
-func NewService(repository Repository, authorizer MembershipAuthorizer, outputs OutputStore, dispatcher PostDeploymentDispatcher, frontendURL string, scrapeDelay time.Duration) *Service {
+func NewService(pool *pgxpool.Pool, q *queries.Queries, authorizer MembershipAuthorizer, outputs OutputStore, dispatcher PostDeploymentDispatcher, frontendURL string, scrapeDelay time.Duration) *Service {
 	return &Service{
-		repository:  repository,
+		repository:  &store{pool: pool, queries: q},
 		authorizer:  authorizer,
 		outputs:     outputs,
 		dispatcher:  dispatcher,

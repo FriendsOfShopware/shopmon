@@ -1,4 +1,4 @@
-package postgres
+package identity
 
 import (
 	"context"
@@ -9,23 +9,20 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/access"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/identity"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// SessionRepository adapts sqlc session queries to the identity application boundary.
-type SessionRepository struct {
+// sessionStore adapts sqlc session queries to the identity application boundary.
+type sessionStore struct {
 	queries *queries.Queries
 }
 
-func NewSessionRepository(q *queries.Queries) *SessionRepository {
-	return &SessionRepository{queries: q}
-}
+var _ SessionRepository = (*sessionStore)(nil)
 
-func (r *SessionRepository) FindByToken(ctx context.Context, token string) (identity.SessionRecord, error) {
+func (r *sessionStore) FindByToken(ctx context.Context, token string) (SessionRecord, error) {
 	row, err := r.queries.GetSessionByToken(ctx, token)
 	if err != nil {
-		return identity.SessionRecord{}, fmt.Errorf("get session by token: %w", err)
+		return SessionRecord{}, fmt.Errorf("get session by token: %w", err)
 	}
 
 	notifications := []string{}
@@ -44,7 +41,7 @@ func (r *SessionRepository) FindByToken(ctx context.Context, token string) (iden
 		banExpiresAt = &row.UserBanExpires.Time
 	}
 
-	return identity.SessionRecord{
+	return SessionRecord{
 		Principal: access.Principal{
 			Session: access.Session{
 				ID:                   row.ID,
@@ -62,14 +59,14 @@ func (r *SessionRepository) FindByToken(ctx context.Context, token string) (iden
 				Notifications: notifications,
 			},
 		},
-		Ban: identity.Ban{
+		Ban: Ban{
 			Enabled:   row.UserBanned != nil && *row.UserBanned,
 			ExpiresAt: banExpiresAt,
 		},
 	}, nil
 }
 
-func (r *SessionRepository) RefreshExpiry(ctx context.Context, sessionID string, expiresAt time.Time) error {
+func (r *sessionStore) RefreshExpiry(ctx context.Context, sessionID string, expiresAt time.Time) error {
 	if err := r.queries.RefreshSessionExpiry(ctx, queries.RefreshSessionExpiryParams{
 		ID:        sessionID,
 		ExpiresAt: pgtype.Timestamp{Time: expiresAt, Valid: true},

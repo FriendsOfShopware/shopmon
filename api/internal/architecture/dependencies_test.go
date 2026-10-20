@@ -34,20 +34,22 @@ func TestHTTPTransportDoesNotImportInfrastructure(t *testing.T) {
 	}
 }
 
-func TestCapabilityCoreDoesNotImportTransportOrPersistence(t *testing.T) {
+// Capability services own their persistence: they use the generated sqlc
+// queries (and pgx error values) directly or through an unexported store in
+// the same package. Transport, queue, mail, storage, and cache clients stay
+// behind capability-owned interfaces.
+func TestCapabilityCoreDoesNotImportTransport(t *testing.T) {
 	root := apiRoot(t)
 	forbidden := []string{
 		modulePath + "/internal/api",
 		modulePath + "/internal/auth",
 		modulePath + "/internal/authapi",
 		modulePath + "/internal/config",
-		modulePath + "/internal/database",
 		modulePath + "/internal/handler",
 		modulePath + "/internal/jobs",
 		modulePath + "/internal/mail",
 		modulePath + "/internal/readmodel",
 		modulePath + "/internal/storage",
-		"github.com/jackc/pgx",
 		"github.com/redis/go-redis",
 		"github.com/shyim/go-queue",
 	}

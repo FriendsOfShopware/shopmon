@@ -7,7 +7,9 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -63,25 +65,6 @@ type FullOrganization struct {
 	Invitations  []Invitation
 }
 
-type Repository interface {
-	CreateWithOwner(ctx context.Context, organization Organization, memberID, ownerID, sessionToken string) error
-	Find(ctx context.Context, organizationID string) (Organization, error)
-	Update(ctx context.Context, organization Organization) error
-	Delete(ctx context.Context, organizationID string) error
-	CreateInvitation(ctx context.Context, invitation Invitation) error
-	FindInvitation(ctx context.Context, invitationID string) (Invitation, error)
-	UpdateInvitationStatus(ctx context.Context, invitationID, status string) error
-	AcceptInvitation(ctx context.Context, invitationID, memberID, organizationID, userID string, role Role) error
-	DeleteMember(ctx context.Context, organizationID, userID string) error
-	CountOwners(ctx context.Context, organizationID string) (int32, error)
-	UpdateMemberRole(ctx context.Context, organizationID, userID string, role Role) error
-	ListMembers(ctx context.Context, organizationID string) ([]Member, error)
-	ListInvitations(ctx context.Context, organizationID string) ([]Invitation, error)
-	ListForUser(ctx context.Context, userID string) ([]Membership, error)
-	DeleteInvitation(ctx context.Context, invitationID string) error
-	SetActiveOrganization(ctx context.Context, sessionToken, organizationID string) error
-}
-
 type OrganizationAuthorizer interface {
 	RequireOrganization(ctx context.Context, organizationID string) error
 	Membership(ctx context.Context, userID, organizationID string) (Role, error)
@@ -93,15 +76,15 @@ type InvitationMailer interface {
 }
 
 type Service struct {
-	repository Repository
+	repository *store
 	authorizer OrganizationAuthorizer
 	mailer     InvitationMailer
 	now        func() time.Time
 }
 
-func NewService(repository Repository, authorizer OrganizationAuthorizer, mailer InvitationMailer) *Service {
+func NewService(pool *pgxpool.Pool, q *queries.Queries, authorizer OrganizationAuthorizer, mailer InvitationMailer) *Service {
 	return &Service{
-		repository: repository,
+		repository: &store{pool: pool, queries: q},
 		authorizer: authorizer,
 		mailer:     mailer,
 		now:        time.Now,

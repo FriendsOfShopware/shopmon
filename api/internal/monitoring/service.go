@@ -7,6 +7,9 @@ import (
 	"log/slog"
 	"math"
 	"time"
+
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -138,9 +141,9 @@ type Service struct {
 	outputs      DeploymentOutputStore
 }
 
-func NewService(repository Repository, authorizer MembershipAuthorizer, environments EnvironmentGateway, jobs JobDispatcher, outputs DeploymentOutputStore) *Service {
+func NewService(pool *pgxpool.Pool, q *queries.Queries, authorizer MembershipAuthorizer, environments EnvironmentGateway, jobs JobDispatcher, outputs DeploymentOutputStore) *Service {
 	return &Service{
-		repository:   repository,
+		repository:   &store{pool: pool, queries: q},
 		authorizer:   authorizer,
 		environments: environments,
 		jobs:         jobs,

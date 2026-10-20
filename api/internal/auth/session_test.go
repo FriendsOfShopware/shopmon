@@ -7,7 +7,6 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/access"
 	"github.com/friendsofshopware/shopmon/api/internal/identity"
-	identitypostgres "github.com/friendsofshopware/shopmon/api/internal/identity/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -77,6 +76,5 @@ func TestValidateSessionDoesNotRotateImpersonation(t *testing.T) {
 }
 
 func authenticateSession(ctx context.Context, env *testutil.TestEnv, token string) (*access.Principal, error) {
-	repository := identitypostgres.NewSessionRepository(env.Queries)
-	return identity.NewSessionAuthenticator(repository).Authenticate(ctx, token)
+	return identity.NewSessionAuthenticator(env.Queries).Authenticate(ctx, token)
 }

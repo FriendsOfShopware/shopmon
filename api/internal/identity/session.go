@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/access"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 )
 
 // SessionLifetime is the validity window granted to a regular session token.
@@ -44,8 +45,8 @@ type SessionAuthenticator struct {
 	sessions SessionRepository
 }
 
-func NewSessionAuthenticator(sessions SessionRepository) *SessionAuthenticator {
-	return &SessionAuthenticator{sessions: sessions}
+func NewSessionAuthenticator(q *queries.Queries) *SessionAuthenticator {
+	return &SessionAuthenticator{sessions: &sessionStore{queries: q}}
 }
 
 // Authenticate validates a session and returns the principal to attach to the

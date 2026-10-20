@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -47,10 +50,6 @@ func (e *RemoteError) Unwrap() error {
 	return ErrRemote
 }
 
-type ShopRepository interface {
-	OrganizationIDForShop(ctx context.Context, shopID int32) (string, error)
-}
-
 type MembershipAuthorizer interface {
 	IsMember(ctx context.Context, userID, organizationID string) (bool, error)
 }
@@ -63,14 +62,14 @@ type Gateway interface {
 }
 
 type Service struct {
-	shops      ShopRepository
+	queries    *queries.Queries
 	authorizer MembershipAuthorizer
 	gateway    Gateway
 	config     Config
 }
 
-func NewService(shops ShopRepository, authorizer MembershipAuthorizer, gateway Gateway, config Config) *Service {
-	return &Service{shops: shops, authorizer: authorizer, gateway: gateway, config: config}
+func NewService(q *queries.Queries, authorizer MembershipAuthorizer, gateway Gateway, config Config) *Service {
+	return &Service{queries: q, authorizer: authorizer, gateway: gateway, config: config}
 }
 
 func (s *Service) Configuration() Configuration {
@@ -170,11 +169,14 @@ func (s *Service) authorizeShop(ctx context.Context, cmd ShopCommand) error {
 	if !member {
 		return ErrNotAuthorized
 	}
-	organizationID, err := s.shops.OrganizationIDForShop(ctx, cmd.ShopID)
+	shop, err := s.queries.GetShopByID(ctx, cmd.ShopID)
 	if err != nil {
-		return err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrShopNotFound
+		}
+		return fmt.Errorf("get shop: %w", err)
 	}
-	if organizationID != cmd.OrganizationID {
+	if shop.OrganizationID != cmd.OrganizationID {
 		return ErrShopOrganizationMismatch
 	}
 	return nil

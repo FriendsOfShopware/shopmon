@@ -15,7 +15,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/organization"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -61,39 +65,19 @@ type CreateCommand struct {
 	ExpiresAt     *time.Time
 }
 
-// ShopScope is the ownership information the service needs to authorize and
-// validate a suppression without importing persistence types.
-type ShopScope struct {
-	ShopID         int32
-	OrganizationID string
-}
-
-// Repository is the persistence port.
-type Repository interface {
-	FindShopScope(ctx context.Context, shopID int32) (ShopScope, error)
-	EnvironmentBelongsToShop(ctx context.Context, environmentID, shopID int32) (bool, error)
-	AdvisoryExists(ctx context.Context, advisoryID string) (bool, error)
-	Create(ctx context.Context, record Suppression) (Suppression, error)
-	// Find loads a suppression restricted to the caller's organizations, so a
-	// revoke can be authorized against its actual scope before mutating it.
-	Find(ctx context.Context, id int64, organizationIDs []string) (Suppression, error)
-	Revoke(ctx context.Context, id int64, userID string, organizationIDs []string) (Suppression, error)
-	ListForOrganizations(ctx context.Context, organizationIDs []string, includeInactive bool) ([]Suppression, error)
-}
-
 // Authorizer reports a caller's role within an organization.
 type Authorizer interface {
 	RequireRole(ctx context.Context, userID, organizationID string, allowedRoles ...organization.Role) (organization.Role, error)
 }
 
 type Service struct {
-	repository Repository
+	queries    *queries.Queries
 	authorizer Authorizer
 	now        func() time.Time
 }
 
-func NewService(repository Repository, authorizer Authorizer) *Service {
-	return &Service{repository: repository, authorizer: authorizer, now: time.Now}
+func NewService(q *queries.Queries, authorizer Authorizer) *Service {
+	return &Service{queries: q, authorizer: authorizer, now: time.Now}
 }
 
 // Create records a suppression after validating the scope and the caller's role.
@@ -110,17 +94,20 @@ func (s *Service) Create(ctx context.Context, cmd CreateCommand) (Suppression, e
 		return Suppression{}, ErrExpiryInPast
 	}
 
-	scope, err := s.repository.FindShopScope(ctx, cmd.ShopID)
+	shop, err := s.queries.GetShopByID(ctx, cmd.ShopID)
 	if err != nil {
-		return Suppression{}, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Suppression{}, ErrShopNotFound
+		}
+		return Suppression{}, fmt.Errorf("get shop: %w", err)
 	}
 
-	if err := s.authorizeScope(ctx, cmd.UserID, scope.OrganizationID, cmd.EnvironmentID); err != nil {
+	if err := s.authorizeScope(ctx, cmd.UserID, shop.OrganizationID, cmd.EnvironmentID); err != nil {
 		return Suppression{}, err
 	}
 
 	if cmd.EnvironmentID != nil {
-		belongs, err := s.repository.EnvironmentBelongsToShop(ctx, *cmd.EnvironmentID, cmd.ShopID)
+		belongs, err := s.environmentBelongsToShop(ctx, *cmd.EnvironmentID, cmd.ShopID)
 		if err != nil {
 			return Suppression{}, err
 		}
@@ -129,7 +116,7 @@ func (s *Service) Create(ctx context.Context, cmd CreateCommand) (Suppression, e
 		}
 	}
 
-	exists, err := s.repository.AdvisoryExists(ctx, cmd.AdvisoryID)
+	exists, err := s.advisoryExists(ctx, cmd.AdvisoryID)
 	if err != nil {
 		return Suppression{}, err
 	}
@@ -137,8 +124,8 @@ func (s *Service) Create(ctx context.Context, cmd CreateCommand) (Suppression, e
 		return Suppression{}, ErrAdvisoryNotFound
 	}
 
-	created, err := s.repository.Create(ctx, Suppression{
-		OrganizationID: scope.OrganizationID,
+	created, err := s.create(ctx, Suppression{
+		OrganizationID: shop.OrganizationID,
 		ShopID:         cmd.ShopID,
 		EnvironmentID:  cmd.EnvironmentID,
 		AdvisoryID:     cmd.AdvisoryID,
@@ -166,7 +153,9 @@ func (s *Service) Revoke(ctx context.Context, id int64, userID string, organizat
 		return Suppression{}, ErrNotFound
 	}
 
-	existing, err := s.repository.Find(ctx, id, organizationIDs)
+	// Load restricted to the caller's organizations, so the revoke can be
+	// authorized against its actual scope before mutating it.
+	existing, err := s.find(ctx, id, organizationIDs)
 	if err != nil {
 		return Suppression{}, err
 	}
@@ -174,7 +163,7 @@ func (s *Service) Revoke(ctx context.Context, id int64, userID string, organizat
 		return Suppression{}, err
 	}
 
-	revoked, err := s.repository.Revoke(ctx, id, userID, organizationIDs)
+	revoked, err := s.revoke(ctx, id, userID, organizationIDs)
 	if err != nil {
 		return Suppression{}, err
 	}
@@ -184,7 +173,7 @@ func (s *Service) Revoke(ctx context.Context, id int64, userID string, organizat
 // authorizeScope applies the role policy a suppression's blast radius demands:
 // shop-wide is owner/admin, environment-scoped additionally allows members.
 //
-// Only genuine membership/role denials become ErrNotAuthorized. A repository
+// Only genuine membership/role denials become ErrNotAuthorized. A database
 // or context failure is returned unchanged, so an outage surfaces as an error
 // rather than as a misleading 403.
 func (s *Service) authorizeScope(ctx context.Context, userID, organizationID string, environmentID *int32) error {
@@ -206,7 +195,34 @@ func (s *Service) List(ctx context.Context, organizationIDs []string, includeIna
 	if len(organizationIDs) == 0 {
 		return nil, nil
 	}
-	return s.repository.ListForOrganizations(ctx, organizationIDs, includeInactive)
+	rows, err := s.queries.ListSuppressionsForOrganizations(ctx, queries.ListSuppressionsForOrganizationsParams{
+		OrganizationIds: organizationIDs,
+		IncludeInactive: includeInactive,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list suppressions: %w", err)
+	}
+
+	out := make([]Suppression, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, Suppression{
+			ID:              row.ID,
+			OrganizationID:  row.OrganizationID,
+			ShopID:          row.ShopID,
+			EnvironmentID:   row.EnvironmentID,
+			AdvisoryID:      row.AdvisoryID,
+			Reason:          row.Reason,
+			ExpiresAt:       database.TimePtr(row.ExpiresAt),
+			CreatedBy:       row.CreatedBy,
+			CreatedAt:       row.CreatedAt.Time,
+			RevokedAt:       database.TimePtr(row.RevokedAt),
+			RevokedBy:       row.RevokedBy,
+			ShopName:        row.ShopName,
+			EnvironmentName: row.EnvironmentName,
+			CreatedByName:   row.CreatedByName,
+		})
+	}
+	return out, nil
 }
 
 // Active reports whether a suppression is currently in force.
@@ -215,4 +231,145 @@ func (s Suppression) Active(now time.Time) bool {
 		return false
 	}
 	return s.ExpiresAt == nil || s.ExpiresAt.After(now)
+}
+
+// uniqueViolation is the PostgreSQL error code for a unique constraint breach.
+// The partial unique indexes on advisory_suppression turn a double-submit into
+// this rather than the lost-update clobber the legacy ignores PATCH suffers.
+const uniqueViolation = "23505"
+
+func (s *Service) environmentBelongsToShop(ctx context.Context, environmentID, shopID int32) (bool, error) {
+	row, err := s.queries.GetEnvironmentByID(ctx, environmentID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("get environment: %w", err)
+	}
+	return row.ShopID == shopID, nil
+}
+
+func (s *Service) advisoryExists(ctx context.Context, advisoryID string) (bool, error) {
+	if _, err := s.queries.GetComposerAdvisory(ctx, advisoryID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("get advisory: %w", err)
+	}
+	return true, nil
+}
+
+func (s *Service) create(ctx context.Context, record Suppression) (Suppression, error) {
+	row, err := s.insert(ctx, record)
+	if err == nil {
+		out := toDomain(row)
+		s.fillDisplayNames(ctx, &out)
+		return out, nil
+	}
+
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != uniqueViolation {
+		return Suppression{}, fmt.Errorf("insert suppression: %w", err)
+	}
+
+	// The partial unique indexes cannot express expiry (NOW() is not usable in
+	// an index predicate), so the conflicting row may be an expired suppression
+	// that every read path already treats as inactive. Retire it — a soft
+	// revoke, preserving the audit trail — and retry once. If nothing expired
+	// was blocking, the scope really is actively suppressed.
+	retired, retireErr := s.queries.RevokeExpiredAdvisorySuppressions(ctx, queries.RevokeExpiredAdvisorySuppressionsParams{
+		ShopID:        record.ShopID,
+		AdvisoryID:    record.AdvisoryID,
+		EnvironmentID: record.EnvironmentID,
+		RevokedBy:     record.CreatedBy,
+	})
+	if retireErr != nil {
+		return Suppression{}, fmt.Errorf("retire expired suppression: %w", retireErr)
+	}
+	if retired == 0 {
+		return Suppression{}, ErrAlreadySuppressed
+	}
+
+	row, err = s.insert(ctx, record)
+	if err != nil {
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolation {
+			return Suppression{}, ErrAlreadySuppressed
+		}
+		return Suppression{}, fmt.Errorf("insert suppression: %w", err)
+	}
+	out := toDomain(row)
+	s.fillDisplayNames(ctx, &out)
+	return out, nil
+}
+
+// fillDisplayNames resolves the shop (and environment) names the API contract
+// requires on a created suppression; the bare INSERT ... RETURNING cannot
+// provide them. Best-effort: a lookup failure leaves the field empty rather
+// than failing a write that already succeeded.
+func (s *Service) fillDisplayNames(ctx context.Context, record *Suppression) {
+	if shop, err := s.queries.GetShopByID(ctx, record.ShopID); err == nil {
+		record.ShopName = shop.Name
+	}
+	if record.EnvironmentID != nil {
+		if env, err := s.queries.GetEnvironmentByID(ctx, *record.EnvironmentID); err == nil {
+			record.EnvironmentName = &env.Name
+		}
+	}
+}
+
+func (s *Service) insert(ctx context.Context, record Suppression) (queries.AdvisorySuppression, error) {
+	return s.queries.CreateAdvisorySuppression(ctx, queries.CreateAdvisorySuppressionParams{
+		OrganizationID: record.OrganizationID,
+		ShopID:         record.ShopID,
+		EnvironmentID:  record.EnvironmentID,
+		AdvisoryID:     record.AdvisoryID,
+		Reason:         record.Reason,
+		ExpiresAt:      database.TimestampFromPtr(record.ExpiresAt),
+		CreatedBy:      record.CreatedBy,
+	})
+}
+
+func (s *Service) find(ctx context.Context, id int64, organizationIDs []string) (Suppression, error) {
+	row, err := s.queries.GetAdvisorySuppressionInOrgs(ctx, queries.GetAdvisorySuppressionInOrgsParams{
+		ID:              id,
+		OrganizationIds: organizationIDs,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Suppression{}, ErrNotFound
+		}
+		return Suppression{}, fmt.Errorf("get suppression: %w", err)
+	}
+	return toDomain(row), nil
+}
+
+func (s *Service) revoke(ctx context.Context, id int64, userID string, organizationIDs []string) (Suppression, error) {
+	row, err := s.queries.RevokeAdvisorySuppression(ctx, queries.RevokeAdvisorySuppressionParams{
+		ID:              id,
+		RevokedBy:       &userID,
+		OrganizationIds: organizationIDs,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Suppression{}, ErrNotFound
+		}
+		return Suppression{}, fmt.Errorf("revoke suppression: %w", err)
+	}
+	return toDomain(row), nil
+}
+
+func toDomain(row queries.AdvisorySuppression) Suppression {
+	return Suppression{
+		ID:             row.ID,
+		OrganizationID: row.OrganizationID,
+		ShopID:         row.ShopID,
+		EnvironmentID:  row.EnvironmentID,
+		AdvisoryID:     row.AdvisoryID,
+		Reason:         row.Reason,
+		ExpiresAt:      database.TimePtr(row.ExpiresAt),
+		CreatedBy:      row.CreatedBy,
+		CreatedAt:      row.CreatedAt.Time,
+		RevokedAt:      database.TimePtr(row.RevokedAt),
+		RevokedBy:      row.RevokedBy,
+	}
 }

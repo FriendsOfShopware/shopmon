@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSchedulerRegistersRecurringJobs(t *testing.T) {
-	scheduler, err := NewScheduler(&scheduleRepositoryStub{}, &scheduleDispatcherStub{}, SchedulerConfig{})
+	scheduler, err := newScheduler(&scheduleRepositoryStub{}, &scheduleDispatcherStub{}, SchedulerConfig{})
 	require.NoError(t, err)
 	assert.Len(t, scheduler.cron.Entries(), 8)
 }
@@ -25,7 +26,7 @@ func TestSchedulerFiltersRepeatedConnectionFailures(t *testing.T) {
 		{ID: 3, ConnectionIssueCount: 2},
 	}}
 	dispatcher := &scheduleDispatcherStub{}
-	scheduler, err := NewScheduler(repository, dispatcher, SchedulerConfig{})
+	scheduler, err := newScheduler(repository, dispatcher, SchedulerConfig{})
 	require.NoError(t, err)
 
 	scheduler.enqueueEnvironmentScrapes(context.Background())
@@ -36,14 +37,14 @@ func TestSchedulerFiltersRepeatedConnectionFailures(t *testing.T) {
 func TestSchedulerOnlyQueriesSitespeedTargetsWhenEnabled(t *testing.T) {
 	repository := &scheduleRepositoryStub{sitespeed: []int32{4, 5}}
 	dispatcher := &scheduleDispatcherStub{}
-	disabled, err := NewScheduler(repository, dispatcher, SchedulerConfig{})
+	disabled, err := newScheduler(repository, dispatcher, SchedulerConfig{})
 	require.NoError(t, err)
 
 	disabled.enqueueSitespeedScrapes(context.Background())
 	assert.Zero(t, repository.sitespeedCalls)
 	assert.Empty(t, dispatcher.sitespeedScrapes)
 
-	enabled, err := NewScheduler(repository, dispatcher, SchedulerConfig{SitespeedEnabled: true})
+	enabled, err := newScheduler(repository, dispatcher, SchedulerConfig{SitespeedEnabled: true})
 	require.NoError(t, err)
 	enabled.rand = rand.New(rand.NewPCG(1, 2))
 	enabled.enqueueSitespeedScrapes(context.Background())
@@ -56,7 +57,7 @@ func TestSchedulerSpreadsSitespeedScrapesAcrossTheDay(t *testing.T) {
 	ids := []int32{4, 5, 6, 7}
 	repository := &scheduleRepositoryStub{sitespeed: ids}
 	dispatcher := &scheduleDispatcherStub{}
-	scheduler, err := NewScheduler(repository, dispatcher, SchedulerConfig{SitespeedEnabled: true})
+	scheduler, err := newScheduler(repository, dispatcher, SchedulerConfig{SitespeedEnabled: true})
 	require.NoError(t, err)
 	scheduler.rand = rand.New(rand.NewPCG(1, 2))
 
@@ -152,7 +153,7 @@ func assertSitespeedDelaysSpread(t *testing.T, delays []time.Duration, window ti
 func TestSchedulerStopsFanoutWhenRepositoryFails(t *testing.T) {
 	repository := &scheduleRepositoryStub{environmentErr: errors.New("database unavailable")}
 	dispatcher := &scheduleDispatcherStub{}
-	scheduler, err := NewScheduler(repository, dispatcher, SchedulerConfig{})
+	scheduler, err := newScheduler(repository, dispatcher, SchedulerConfig{})
 	require.NoError(t, err)
 
 	scheduler.enqueueEnvironmentScrapes(context.Background())
@@ -164,7 +165,7 @@ func TestNewSchedulerRequiresDependencies(t *testing.T) {
 	_, err := NewScheduler(nil, &scheduleDispatcherStub{}, SchedulerConfig{})
 	require.Error(t, err)
 
-	_, err = NewScheduler(&scheduleRepositoryStub{}, nil, SchedulerConfig{})
+	_, err = NewScheduler(queries.New(nil), nil, SchedulerConfig{})
 	require.Error(t, err)
 }
 

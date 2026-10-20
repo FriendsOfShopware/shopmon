@@ -9,7 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -52,17 +54,6 @@ type Verification struct {
 	ExpiresAt  time.Time
 }
 
-type CredentialRepository interface {
-	EmailExists(ctx context.Context, email string) (bool, error)
-	CreateCredentialUser(ctx context.Context, user CredentialUser, accountID, passwordHash string) error
-	FindUserByEmail(ctx context.Context, email string) (CredentialUser, error)
-	CredentialPassword(ctx context.Context, userID string) (string, error)
-	CreateVerification(ctx context.Context, verification Verification) error
-	FindVerification(ctx context.Context, token string) (Verification, error)
-	VerifyEmail(ctx context.Context, userID, verificationID string) error
-	ResetPassword(ctx context.Context, userID, verificationID, passwordHash string) error
-}
-
 type CredentialMailer interface {
 	SendConfirmation(ctx context.Context, recipient, name, token string) error
 	SendPasswordReset(ctx context.Context, recipient, name, token string) error
@@ -73,7 +64,7 @@ type CredentialConfig struct {
 }
 
 type CredentialService struct {
-	repository CredentialRepository
+	repository *credentialStore
 	sessions   *SessionService
 	mailer     CredentialMailer
 	config     CredentialConfig
@@ -81,9 +72,9 @@ type CredentialService struct {
 	now        func() time.Time
 }
 
-func NewCredentialService(repository CredentialRepository, sessions *SessionService, mailer CredentialMailer, config CredentialConfig) *CredentialService {
+func NewCredentialService(pool *pgxpool.Pool, q *queries.Queries, sessions *SessionService, mailer CredentialMailer, config CredentialConfig) *CredentialService {
 	return &CredentialService{
-		repository: repository,
+		repository: &credentialStore{pool: pool, queries: q},
 		sessions:   sessions,
 		mailer:     mailer,
 		config:     config,

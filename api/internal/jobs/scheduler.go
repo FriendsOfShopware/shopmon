@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	cron "github.com/robfig/cron/v3"
 )
 
@@ -68,7 +69,14 @@ type Scheduler struct {
 	rand       *rand.Rand
 }
 
-func NewScheduler(repository ScheduleRepository, dispatcher ScheduleDispatcher, config SchedulerConfig) (*Scheduler, error) {
+func NewScheduler(q *queries.Queries, dispatcher ScheduleDispatcher, config SchedulerConfig) (*Scheduler, error) {
+	if q == nil {
+		return nil, errors.New("create job scheduler: queries is required")
+	}
+	return newScheduler(&scheduleStore{queries: q}, dispatcher, config)
+}
+
+func newScheduler(repository ScheduleRepository, dispatcher ScheduleDispatcher, config SchedulerConfig) (*Scheduler, error) {
 	if repository == nil {
 		return nil, errors.New("create job scheduler: repository is required")
 	}
