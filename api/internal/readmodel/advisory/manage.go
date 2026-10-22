@@ -73,9 +73,6 @@ func (s *Service) Create(ctx context.Context, input CreateInput) (AdvisoryView, 
 	if err != nil {
 		return AdvisoryView{}, err
 	}
-	if err := s.ensureIdentifiersUnused(ctx, n.cve, n.ghsa); err != nil {
-		return AdvisoryView{}, err
-	}
 	if s.pool == nil {
 		return AdvisoryView{}, errors.New("create advisory: database pool is required")
 	}
@@ -115,9 +112,6 @@ func (s *Service) ImportGHSA(ctx context.Context, input CreateInput) (AdvisoryVi
 	}
 	if n.ghsa == nil {
 		return AdvisoryView{}, fmt.Errorf("%w: ghsaId is required for a GitHub import", ErrInvalidInput)
-	}
-	if err := s.ensureIdentifiersUnused(ctx, n.cve, n.ghsa); err != nil {
-		return AdvisoryView{}, err
 	}
 	if s.pool == nil {
 		return AdvisoryView{}, errors.New("import advisory: database pool is required")
@@ -201,11 +195,11 @@ func normalizeCreateInput(input CreateInput) (normalizedCreate, error) {
 // ensureIdentifiersUnused refuses identifiers another row already claims:
 // splitting one vulnerability across two advisories would double-match and
 // double-alert shops. The admin links or enriches the existing row instead.
-func (s *Service) ensureIdentifiersUnused(ctx context.Context, cve, ghsa *string) error {
+func (s *Service) ensureIdentifiersUnused(ctx context.Context, txq *queries.Queries, cve, ghsa *string) error {
 	if cve == nil && ghsa == nil {
 		return nil
 	}
-	existing, err := s.queries.ListComposerAdvisoriesByIdentifiers(ctx, queries.ListComposerAdvisoriesByIdentifiersParams{
+	existing, err := txq.ListComposerAdvisoriesByIdentifiers(ctx, queries.ListComposerAdvisoriesByIdentifiersParams{
 		Cve:    cve,
 		GhsaID: ghsa,
 	})
@@ -233,6 +227,12 @@ func (s *Service) insertManualAdvisory(ctx context.Context, input CreateInput, n
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	txq := s.queries.WithTx(tx)
+	if err := txq.LockComposerAdvisoryCatalog(ctx); err != nil {
+		return AdvisoryView{}, fmt.Errorf("lock advisory catalog: %w", err)
+	}
+	if err := s.ensureIdentifiersUnused(ctx, txq, n.cve, n.ghsa); err != nil {
+		return AdvisoryView{}, err
+	}
 
 	now := time.Now().UTC()
 	reportedAt := pgtype.Timestamp{Time: now, Valid: true}
@@ -359,6 +359,9 @@ func (s *Service) LinkOfficial(ctx context.Context, advisoryID string, input Lin
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	txq := s.queries.WithTx(tx)
+	if err := txq.LockComposerAdvisoryCatalog(ctx); err != nil {
+		return AdvisoryView{}, fmt.Errorf("lock advisory catalog: %w", err)
+	}
 
 	current, err := txq.GetComposerAdvisoryForUpdate(ctx, advisoryID)
 	if err != nil {
@@ -478,6 +481,9 @@ func (s *Service) mergeOfficialRow(ctx context.Context, txq *queries.Queries, su
 		AdvisoryID_2: official.AdvisoryID,
 	}); err != nil {
 		return fmt.Errorf("merge advisory notification markers: %w", err)
+	}
+	if err := txq.RevokeExpiredSuppressionsForAdvisoryMerge(ctx, []string{survivor.AdvisoryID, official.AdvisoryID}); err != nil {
+		return fmt.Errorf("retire expired advisory suppressions: %w", err)
 	}
 	if err := txq.MergeRevokedAdvisorySuppressions(ctx, queries.MergeRevokedAdvisorySuppressionsParams{
 		AdvisoryID:   survivor.AdvisoryID,

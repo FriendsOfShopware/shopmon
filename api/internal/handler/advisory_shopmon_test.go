@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -359,4 +361,44 @@ func TestAdminImportGhsaAdvisory(t *testing.T) {
 	status, fetched = shopmonAdvRequest(t, "GET", env.Server.URL+"/api/advisories/CVE-2026-6666", userToken, nil)
 	require.Equal(t, http.StatusOK, status, "%v", fetched)
 	assert.Equal(t, "GHSA-vj8m-rx9g-45fq", fetched["advisoryId"])
+}
+
+func TestAdvisoryMergeRetiresExpiredSuppressions(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+	token := env.SeedUser(t, "admin", "Admin", "admin@example.com", "admin")
+	env.SeedOrganization(t, "org", "Org", "org", "admin")
+	shopID := int32(env.SeedShop(t, "org", "Shop"))
+	envID := int32(env.SeedEnvironment(t, "org", int(shopID), "Production", "https://example.com"))
+	status, created := shopmonAdvRequest(t, "POST", env.Server.URL+"/api/admin/advisories", token, shopmonAdvCreatePayload(true))
+	require.Equal(t, http.StatusCreated, status)
+	survivorID := created["advisoryId"].(string)
+	officialID := "CVE-2026-9911"
+	seedAdvisory(t, env.Queries, officialID, []string{"shopware/core"}, true, nil)
+	var activeIDs []int64
+	for _, scope := range []*int32{nil, &envID} {
+		_, err := env.Queries.CreateAdvisorySuppression(ctx, queries.CreateAdvisorySuppressionParams{
+			OrganizationID: "org", ShopID: shopID, EnvironmentID: scope, AdvisoryID: survivorID,
+			Reason: "Expired acknowledgement", ExpiresAt: pgtype.Timestamp{Time: time.Now().UTC().Add(-time.Hour), Valid: true},
+		})
+		require.NoError(t, err)
+		active, err := env.Queries.CreateAdvisorySuppression(ctx, queries.CreateAdvisorySuppressionParams{
+			OrganizationID: "org", ShopID: shopID, EnvironmentID: scope, AdvisoryID: officialID,
+			Reason: "Still mitigated", ExpiresAt: pgtype.Timestamp{Time: time.Now().UTC().Add(time.Hour), Valid: true},
+		})
+		require.NoError(t, err)
+		activeIDs = append(activeIDs, active.ID)
+	}
+	status, body := shopmonAdvRequest(t, "POST", env.Server.URL+"/api/admin/advisories/"+survivorID+"/link-official", token, map[string]any{"cve": officialID})
+	require.Equal(t, http.StatusOK, status, "%v", body)
+	active, err := env.Queries.ListActiveSuppressionsForEnvironment(ctx, envID)
+	require.NoError(t, err)
+	require.Len(t, active, 2)
+	for _, suppression := range active {
+		assert.Contains(t, activeIDs, suppression.ID)
+		assert.Equal(t, survivorID, suppression.AdvisoryID)
+	}
+	var retired int
+	require.NoError(t, env.Pool.QueryRow(ctx, `SELECT count(*) FROM advisory_suppression WHERE advisory_id=$1 AND revoked_at IS NOT NULL`, survivorID).Scan(&retired))
+	assert.Equal(t, 2, retired, "expired acknowledgements remain as history")
 }

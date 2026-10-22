@@ -11,6 +11,7 @@ import (
 
 	catalogadvisory "github.com/friendsofshopware/shopmon/api/internal/catalog/advisory"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -55,6 +56,10 @@ func TestSyncMergesIntoLinkedShopmonAdvisory(t *testing.T) {
 		AdvisoryID:       "SHOPMON-2026-0001",
 		PackageName:      "shopware/core",
 		AffectedVersions: ">=6.7.0.0,<6.7.10.1",
+	}))
+	// A mistaken manual package must disappear when official ranges arrive.
+	require.NoError(t, env.Queries.UpsertComposerAdvisoryPackage(ctx, queries.UpsertComposerAdvisoryPackageParams{
+		AdvisoryID: "SHOPMON-2026-0001", PackageName: "qa/incorrect-package", AffectedVersions: "<2.0.0",
 	}))
 	_, err = env.Pool.Exec(ctx, `
 		INSERT INTO environment_sbom_component (environment_id, package_name, version)
@@ -221,4 +226,73 @@ func advisorySyncServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return server
+}
+
+func TestSyncAndLinkSerializeCatalogIdentity(t *testing.T) {
+	for _, first := range []string{"sync", "link"} {
+		t.Run(first+" first", func(t *testing.T) {
+			env := testutil.Setup(t)
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+			defer cancel()
+			env.SeedUser(t, "admin", "Admin", "admin@example.com", "admin")
+			server := advisorySyncServer(t)
+			syncService := catalogadvisory.NewServiceWithClient(env.Pool, env.Queries, server.URL, server.Client())
+			require.NoError(t, syncService.Sync(ctx))
+			manualService := advisoryread.NewService(env.Pool, env.Queries, nil)
+			manual, err := manualService.Create(ctx, advisoryread.CreateInput{
+				Title: "Early warning", CreatedBy: "admin",
+				Packages: []advisoryread.PackageInput{{PackageName: "shopware/core", AffectedVersions: "<6.7.10.1"}},
+			})
+			require.NoError(t, err)
+			gate, err := env.Pool.Begin(ctx)
+			require.NoError(t, err)
+			defer func() { _ = gate.Rollback(ctx) }()
+			require.NoError(t, env.Queries.WithTx(gate).LockComposerAdvisoryCatalog(ctx))
+
+			done := make(chan error, 2)
+			start := func(operation string) {
+				go func() {
+					if operation == "sync" {
+						done <- syncService.Sync(ctx)
+						return
+					}
+					_, err := manualService.LinkOfficial(ctx, manual.Advisory.AdvisoryID, advisoryread.LinkOfficialInput{Cve: new("CVE-2026-0007")})
+					done <- err
+				}()
+			}
+			waitForBlocked := func(want int) {
+				require.Eventually(t, func() bool {
+					var count int
+					err := env.Pool.QueryRow(ctx, `SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND NOT granted AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`).Scan(&count)
+					return err == nil && count == want
+				}, 5*time.Second, 10*time.Millisecond)
+			}
+			start(first)
+			waitForBlocked(1)
+			if first == "sync" {
+				start("link")
+			} else {
+				start("sync")
+			}
+			waitForBlocked(2)
+			require.NoError(t, gate.Commit(ctx))
+			for range 2 {
+				select {
+				case err := <-done:
+					require.NoError(t, err)
+				case <-ctx.Done():
+					t.Fatal(ctx.Err())
+				}
+			}
+			_, err = env.Queries.GetComposerAdvisory(ctx, "CVE-2026-0007")
+			require.ErrorIs(t, err, pgx.ErrNoRows)
+			row, err := env.Queries.GetComposerAdvisory(ctx, manual.Advisory.AdvisoryID)
+			require.NoError(t, err)
+			require.Equal(t, "CVE-2026-0007", *row.Cve)
+			packages, err := env.Queries.ListComposerAdvisoryPackagesForAdvisory(ctx, row.AdvisoryID)
+			require.NoError(t, err)
+			require.Len(t, packages, 1)
+			require.Equal(t, "PKSA-core-7", *packages[0].PackagistAdvisoryID)
+		})
+	}
 }

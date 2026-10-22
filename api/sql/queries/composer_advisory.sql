@@ -255,6 +255,11 @@ RETURNING *;
 -- name: NextShopmonAdvisoryNumber :one
 SELECT nextval('shopmon_advisory_seq')::bigint AS number;
 
+-- Serialize catalog identity changes before resolving aliases or moving
+-- packages. Held only during database work, never while fetching upstream.
+-- name: LockComposerAdvisoryCatalog :exec
+SELECT pg_advisory_xact_lock(hashtextextended('shopmon:composer-advisory-catalog', 0));
+
 -- name: InsertManualAdvisory :one
 INSERT INTO composer_advisory (
   advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at,
@@ -305,6 +310,12 @@ RETURNING *;
 
 -- name: DeleteComposerAdvisoryPackages :exec
 DELETE FROM composer_advisory_package WHERE advisory_id = $1;
+
+-- Official data replaces manual ranges on first takeover. Preserve already
+-- synced packages, including those outside the current package-scoped fetch.
+-- name: DeleteManualComposerAdvisoryPackages :exec
+DELETE FROM composer_advisory_package
+WHERE advisory_id = $1 AND packagist_advisory_id IS NULL;
 
 -- name: GetComposerAdvisoryForUpdate :one
 SELECT * FROM composer_advisory WHERE advisory_id = $1 FOR UPDATE;
@@ -377,6 +388,13 @@ ON CONFLICT (environment_id, advisory_id) DO NOTHING;
 -- name: MergeRevokedAdvisorySuppressions :exec
 UPDATE advisory_suppression SET advisory_id = $1
 WHERE advisory_id = $2 AND revoked_at IS NOT NULL;
+
+-- Expired rows still occupy the partial unique indexes. Retire them on both
+-- sides before moving suppressions so a valid acknowledgement can survive.
+-- name: RevokeExpiredSuppressionsForAdvisoryMerge :exec
+UPDATE advisory_suppression SET revoked_at = NOW()
+WHERE advisory_id = ANY(sqlc.arg('advisory_ids')::text[])
+  AND revoked_at IS NULL AND expires_at <= NOW();
 
 -- name: MergeActiveAdvisorySuppressions :exec
 UPDATE advisory_suppression s SET advisory_id = $1

@@ -309,6 +309,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  type AdvisoryCwe,
   type AdvisoryPackageInput,
   type CreateAdvisoryRequest,
   type SeverityLevel,
@@ -316,6 +317,7 @@ import {
   adminImportGhsaAdvisory,
   adminPreviewGhsaImport,
 } from "@/api/generated";
+import { advisoryCwesFromInput } from "@/helpers/advisory";
 import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -358,6 +360,8 @@ const importError = ref("");
 const existingAdvisoryId = ref("");
 const importedGhsaId = ref("");
 const patchedNote = ref("");
+const importedCwes = ref<AdvisoryCwe[]>([]);
+const importedUpgrade = ref("");
 
 // Submitting creates a GitHub import exactly while the form still carries
 // the fetched GHSA id; editing it away falls back to a Shopmon advisory.
@@ -393,18 +397,20 @@ async function fetchPreview() {
     form.cvssScore = data.cvssScore != null ? String(data.cvssScore) : "";
     form.cvssVector = data.cvssVector ?? "";
     form.cwes = data.cwes.map((c) => c.id).join(", ");
+    importedCwes.value = data.cwes;
     form.link = data.link ?? "";
     form.externalReferences = data.externalReferences.join("\n");
     form.reportedAt = data.reportedAt ? data.reportedAt.slice(0, 10) : "";
     form.ghsaId = data.ghsaId;
     form.cve = data.cve ?? "";
 
-    const patched = [...new Set(data.packages.map((p) => p.patchedVersion).filter(Boolean))];
-    patchedNote.value =
-      patched.length === 1 ? t("admin.importPatched", { version: patched[0] }) : "";
-    if (patched.length === 1 && form.recommendedUpgrade === "") {
-      form.recommendedUpgrade = patched[0] as string;
+    const patched = [...new Set(data.packages.map((p) => p.patchedVersion ?? ""))];
+    const nextUpgrade = patched.length === 1 ? patched[0]! : "";
+    patchedNote.value = nextUpgrade ? t("admin.importPatched", { version: nextUpgrade }) : "";
+    if (form.recommendedUpgrade === "" || form.recommendedUpgrade === importedUpgrade.value) {
+      form.recommendedUpgrade = nextUpgrade;
     }
+    importedUpgrade.value = nextUpgrade;
     importedGhsaId.value = data.ghsaId;
   } finally {
     importing.value = false;
@@ -441,7 +447,7 @@ async function submit() {
       description: optional(form.description),
       cvssScore: Number.isFinite(score) ? score : undefined,
       cvssVector: optional(form.cvssVector),
-      cwes: splitList(form.cwes).map((id) => ({ id, name: "" })),
+      cwes: advisoryCwesFromInput(form.cwes, importedCwes.value),
       link: optional(form.link),
       externalReferences: form.externalReferences
         .split("\n")

@@ -8,6 +8,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/ghsa"
 	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -124,4 +125,35 @@ func TestImportGHSARequiresGHSAID(t *testing.T) {
 
 	_, err = svc.PreviewGHSAImport(context.Background(), "GHSA-vj8m-rx9g-45fq")
 	assert.ErrorIs(t, err, advisoryread.ErrGHSAImportUnavailable)
+}
+
+func TestPreviewGHSACombinesPackageRanges(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+	env.SeedUser(t, "admin", "Admin", "admin@example.com", "admin")
+	fetched := fetchedStub()
+	fetched.Packages = []ghsa.Package{
+		{Name: "vendor/package", Ecosystem: "composer", VulnerableVersionRange: ">=1.0.0,<1.2.0", PatchedVersion: "1.2.0"},
+		{Name: "Vendor/Package", Ecosystem: "composer", VulnerableVersionRange: ">=2.0.0,<2.1.0", PatchedVersion: "2.1.0"},
+		{Name: "vendor/package", Ecosystem: "composer", VulnerableVersionRange: ">=1.0.0,<1.2.0", PatchedVersion: "1.2.0"},
+	}
+	svc := advisoryread.NewService(env.Pool, env.Queries, ghsaFetcherStub{advisory: fetched})
+	preview, err := svc.PreviewGHSAImport(ctx, fetched.GHSAID)
+	require.NoError(t, err)
+	require.Len(t, preview.Packages, 1)
+	pkg := preview.Packages[0]
+	require.Equal(t, ">=1.0.0,<1.2.0 || >=2.0.0,<2.1.0", pkg.AffectedVersions)
+	require.Empty(t, pkg.PatchedVersion, "different branches must not produce misleading single-version advice")
+	for installed, want := range map[string]bool{"1.1.0": true, "2.0.5": true, "1.5.0": false, "2.1.0": false} {
+		matched, err := version.Satisfies(installed, pkg.AffectedVersions)
+		require.NoError(t, err)
+		assert.Equal(t, want, matched, installed)
+	}
+	imported, err := svc.ImportGHSA(ctx, advisoryread.CreateInput{
+		Title: preview.Title, GhsaID: &preview.GhsaID, CreatedBy: "admin",
+		Packages: []advisoryread.PackageInput{{PackageName: pkg.PackageName, AffectedVersions: pkg.AffectedVersions}},
+	})
+	require.NoError(t, err)
+	require.Len(t, imported.Packages, 1)
+	assert.Equal(t, pkg.AffectedVersions, imported.Packages[0].AffectedVersions)
 }

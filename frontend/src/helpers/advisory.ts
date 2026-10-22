@@ -1,5 +1,16 @@
 // Shared severity styling and link safety for the advisory pages.
 
+import type { AdvisoryCwe } from "@/api/generated";
+
+export function advisoryCwesFromInput(value: string, known: AdvisoryCwe[]): AdvisoryCwe[] {
+  const names = new Map(known.map((cwe) => [cwe.id.toUpperCase(), cwe.name]));
+  return value
+    .split(",")
+    .map((id) => id.trim().toUpperCase())
+    .filter(Boolean)
+    .map((id) => ({ id, name: names.get(id) ?? "" }));
+}
+
 type AdvisoryOriginLike = {
   origin?: string | null;
   cve?: string | null;

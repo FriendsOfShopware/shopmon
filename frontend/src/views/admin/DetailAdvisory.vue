@@ -465,7 +465,12 @@ import {
   adminLinkAdvisoryOfficial,
   adminUpdateAdvisory,
 } from "@/api/generated";
-import { isAdvisoryContentLocked, isManualAdvisory, isSafeHttpUrl } from "@/helpers/advisory";
+import {
+  advisoryCwesFromInput,
+  isAdvisoryContentLocked,
+  isManualAdvisory,
+  isSafeHttpUrl,
+} from "@/helpers/advisory";
 import { formatDate } from "@/helpers/formatter";
 import { sanitizeHtml } from "@/helpers/sanitize";
 import { computed, reactive, ref, watch } from "vue";
@@ -548,7 +553,9 @@ function loadContentForm(a: AdminAdvisory) {
   contentForm.externalReferences = (a.externalReferences ?? []).join("\n");
   contentError.value = "";
   contentSuccess.value = false;
+}
 
+function loadLinkForm(a: AdminAdvisory) {
   linkForm.cve = a.cve ?? "";
   linkForm.ghsaId = a.ghsaId ?? "";
   linkForm.link = a.link ?? "";
@@ -579,7 +586,7 @@ async function saveContent() {
         description: contentForm.description,
         cvssScore: Number.isFinite(score) ? score : null,
         cvssVector: contentForm.cvssVector,
-        cwes: splitList(contentForm.cwes).map((id) => ({ id, name: "" })),
+        cwes: advisoryCwesFromInput(contentForm.cwes, advisory.value.cwes ?? []),
         link: contentForm.link,
         externalReferences: contentForm.externalReferences
           .split("\n")
@@ -596,7 +603,6 @@ async function saveContent() {
       return;
     }
     advisory.value = data;
-    loadForm(data);
     loadContentForm(data);
     contentSuccess.value = true;
   } finally {
@@ -624,8 +630,8 @@ async function linkOfficial() {
       return;
     }
     advisory.value = data;
-    loadForm(data);
     loadContentForm(data);
+    loadLinkForm(data);
     linkSuccess.value = true;
   } finally {
     linking.value = false;
@@ -709,6 +715,7 @@ watch(
     advisory.value = data;
     loadForm(data);
     loadContentForm(data);
+    loadLinkForm(data);
   },
   { immediate: true },
 );

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -103,14 +104,33 @@ func (s *Service) PreviewGHSAImport(ctx context.Context, ref string) (GHSAPrevie
 		}
 		preview.ExternalReferences = append(preview.ExternalReferences, ref)
 	}
+	packageIndexes := make(map[string]int)
+	ranges := make(map[string][]string)
 	for _, pkg := range fetched.Packages {
 		if pkg.Ecosystem != "composer" {
 			continue
 		}
+		name := strings.ToLower(strings.TrimSpace(pkg.Name))
+		affected := strings.TrimSpace(pkg.VulnerableVersionRange)
+		patched := strings.TrimSpace(pkg.PatchedVersion)
+		if index, exists := packageIndexes[name]; exists {
+			if !slices.Contains(ranges[name], affected) {
+				ranges[name] = append(ranges[name], affected)
+				preview.Packages[index].AffectedVersions = strings.Join(ranges[name], " || ")
+			}
+			// Different vulnerable branches can have different fixes. Do not
+			// recommend one branch's patch as a fix for every affected range.
+			if preview.Packages[index].PatchedVersion != patched {
+				preview.Packages[index].PatchedVersion = ""
+			}
+			continue
+		}
+		packageIndexes[name] = len(preview.Packages)
+		ranges[name] = []string{affected}
 		preview.Packages = append(preview.Packages, GHSAPreviewPackage{
-			PackageName:      strings.ToLower(pkg.Name),
-			AffectedVersions: pkg.VulnerableVersionRange,
-			PatchedVersion:   pkg.PatchedVersion,
+			PackageName:      name,
+			AffectedVersions: affected,
+			PatchedVersion:   patched,
 		})
 	}
 	if len(preview.Packages) == 0 {

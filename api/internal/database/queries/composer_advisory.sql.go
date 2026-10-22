@@ -94,6 +94,18 @@ func (q *Queries) DeleteComposerAdvisoryPackages(ctx context.Context, advisoryID
 	return err
 }
 
+const deleteManualComposerAdvisoryPackages = `-- name: DeleteManualComposerAdvisoryPackages :exec
+DELETE FROM composer_advisory_package
+WHERE advisory_id = $1 AND packagist_advisory_id IS NULL
+`
+
+// Official data replaces manual ranges on first takeover. Preserve already
+// synced packages, including those outside the current package-scoped fetch.
+func (q *Queries) DeleteManualComposerAdvisoryPackages(ctx context.Context, advisoryID string) error {
+	_, err := q.db.Exec(ctx, deleteManualComposerAdvisoryPackages, advisoryID)
+	return err
+}
+
 const getComposerAdvisory = `-- name: GetComposerAdvisory :one
 SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by FROM composer_advisory WHERE advisory_id = $1
 `
@@ -1002,6 +1014,17 @@ func (q *Queries) ListVisibleComposerAdvisories(ctx context.Context) ([]Composer
 	return items, nil
 }
 
+const lockComposerAdvisoryCatalog = `-- name: LockComposerAdvisoryCatalog :exec
+SELECT pg_advisory_xact_lock(hashtextextended('shopmon:composer-advisory-catalog', 0))
+`
+
+// Serialize catalog identity changes before resolving aliases or moving
+// packages. Held only during database work, never while fetching upstream.
+func (q *Queries) LockComposerAdvisoryCatalog(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, lockComposerAdvisoryCatalog)
+	return err
+}
+
 const markComposerAdvisoryDetailsAttemptedByCve = `-- name: MarkComposerAdvisoryDetailsAttemptedByCve :exec
 UPDATE composer_advisory SET details_attempted_at = NOW()
 WHERE cve = $1
@@ -1147,6 +1170,19 @@ func (q *Queries) NextShopmonAdvisoryNumber(ctx context.Context) (int64, error) 
 	var number int64
 	err := row.Scan(&number)
 	return number, err
+}
+
+const revokeExpiredSuppressionsForAdvisoryMerge = `-- name: RevokeExpiredSuppressionsForAdvisoryMerge :exec
+UPDATE advisory_suppression SET revoked_at = NOW()
+WHERE advisory_id = ANY($1::text[])
+  AND revoked_at IS NULL AND expires_at <= NOW()
+`
+
+// Expired rows still occupy the partial unique indexes. Retire them on both
+// sides before moving suppressions so a valid acknowledgement can survive.
+func (q *Queries) RevokeExpiredSuppressionsForAdvisoryMerge(ctx context.Context, advisoryIds []string) error {
+	_, err := q.db.Exec(ctx, revokeExpiredSuppressionsForAdvisoryMerge, advisoryIds)
+	return err
 }
 
 const updateComposerAdvisoryContent = `-- name: UpdateComposerAdvisoryContent :one

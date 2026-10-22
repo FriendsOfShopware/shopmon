@@ -208,22 +208,34 @@ func (s *Service) syncFromPackagist(ctx context.Context) (int, error) {
 }
 
 func (s *Service) upsertAll(ctx context.Context, advisoriesByPkg repository.Advisories) (int, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("begin advisory sync transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	txq := s.queries.WithTx(tx)
+	if err := txq.LockComposerAdvisoryCatalog(ctx); err != nil {
+		return 0, fmt.Errorf("lock advisory catalog for sync: %w", err)
+	}
 	var upserted int
 	for pkg, ads := range advisoriesByPkg {
 		if pkg == "" {
 			continue
 		}
 		for _, adv := range ads {
-			if err := s.upsertOne(ctx, adv); err != nil {
+			if err := s.upsertOne(ctx, txq, adv); err != nil {
 				return upserted, err
 			}
 			upserted++
 		}
 	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("commit advisory sync: %w", err)
+	}
 	return upserted, nil
 }
 
-func (s *Service) upsertOne(ctx context.Context, adv repository.SecurityAdvisory) error {
+func (s *Service) upsertOne(ctx context.Context, txq *queries.Queries, adv repository.SecurityAdvisory) error {
 	if adv.AdvisoryID == "" || adv.PackageName == "" || adv.Title == "" {
 		slog.WarnContext(ctx, "skipping incomplete packagist advisory",
 			"advisoryId", adv.AdvisoryID, "package", adv.PackageName)
@@ -272,6 +284,7 @@ func (s *Service) upsertOne(ctx context.Context, adv repository.SecurityAdvisory
 
 	// One logical row per CVE/GHSA; package ranges live in the child table.
 	canonicalID := canonicalAdvisoryID(cve, ghsa, adv.AdvisoryID)
+	manual := false
 
 	// A manually tracked advisory (Shopmon-authored under its stable
 	// SHOPMON-… id, or imported from GitHub under its GHSA id) already linked
@@ -281,17 +294,18 @@ func (s *Service) upsertOne(ctx context.Context, adv repository.SecurityAdvisory
 	// never touches origin or the admin enrichment columns, so the row keeps
 	// its provenance marking with its enrichment intact.
 	if cvePtr != nil || ghsaPtr != nil {
-		if manualRow, lookupErr := s.queries.GetManualAdvisoryByIdentifiers(ctx, queries.GetManualAdvisoryByIdentifiersParams{
+		if manualRow, lookupErr := txq.GetManualAdvisoryByIdentifiers(ctx, queries.GetManualAdvisoryByIdentifiersParams{
 			Cve:    cvePtr,
 			GhsaID: ghsaPtr,
 		}); lookupErr == nil {
 			canonicalID = manualRow.AdvisoryID
+			manual = true
 		} else if !errors.Is(lookupErr, pgx.ErrNoRows) {
 			return fmt.Errorf("lookup manual advisory for %s: %w", canonicalID, lookupErr)
 		}
 	}
 
-	if err := s.queries.UpsertComposerAdvisory(ctx, queries.UpsertComposerAdvisoryParams{
+	if err := txq.UpsertComposerAdvisory(ctx, queries.UpsertComposerAdvisoryParams{
 		AdvisoryID:         canonicalID,
 		Title:              adv.Title,
 		Link:               link,
@@ -304,8 +318,15 @@ func (s *Service) upsertOne(ctx context.Context, adv repository.SecurityAdvisory
 	}); err != nil {
 		return fmt.Errorf("upsert advisory %s: %w", canonicalID, err)
 	}
+	// Lock/update the parent before touching its packages, matching the order
+	// used by admin edits and linking to avoid deadlocks with content saves.
+	if manual {
+		if err := txq.DeleteManualComposerAdvisoryPackages(ctx, canonicalID); err != nil {
+			return fmt.Errorf("replace manual advisory packages %s: %w", canonicalID, err)
+		}
+	}
 
-	if err := s.queries.UpsertComposerAdvisoryPackage(ctx, queries.UpsertComposerAdvisoryPackageParams{
+	if err := txq.UpsertComposerAdvisoryPackage(ctx, queries.UpsertComposerAdvisoryPackageParams{
 		AdvisoryID:          canonicalID,
 		PackageName:         adv.PackageName,
 		PackagistAdvisoryID: &adv.AdvisoryID,
