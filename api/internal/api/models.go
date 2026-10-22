@@ -71,6 +71,27 @@ func (e AdvisoryScope) Valid() bool {
 	}
 }
 
+// Defines values for AdvisoryOrigin.
+const (
+	AdvisoryOriginGithub   AdvisoryOrigin = "github"
+	AdvisoryOriginShopmon  AdvisoryOrigin = "shopmon"
+	AdvisoryOriginUpstream AdvisoryOrigin = "upstream"
+)
+
+// Valid indicates whether the value is a known member of the AdvisoryOrigin enum.
+func (e AdvisoryOrigin) Valid() bool {
+	switch e {
+	case AdvisoryOriginGithub:
+		return true
+	case AdvisoryOriginShopmon:
+		return true
+	case AdvisoryOriginUpstream:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdvisorySeverity.
 const (
 	AdvisorySeverityCritical AdvisorySeverity = "critical"
@@ -461,18 +482,20 @@ type AccountShop struct {
 
 // AdminAdvisory defines model for AdminAdvisory.
 type AdminAdvisory struct {
-	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA)
+	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA; SHOPMON-YYYY-NNNN for Shopmon-authored advisories)
 	AdvisoryId         string   `json:"advisoryId"`
 	AffectedComponents []string `json:"affectedComponents"`
 
 	// AffectedEnvironmentCount Number of the caller's environments whose Composer package inventory matches this advisory and that are not suppressed. Null when no SBOM data has been collected.
-	AffectedEnvironmentCount *int           `json:"affectedEnvironmentCount,omitempty"`
-	ComposerRepository       *string        `json:"composerRepository,omitempty"`
-	CreatedAt                time.Time      `json:"createdAt"`
-	Cve                      *string        `json:"cve,omitempty"`
-	CvssScore                *float64       `json:"cvssScore,omitempty"`
-	CvssVector               *string        `json:"cvssVector,omitempty"`
-	Cwes                     *[]AdvisoryCWE `json:"cwes,omitempty"`
+	AffectedEnvironmentCount *int      `json:"affectedEnvironmentCount,omitempty"`
+	ComposerRepository       *string   `json:"composerRepository,omitempty"`
+	CreatedAt                time.Time `json:"createdAt"`
+	// CreatedBy Admin user who authored this advisory; set only for Shopmon-authored advisories
+	CreatedBy  *string        `json:"createdBy,omitempty"`
+	Cve        *string        `json:"cve,omitempty"`
+	CvssScore  *float64       `json:"cvssScore,omitempty"`
+	CvssVector *string        `json:"cvssVector,omitempty"`
+	Cwes       *[]AdvisoryCWE `json:"cwes,omitempty"`
 
 	// Description Full advisory write-up in Markdown (source form)
 	Description *string `json:"description,omitempty"`
@@ -496,6 +519,8 @@ type AdminAdvisory struct {
 	Link                 *string            `json:"link,omitempty"`
 	NotesInternal        *string            `json:"notesInternal,omitempty"`
 	NotesPublic          *string            `json:"notesPublic,omitempty"`
+	// Origin Whether this advisory was authored by Shopmon (shopmon) or synced from an upstream registry (upstream)
+	Origin AdvisoryOrigin `json:"origin"`
 
 	// Packages Affected Composer packages (one CVE may span multiple packages)
 	Packages           []AdvisoryAffectedPackage `json:"packages"`
@@ -725,7 +750,7 @@ type AdminStats struct {
 
 // Advisory defines model for Advisory.
 type Advisory struct {
-	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA)
+	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA; SHOPMON-YYYY-NNNN for Shopmon-authored advisories)
 	AdvisoryId         string   `json:"advisoryId"`
 	AffectedComponents []string `json:"affectedComponents"`
 
@@ -757,6 +782,8 @@ type Advisory struct {
 	IsVisible            bool               `json:"isVisible"`
 	Link                 *string            `json:"link,omitempty"`
 	NotesPublic          *string            `json:"notesPublic,omitempty"`
+	// Origin Whether this advisory was authored by Shopmon (shopmon) or synced from an upstream registry (upstream)
+	Origin AdvisoryOrigin `json:"origin"`
 
 	// Packages Affected Composer packages (one CVE may span multiple packages)
 	Packages           []AdvisoryAffectedPackage `json:"packages"`
@@ -813,8 +840,8 @@ type AdvisoryAffectedPackage struct {
 	// PackageName Composer package name (e.g. shopware/core)
 	PackageName string `json:"packageName"`
 
-	// PackagistAdvisoryId Original Packagist PKSA id for this package row
-	PackagistAdvisoryId string `json:"packagistAdvisoryId"`
+	// PackagistAdvisoryId Original Packagist PKSA id for this package row; absent for Shopmon-authored rows
+	PackagistAdvisoryId *string `json:"packagistAdvisoryId,omitempty"`
 }
 
 // AdvisoryAffectedResponse defines model for AdvisoryAffectedResponse.
@@ -925,6 +952,115 @@ type CacheInfo struct {
 	Environment  *string `json:"environment,omitempty"`
 	HttpCache    *bool   `json:"httpCache,omitempty"`
 	Id           *int    `json:"id,omitempty"`
+}
+
+// AdvisoryPackageInput defines model for AdvisoryPackageInput.
+type AdvisoryPackageInput struct {
+	// AffectedVersions Composer constraint for this package, e.g. ">=6.7.0.0,<6.7.10.1"
+	AffectedVersions string `json:"affectedVersions"`
+
+	// PackageName Composer package name (e.g. shopware/core)
+	PackageName string `json:"packageName"`
+}
+
+// CreateAdvisoryRequest defines model for CreateAdvisoryRequest.
+//
+// Creates a Shopmon-authored advisory. It receives a stable SHOPMON-YYYY-NNNN
+// id and can be linked to an official CVE/GHSA later without changing it.
+// New advisories start hidden (draft) unless isVisible is set.
+type CreateAdvisoryRequest struct {
+	// Title Short vulnerability title
+	Title string `json:"title"`
+
+	// Packages Affected Composer packages with their version constraints (at least one)
+	Packages []AdvisoryPackageInput `json:"packages"`
+
+	Severity    *string        `json:"severity,omitempty" enum:"none,low,medium,high,critical" nullable:"true"`
+	Summary     *string        `json:"summary,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	CvssScore   *float64       `json:"cvssScore,omitempty"`
+	CvssVector  *string        `json:"cvssVector,omitempty"`
+	Cwes        *[]AdvisoryCWE `json:"cwes,omitempty"`
+	Link        *string        `json:"link,omitempty"`
+
+	// ExternalReferences External reference URLs (disclosure, commits, etc.)
+	ExternalReferences *[]string `json:"externalReferences,omitempty"`
+
+	// Cve Official CVE id if one is already reserved; linking is also possible later
+	Cve *string `json:"cve,omitempty"`
+
+	// GhsaId Official GHSA id if one already exists; linking is also possible later
+	GhsaId *string `json:"ghsaId,omitempty"`
+
+	// ReportedAt Disclosure date; defaults to now
+	ReportedAt *time.Time `json:"reportedAt,omitempty"`
+
+	// IsVisible Publish immediately instead of saving as a hidden draft
+	IsVisible             *bool     `json:"isVisible,omitempty"`
+	NotesPublic           *string   `json:"notesPublic,omitempty"`
+	NotesInternal         *string   `json:"notesInternal,omitempty"`
+	RemediationSummary    *string   `json:"remediationSummary,omitempty"`
+	RemediationUrl        *string   `json:"remediationUrl,omitempty"`
+	RecommendedUpgrade    *string   `json:"recommendedUpgrade,omitempty"`
+	ShopwareImpactSummary *string   `json:"shopwareImpactSummary,omitempty"`
+	AffectedComponents    *[]string `json:"affectedComponents,omitempty"`
+	Tags                  *[]string `json:"tags,omitempty"`
+}
+
+// ImportGhsaPreviewRequest defines model for ImportGhsaPreviewRequest.
+type ImportGhsaPreviewRequest struct {
+	// Input A GHSA id (GHSA-xxxx-xxxx-xxxx) or a GitHub advisory URL (global or repository-scoped)
+	Input string `json:"input"`
+}
+
+// GhsaPreviewPackage defines model for GhsaPreviewPackage.
+type GhsaPreviewPackage struct {
+	// AffectedVersions Affected version range as published on GitHub
+	AffectedVersions string `json:"affectedVersions"`
+
+	// PackageName Composer package name (e.g. frosh/mail-platform-archive)
+	PackageName string `json:"packageName"`
+
+	// PatchedVersion First fixed version as published on GitHub, when known
+	PatchedVersion *string `json:"patchedVersion,omitempty"`
+}
+
+// GhsaAdvisoryPreview defines model for GhsaAdvisoryPreview.
+//
+// A GitHub security advisory projected onto the create form's fields for
+// admin review. Nothing is persisted by the preview; submitting the reviewed
+// form through the GHSA import endpoint creates the advisory with origin
+// "github" and the GHSA id as its advisory id.
+type GhsaAdvisoryPreview struct {
+	Cve         *string       `json:"cve,omitempty"`
+	CvssScore   *float64      `json:"cvssScore,omitempty"`
+	CvssVector  *string       `json:"cvssVector,omitempty"`
+	Cwes        []AdvisoryCWE `json:"cwes"`
+	Description *string       `json:"description,omitempty"`
+
+	// ExistingAdvisoryId Catalog advisory already tracking this GHSA/CVE; importing would duplicate it
+	ExistingAdvisoryId *string              `json:"existingAdvisoryId,omitempty"`
+	ExternalReferences []string             `json:"externalReferences"`
+	GhsaId             string               `json:"ghsaId"`
+	Link               *string              `json:"link,omitempty"`
+	Packages           []GhsaPreviewPackage `json:"packages"`
+	ReportedAt         *time.Time           `json:"reportedAt,omitempty"`
+	Severity           *SeverityLevel       `json:"severity,omitempty"`
+	Title              string               `json:"title"`
+}
+
+// LinkAdvisoryOfficialRequest defines model for LinkAdvisoryOfficialRequest.
+//
+// Links a Shopmon-authored advisory to its official CVE and/or GHSA once the
+// registry publishes it. At least one of cve or ghsaId is required. If the
+// official advisory has already been synced as its own row, it is merged into
+// the Shopmon advisory (which keeps its id, suppressions, and alert history).
+type LinkAdvisoryOfficialRequest struct {
+	Cve    *string `json:"cve,omitempty"`
+	GhsaId *string `json:"ghsaId,omitempty"`
+
+	// Link URL of the official advisory
+	Link *string `json:"link,omitempty"`
 }
 
 // CreateAdvisorySuppressionRequest defines model for CreateAdvisorySuppressionRequest.
@@ -1373,6 +1509,12 @@ type SubscribedEnvironment struct {
 }
 
 // UpdateAdvisoryEnrichmentRequest defines model for UpdateAdvisoryEnrichmentRequest.
+//
+// The enrichment fields apply to every advisory. The core fields (title,
+// packages, severity, summary, description, CVSS, CWEs, link, references,
+// reportedAt) are only accepted for Shopmon-authored advisories that have not
+// been linked to an official CVE/GHSA yet; upstream advisories take those
+// fields from the sync exclusively.
 type UpdateAdvisoryEnrichmentRequest struct {
 	AffectedComponents    *[]string `json:"affectedComponents,omitempty"`
 	IsVisible             *bool     `json:"isVisible,omitempty"`
@@ -1384,17 +1526,37 @@ type UpdateAdvisoryEnrichmentRequest struct {
 	SeverityOverride      *string   `json:"severityOverride,omitempty" enum:"none,low,medium,high,critical" nullable:"true"`
 	ShopwareImpactSummary *string   `json:"shopwareImpactSummary,omitempty"`
 	Tags                  *[]string `json:"tags,omitempty"`
+
+	// Title Core field; Shopmon-authored, unlinked advisories only
+	Title *string `json:"title,omitempty"`
+
+	// Packages Replacement affected-package set; Shopmon-authored, unlinked advisories only
+	Packages *[]AdvisoryPackageInput `json:"packages,omitempty"`
+
+	// Severity Core field; Shopmon-authored, unlinked advisories only. No enum
+	// tag on purpose: an explicit empty string clears the severity, which the
+	// enum validation would reject before the handler runs. The service
+	// validates the level instead.
+	Severity           *string                   `json:"severity,omitempty"`
+	Summary            *string                   `json:"summary,omitempty"`
+	Description        *string                   `json:"description,omitempty"`
+	CvssScore          OptionalNullable[float64] `json:"cvssScore,omitzero" doc:"Omit to keep the current score; null clears it."`
+	CvssVector         *string                   `json:"cvssVector,omitempty"`
+	Cwes               *[]AdvisoryCWE            `json:"cwes,omitempty"`
+	Link               *string                   `json:"link,omitempty"`
+	ExternalReferences *[]string                 `json:"externalReferences,omitempty"`
+	ReportedAt         *time.Time                `json:"reportedAt,omitempty"`
 }
 
 // UpdateEnvironmentRequest defines model for UpdateEnvironmentRequest.
 type UpdateEnvironmentRequest struct {
-	ClientId     *string   `json:"clientId,omitempty"`
-	ClientSecret *string   `json:"clientSecret,omitempty"`
-	Ignores      *[]string `json:"ignores,omitempty"`
-	Name         *string   `json:"name,omitempty"`
-	ShopId       int       `json:"shopId"`
-	ShopUrl      *string   `json:"shopUrl,omitempty"`
-	TaskGraceMinutes *int  `json:"taskGraceMinutes,omitempty" minimum:"0" maximum:"153722867"`
+	ClientId         *string   `json:"clientId,omitempty"`
+	ClientSecret     *string   `json:"clientSecret,omitempty"`
+	Ignores          *[]string `json:"ignores,omitempty"`
+	Name             *string   `json:"name,omitempty"`
+	ShopId           int       `json:"shopId"`
+	ShopUrl          *string   `json:"shopUrl,omitempty"`
+	TaskGraceMinutes *int      `json:"taskGraceMinutes,omitempty" minimum:"0" maximum:"153722867"`
 }
 
 // UpdateShopRequest defines model for UpdateShopRequest.
@@ -1444,6 +1606,13 @@ type AdvisoryScope string
 
 func (AdvisoryScope) Schema(r huma.Registry) *huma.Schema {
 	return namedStringEnumSchema(r, "AdvisoryScope", "affected", "all", "suppressed")
+}
+
+// AdvisoryOrigin defines model for AdvisoryOrigin.
+type AdvisoryOrigin string
+
+func (AdvisoryOrigin) Schema(r huma.Registry) *huma.Schema {
+	return namedStringEnumSchema(r, "AdvisoryOrigin", "upstream", "shopmon", "github")
 }
 
 // AdvisorySearch defines model for AdvisorySearch.

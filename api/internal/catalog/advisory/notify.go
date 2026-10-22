@@ -237,9 +237,16 @@ func advisoryReason(row queries.ComposerAdvisory, hit sbom.Match) notify.StatusR
 		params["recommended"] = fix
 	}
 
+	key := "check.security.advisoryAlert"
+	if row.Origin == "shopmon" {
+		// The alert email must carry the same Shopmon marker as the UI: a
+		// Shopmon early warning is not an official CVE yet.
+		key = "check.security.advisoryAlertShopmon"
+	}
+
 	return notify.StatusReason{
 		Level:  severityLevel(severity),
-		Key:    "check.security.advisoryAlert",
+		Key:    key,
 		Params: params,
 		Source: "security",
 	}

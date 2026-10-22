@@ -125,7 +125,8 @@ func TestSyncCollapsesPackagesUnderCVE(t *testing.T) {
 	require.Len(t, pkgs, 2)
 	names := map[string]string{}
 	for _, p := range pkgs {
-		names[p.PackageName] = p.PackagistAdvisoryID
+		require.NotNil(t, p.PackagistAdvisoryID)
+		names[p.PackageName] = *p.PackagistAdvisoryID
 	}
 	assert.Equal(t, "PKSA-core-1", names["shopware/core"])
 	assert.Equal(t, "PKSA-platform-1", names["shopware/platform"])

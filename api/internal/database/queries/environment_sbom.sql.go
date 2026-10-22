@@ -439,7 +439,7 @@ func (q *Queries) ListAffectedEnvironmentsForAdvisory(ctx context.Context, arg L
 }
 
 const listComposerAdvisoriesScoped = `-- name: ListComposerAdvisoriesScoped :many
-SELECT a.advisory_id, a.title, a.link, a.cve, a.ghsa_id, a.severity, a.sources, a.reported_at, a.composer_repository, a.synced_at, a.created_at, a.updated_at, a.summary, a.description, a.cvss_score, a.cvss_vector, a.cwes, a.external_references, a.details_source, a.details_synced_at, a.github_synced_at, a.details_attempted_at, a.severity_override, a.is_visible, a.notes_public, a.notes_internal, a.remediation_summary, a.remediation_url, a.recommended_upgrade, a.shopware_impact_summary, a.affected_components, a.tags, a.enriched_at, a.enriched_by, a.first_patched_versions,
+SELECT a.advisory_id, a.title, a.link, a.cve, a.ghsa_id, a.severity, a.sources, a.reported_at, a.composer_repository, a.synced_at, a.created_at, a.updated_at, a.summary, a.description, a.cvss_score, a.cvss_vector, a.cwes, a.external_references, a.details_source, a.details_synced_at, a.github_synced_at, a.details_attempted_at, a.severity_override, a.is_visible, a.notes_public, a.notes_internal, a.remediation_summary, a.remediation_url, a.recommended_upgrade, a.shopware_impact_summary, a.affected_components, a.tags, a.enriched_at, a.enriched_by, a.first_patched_versions, a.origin, a.created_by,
        COALESCE(m.affected_count, 0)::int AS affected_count,
        COALESCE(m.suppressed_count, 0)::int AS suppressed_count
 FROM composer_advisory a
@@ -567,6 +567,8 @@ type ListComposerAdvisoriesScopedRow struct {
 	EnrichedAt            pgtype.Timestamp `json:"enriched_at"`
 	EnrichedBy            *string          `json:"enriched_by"`
 	FirstPatchedVersions  json.RawMessage  `json:"first_patched_versions"`
+	Origin                string           `json:"origin"`
+	CreatedBy             *string          `json:"created_by"`
 	AffectedCount         int32            `json:"affected_count"`
 	SuppressedCount       int32            `json:"suppressed_count"`
 }
@@ -639,6 +641,8 @@ func (q *Queries) ListComposerAdvisoriesScoped(ctx context.Context, arg ListComp
 			&i.EnrichedAt,
 			&i.EnrichedBy,
 			&i.FirstPatchedVersions,
+			&i.Origin,
+			&i.CreatedBy,
 			&i.AffectedCount,
 			&i.SuppressedCount,
 		); err != nil {

@@ -27,6 +27,11 @@
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl font-bold tracking-tight">{{ advisory.title }}</h1>
           <SeverityBadge :severity="advisory.effectiveSeverity" />
+          <ShopmonAdvisoryBadge :advisory="advisory" />
+          <Badge v-if="advisory.origin === 'github'" variant="outline" class="gap-1">
+            <icon-fa6-brands:github class="size-2.5" />
+            {{ $t("admin.originGithub") }}
+          </Badge>
           <Badge v-if="!advisory.isVisible" variant="outline">{{ $t("admin.hidden") }}</Badge>
         </div>
         <div
@@ -87,7 +92,9 @@
               </div>
               <div>
                 <div class="text-xs font-medium text-muted-foreground">
-                  {{ $t("advisories.packagistSeverity") }}
+                  {{
+                    isManual ? $t("advisories.kpi.severity") : $t("advisories.packagistSeverity")
+                  }}
                 </div>
                 <SeverityBadge
                   v-if="advisory.severity"
@@ -136,6 +143,196 @@
               </div>
             </CardContent>
           </Card>
+          <!-- Shopmon-authored content stays editable until the official
+               CVE/GHSA is linked; from then on the sync owns these fields. -->
+          <Card v-if="isManual">
+            <CardHeader>
+              <CardTitle class="text-base">{{ $t("admin.coreContent") }}</CardTitle>
+            </CardHeader>
+            <CardContent v-if="isLocked" class="text-sm text-muted-foreground">
+              {{ $t("admin.coreLocked") }}
+            </CardContent>
+            <CardContent v-else class="space-y-4">
+              <Alert v-if="contentError" variant="destructive">
+                <AlertDescription>{{ contentError }}</AlertDescription>
+              </Alert>
+              <Alert v-if="contentSuccess">
+                <AlertDescription>{{ $t("admin.coreSaved") }}</AlertDescription>
+              </Alert>
+
+              <div class="space-y-2">
+                <Label for="edit-advisory-contentForm-title">{{ $t("admin.advisoryTitle") }}</Label>
+                <Input id="edit-advisory-contentForm-title" v-model="contentForm.title" />
+              </div>
+              <fieldset class="space-y-2">
+                <legend class="text-sm font-medium">{{ $t("advisories.affectedPackages") }}</legend>
+                <AdvisoryPackageEditor v-model="contentForm.packages" />
+              </fieldset>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div class="space-y-2">
+                  <Label for="edit-advisory-contentForm-severity">{{
+                    $t("advisories.kpi.severity")
+                  }}</Label>
+                  <Select v-model="contentForm.severity">
+                    <SelectTrigger id="edit-advisory-contentForm-severity">
+                      <SelectValue :placeholder="$t('advisories.severity.unknown')" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unknown-severity">
+                        {{ $t("advisories.severity.unknown") }}
+                      </SelectItem>
+                      <SelectItem v-for="s in severities" :key="s" :value="s">
+                        {{ $t(`advisories.severity.${s}`) }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div class="space-y-2">
+                  <Label for="edit-advisory-contentForm-reportedAt">{{
+                    $t("admin.reportedAt")
+                  }}</Label>
+                  <Input
+                    id="edit-advisory-contentForm-reportedAt"
+                    v-model="contentForm.reportedAt"
+                    type="date"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <Label for="edit-advisory-contentForm-cvssScore">{{
+                    $t("advisories.cvss")
+                  }}</Label>
+                  <Input
+                    id="edit-advisory-contentForm-cvssScore"
+                    v-model="contentForm.cvssScore"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="0.0–10.0"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <Label for="edit-advisory-contentForm-cvssVector">{{
+                    $t("advisories.cvssVector")
+                  }}</Label>
+                  <Input
+                    id="edit-advisory-contentForm-cvssVector"
+                    v-model="contentForm.cvssVector"
+                    class="font-mono text-xs"
+                  />
+                </div>
+              </div>
+              <div class="space-y-2">
+                <Label for="edit-advisory-contentForm-summary">{{
+                  $t("advisories.summary")
+                }}</Label>
+                <Textarea
+                  id="edit-advisory-contentForm-summary"
+                  v-model="contentForm.summary"
+                  rows="2"
+                />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit-advisory-contentForm-description"
+                  >{{ $t("advisories.fullDescription") }} (Markdown)</Label
+                >
+                <Textarea
+                  id="edit-advisory-contentForm-description"
+                  v-model="contentForm.description"
+                  rows="8"
+                  class="font-mono text-xs"
+                />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit-advisory-contentForm-cwes"
+                  >{{ $t("advisories.cwes") }} ({{ $t("admin.commaSeparated") }})</Label
+                >
+                <Input
+                  id="edit-advisory-contentForm-cwes"
+                  v-model="contentForm.cwes"
+                  class="font-mono text-xs"
+                  placeholder="CWE-79"
+                />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit-advisory-contentForm-link">{{
+                  $t("advisories.disclosure")
+                }}</Label>
+                <Input
+                  id="edit-advisory-contentForm-link"
+                  v-model="contentForm.link"
+                  placeholder="https://…"
+                />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit-advisory-contentForm-externalReferences">
+                  {{ $t("advisories.references") }} ({{ $t("admin.referencesHint") }})
+                </Label>
+                <Textarea
+                  id="edit-advisory-contentForm-externalReferences"
+                  v-model="contentForm.externalReferences"
+                  rows="3"
+                  class="font-mono text-xs"
+                />
+              </div>
+
+              <Button :disabled="savingContent" class="w-full" @click="saveContent">
+                <icon-line-md:loading-twotone-loop v-if="savingContent" class="mr-1.5 size-3.5" />
+                {{ $t("common.save") }}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card v-if="isManual">
+            <CardHeader>
+              <CardTitle class="text-base">{{ $t("admin.linkOfficial") }}</CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-4">
+              <p class="text-sm text-muted-foreground">{{ $t("admin.linkOfficialHint") }}</p>
+              <Alert v-if="linkError" variant="destructive">
+                <AlertDescription>{{ linkError }}</AlertDescription>
+              </Alert>
+              <Alert v-if="linkSuccess">
+                <AlertDescription>{{ $t("admin.linkSaved") }}</AlertDescription>
+              </Alert>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div class="space-y-2">
+                  <Label for="edit-advisory-linkForm-cve">CVE</Label>
+                  <Input
+                    id="edit-advisory-linkForm-cve"
+                    v-model="linkForm.cve"
+                    class="font-mono text-xs"
+                    placeholder="CVE-2026-1234"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <Label for="edit-advisory-linkForm-ghsaId">GHSA</Label>
+                  <Input
+                    id="edit-advisory-linkForm-ghsaId"
+                    v-model="linkForm.ghsaId"
+                    class="font-mono text-xs"
+                    placeholder="GHSA-xxxx-xxxx-xxxx"
+                  />
+                </div>
+              </div>
+              <div class="space-y-2">
+                <Label for="edit-advisory-linkForm-link">{{ $t("advisories.disclosure") }}</Label>
+                <Input
+                  id="edit-advisory-linkForm-link"
+                  v-model="linkForm.link"
+                  placeholder="https://…"
+                />
+              </div>
+              <Button
+                :disabled="linking || (!linkForm.cve.trim() && !linkForm.ghsaId.trim())"
+                class="w-full"
+                @click="linkOfficial"
+              >
+                <icon-line-md:loading-twotone-loop v-if="linking" class="mr-1.5 size-3.5" />
+                {{ $t("admin.linkOfficial") }}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <!-- Enrichment form -->
@@ -152,9 +349,11 @@
             </Alert>
 
             <div class="space-y-2">
-              <Label>{{ $t("admin.severityOverride") }}</Label>
+              <Label for="edit-advisory-form-severityOverride">{{
+                $t("admin.severityOverride")
+              }}</Label>
               <Select v-model="form.severityOverride">
-                <SelectTrigger>
+                <SelectTrigger id="edit-advisory-form-severityOverride">
                   <SelectValue :placeholder="$t('admin.noOverride')" />
                 </SelectTrigger>
                 <SelectContent>
@@ -166,41 +365,65 @@
               </Select>
             </div>
             <div class="flex items-center gap-3">
-              <Switch v-model="form.isVisible" />
-              <Label>{{ $t("admin.visibleToUsers") }}</Label>
+              <Switch id="edit-advisory-form-isVisible" v-model="form.isVisible" />
+              <Label for="edit-advisory-form-isVisible">{{ $t("admin.visibleToUsers") }}</Label>
             </div>
 
             <div class="space-y-2">
-              <Label>{{ $t("advisories.impact") }}</Label>
-              <Textarea v-model="form.shopwareImpactSummary" rows="3" />
+              <Label for="edit-advisory-form-shopwareImpactSummary">{{
+                $t("advisories.impact")
+              }}</Label>
+              <Textarea
+                id="edit-advisory-form-shopwareImpactSummary"
+                v-model="form.shopwareImpactSummary"
+                rows="3"
+              />
             </div>
             <div class="space-y-2">
-              <Label>{{ $t("advisories.remediation") }}</Label>
-              <Textarea v-model="form.remediationSummary" rows="3" />
+              <Label for="edit-advisory-form-remediationSummary">{{
+                $t("advisories.remediation")
+              }}</Label>
+              <Textarea
+                id="edit-advisory-form-remediationSummary"
+                v-model="form.remediationSummary"
+                rows="3"
+              />
             </div>
             <div class="space-y-2">
-              <Label>{{ $t("advisories.recommendedUpgrade") }}</Label>
-              <Input v-model="form.recommendedUpgrade" />
+              <Label for="edit-advisory-form-recommendedUpgrade">{{
+                $t("advisories.recommendedUpgrade")
+              }}</Label>
+              <Input id="edit-advisory-form-recommendedUpgrade" v-model="form.recommendedUpgrade" />
             </div>
             <div class="space-y-2">
-              <Label>{{ $t("advisories.remediationUrl") }}</Label>
-              <Input v-model="form.remediationUrl" />
+              <Label for="edit-advisory-form-remediationUrl">{{
+                $t("advisories.remediationUrl")
+              }}</Label>
+              <Input id="edit-advisory-form-remediationUrl" v-model="form.remediationUrl" />
             </div>
             <div class="space-y-2">
-              <Label>{{ $t("advisories.components") }} ({{ $t("admin.commaSeparated") }})</Label>
-              <Input v-model="form.affectedComponents" />
+              <Label for="edit-advisory-form-affectedComponents"
+                >{{ $t("advisories.components") }} ({{ $t("admin.commaSeparated") }})</Label
+              >
+              <Input id="edit-advisory-form-affectedComponents" v-model="form.affectedComponents" />
             </div>
             <div class="space-y-2">
-              <Label>{{ $t("advisories.tags") }} ({{ $t("admin.commaSeparated") }})</Label>
-              <Input v-model="form.tags" />
+              <Label for="edit-advisory-form-tags"
+                >{{ $t("advisories.tags") }} ({{ $t("admin.commaSeparated") }})</Label
+              >
+              <Input id="edit-advisory-form-tags" v-model="form.tags" />
             </div>
             <div class="space-y-2">
-              <Label>{{ $t("advisories.notes") }}</Label>
-              <Textarea v-model="form.notesPublic" rows="3" />
+              <Label for="edit-advisory-form-notesPublic">{{ $t("advisories.notes") }}</Label>
+              <Textarea id="edit-advisory-form-notesPublic" v-model="form.notesPublic" rows="3" />
             </div>
             <div class="space-y-2">
-              <Label>{{ $t("admin.notesInternal") }}</Label>
-              <Textarea v-model="form.notesInternal" rows="3" />
+              <Label for="edit-advisory-form-notesInternal">{{ $t("admin.notesInternal") }}</Label>
+              <Textarea
+                id="edit-advisory-form-notesInternal"
+                v-model="form.notesInternal"
+                rows="3"
+              />
             </div>
 
             <Button :disabled="saving" class="w-full" @click="save">
@@ -215,7 +438,9 @@
 </template>
 
 <script setup lang="ts">
+import AdvisoryPackageEditor from "@/components/advisories/AdvisoryPackageEditor.vue";
 import SeverityBadge from "@/components/advisories/SeverityBadge.vue";
+import ShopmonAdvisoryBadge from "@/components/advisories/ShopmonAdvisoryBadge.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -234,11 +459,18 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   type AdminAdvisory,
+  type AdvisoryPackageInput,
   type SeverityLevel,
   adminGetAdvisory,
+  adminLinkAdvisoryOfficial,
   adminUpdateAdvisory,
 } from "@/api/generated";
-import { isSafeHttpUrl } from "@/helpers/advisory";
+import {
+  advisoryCwesFromInput,
+  isAdvisoryContentLocked,
+  isManualAdvisory,
+  isSafeHttpUrl,
+} from "@/helpers/advisory";
 import { formatDate } from "@/helpers/formatter";
 import { sanitizeHtml } from "@/helpers/sanitize";
 import { computed, reactive, ref, watch } from "vue";
@@ -254,6 +486,8 @@ const saving = ref(false);
 const saveError = ref("");
 const saveSuccess = ref(false);
 const descriptionHtml = computed(() => sanitizeHtml(advisory.value?.descriptionHtml));
+const isManual = computed(() => (advisory.value ? isManualAdvisory(advisory.value) : false));
+const isLocked = computed(() => (advisory.value ? isAdvisoryContentLocked(advisory.value) : false));
 
 const severities = ["critical", "high", "medium", "low", "none"] as const;
 
@@ -275,6 +509,138 @@ function splitList(value: string): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+const contentForm = reactive({
+  title: "",
+  packages: [] as AdvisoryPackageInput[],
+  severity: "unknown-severity",
+  reportedAt: "",
+  cvssScore: "",
+  cvssVector: "",
+  summary: "",
+  description: "",
+  cwes: "",
+  link: "",
+  externalReferences: "",
+});
+const savingContent = ref(false);
+const contentError = ref("");
+const contentSuccess = ref(false);
+
+const linkForm = reactive({ cve: "", ghsaId: "", link: "" });
+const linking = ref(false);
+const linkError = ref("");
+const linkSuccess = ref(false);
+
+function loadContentForm(a: AdminAdvisory) {
+  contentForm.title = a.title;
+  contentForm.packages = (a.packages ?? []).map((p) => ({
+    packageName: p.packageName,
+    affectedVersions: p.affectedVersions,
+  }));
+  if (contentForm.packages.length === 0) {
+    contentForm.packages = [{ packageName: "", affectedVersions: "" }];
+  }
+  contentForm.severity = a.severity ?? "unknown-severity";
+  contentForm.reportedAt = a.reportedAt ? a.reportedAt.slice(0, 10) : "";
+  contentForm.cvssScore = a.cvssScore != null ? String(a.cvssScore) : "";
+  contentForm.cvssVector = a.cvssVector ?? "";
+  contentForm.summary = a.summary ?? "";
+  contentForm.description = a.description ?? "";
+  contentForm.cwes = (a.cwes ?? []).map((c) => c.id).join(", ");
+  contentForm.link = a.link ?? "";
+  contentForm.externalReferences = (a.externalReferences ?? []).join("\n");
+  contentError.value = "";
+  contentSuccess.value = false;
+}
+
+function loadLinkForm(a: AdminAdvisory) {
+  linkForm.cve = a.cve ?? "";
+  linkForm.ghsaId = a.ghsaId ?? "";
+  linkForm.link = a.link ?? "";
+  linkError.value = "";
+  linkSuccess.value = false;
+}
+
+async function saveContent() {
+  if (!advisory.value) return;
+  savingContent.value = true;
+  contentError.value = "";
+  contentSuccess.value = false;
+  try {
+    const score = Number.parseFloat(contentForm.cvssScore);
+    const { data, error: apiError } = await adminUpdateAdvisory({
+      path: { advisoryId: advisory.value.advisoryId },
+      body: {
+        title: contentForm.title,
+        packages: contentForm.packages
+          .map((p) => ({
+            packageName: p.packageName.trim(),
+            affectedVersions: p.affectedVersions.trim(),
+          }))
+          .filter((p) => p.packageName !== "" || p.affectedVersions !== ""),
+        // An explicit empty severity clears it server-side.
+        severity: contentForm.severity === "unknown-severity" ? "" : contentForm.severity,
+        summary: contentForm.summary,
+        description: contentForm.description,
+        cvssScore: Number.isFinite(score) ? score : null,
+        cvssVector: contentForm.cvssVector,
+        cwes: advisoryCwesFromInput(contentForm.cwes, advisory.value.cwes ?? []),
+        link: contentForm.link,
+        externalReferences: contentForm.externalReferences
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        reportedAt: contentForm.reportedAt
+          ? new Date(`${contentForm.reportedAt}T00:00:00Z`).toISOString()
+          : undefined,
+      },
+    });
+    if (apiError || !data) {
+      contentError.value =
+        (apiError as { message?: string } | undefined)?.message ?? t("admin.coreSaveFailed");
+      return;
+    }
+    // Both cards edit the disclosure URL. Keep an untouched linking field
+    // current without replacing an independent, unsaved edit in that card.
+    if (linkForm.link === (advisory.value.link ?? "")) {
+      linkForm.link = data.link ?? "";
+    }
+    advisory.value = data;
+    loadContentForm(data);
+    contentSuccess.value = true;
+  } finally {
+    savingContent.value = false;
+  }
+}
+
+async function linkOfficial() {
+  if (!advisory.value) return;
+  linking.value = true;
+  linkError.value = "";
+  linkSuccess.value = false;
+  try {
+    const { data, error: apiError } = await adminLinkAdvisoryOfficial({
+      path: { advisoryId: advisory.value.advisoryId },
+      body: {
+        cve: linkForm.cve.trim() || undefined,
+        ghsaId: linkForm.ghsaId.trim() || undefined,
+        link: linkForm.link.trim() || undefined,
+      },
+    });
+    if (apiError || !data) {
+      linkError.value =
+        (apiError as { message?: string } | undefined)?.message ?? t("admin.linkFailed");
+      return;
+    }
+    advisory.value = data;
+    loadContentForm(data);
+    loadLinkForm(data);
+    linkSuccess.value = true;
+  } finally {
+    linking.value = false;
+  }
 }
 
 function loadForm(a: AdminAdvisory) {
@@ -353,6 +719,8 @@ watch(
     }
     advisory.value = data;
     loadForm(data);
+    loadContentForm(data);
+    loadLinkForm(data);
   },
   { immediate: true },
 );
