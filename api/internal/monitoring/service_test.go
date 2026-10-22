@@ -3,6 +3,7 @@ package monitoring
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -203,6 +204,34 @@ func TestCreateShopStopsBeforeSideEffectsWhenUnauthorized(t *testing.T) {
 	require.ErrorIs(t, err, ErrNotAuthorized)
 	assert.Equal(t, 0, gateway.validateCalls)
 	assert.Empty(t, repository.createdShop.OrganizationID)
+}
+
+func TestCreationEnvironmentTokens(t *testing.T) {
+	for _, createShop := range []bool{true, false} {
+		for _, token := range []string{"", "client-generated-token"} {
+			t.Run(fmt.Sprintf("shop=%t/provided=%t", createShop, token != ""), func(t *testing.T) {
+				repository := &stubRepository{shop: Shop{OrganizationID: "org-1"}}
+				gateway := &stubEnvironmentGateway{}
+				service := NewService(repository, &stubAuthorizer{member: true}, gateway, &stubJobDispatcher{}, nil)
+
+				if createShop {
+					_, err := service.CreateShop(t.Context(), CreateShopCommand{OrganizationID: "org-1", EnvironmentToken: token})
+					require.NoError(t, err)
+				} else {
+					_, err := service.CreateEnvironment(t.Context(), CreateEnvironmentCommand{EnvironmentToken: token})
+					require.NoError(t, err)
+				}
+
+				storedToken := repository.createdEnvironment.EnvironmentToken
+				if token == "" {
+					assert.Regexp(t, `^[0-9a-f]{64}$`, storedToken)
+				} else {
+					assert.Equal(t, token, storedToken)
+				}
+				assert.Equal(t, storedToken, gateway.credentials.EnvironmentToken)
+			})
+		}
+	}
 }
 
 func TestUpdateShopValidatesDefaultEnvironmentBeforeWriting(t *testing.T) {

@@ -79,9 +79,26 @@ func TestCreateShop(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-	var result map[string]any
+	var result api.Shop
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-	assert.NotNil(t, result["id"])
+	require.NotZero(t, result.Id)
+	require.NotNil(t, result.DefaultEnvironmentId)
+
+	var environmentToken string
+	err = env.Pool.QueryRow(t.Context(), `SELECT environment_token FROM environment WHERE id = $1`, *result.DefaultEnvironmentId).Scan(&environmentToken)
+	require.NoError(t, err)
+	assert.Regexp(t, `^[0-9a-f]{64}$`, environmentToken)
+
+	detailReq := testutil.NewRequest(t, http.MethodGet, fmt.Sprintf("%s/api/environments/%d", env.Server.URL, *result.DefaultEnvironmentId), nil)
+	detailReq.Header.Set("Authorization", "Bearer "+token)
+	detailResp, err := http.DefaultClient.Do(detailReq)
+	require.NoError(t, err)
+	defer func() { _ = detailResp.Body.Close() }()
+	require.Equal(t, http.StatusOK, detailResp.StatusCode)
+
+	var detail api.EnvironmentDetail
+	require.NoError(t, json.NewDecoder(detailResp.Body).Decode(&detail))
+	assert.Equal(t, environmentToken, detail.EnvironmentToken)
 }
 
 func TestUpdateShop(t *testing.T) {
