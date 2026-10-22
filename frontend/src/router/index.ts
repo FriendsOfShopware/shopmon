@@ -51,6 +51,8 @@ export function setupRouterGuards(router: Router) {
       "account.forgot.password.confirm",
       "auth.callback",
       "auth.sso.callback",
+      "account.advisories.list",
+      "account.advisories.detail",
     ];
     const authRequired = !publicPages.includes(to.name as string);
     const { setReturnUrl } = useReturnUrl();
@@ -72,6 +74,7 @@ export function setupRouterGuards(router: Router) {
     if (
       session.value &&
       !session.value.session.activeOrganizationId &&
+      authRequired &&
       to.name !== "account.onboarding" &&
       to.name !== "account.organization.accept" &&
       to.name !== "account.organization.reject"

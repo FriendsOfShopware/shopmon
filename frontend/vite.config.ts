@@ -48,8 +48,8 @@ ${ssgRoutes.map((route) => `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <las
 </urlset>`;
       writeFileSync(resolve("dist", "sitemap.xml"), sitemap);
 
-      // Generate a clean SPA fallback for /app/* routes so users
-      // don't briefly see the SSG'd landing page before Vue hydrates.
+      // Generate a clean SPA fallback for /app/* and /advisories/* routes so
+      // users don't briefly see the SSG'd landing page before Vue hydrates.
       const indexHtml = readFileSync(resolve("dist", "index.html"), "utf-8");
       const appDivStart = indexHtml.indexOf('<div id="app"');
       const afterAppDiv = indexHtml.indexOf("<link", appDivStart);
@@ -57,8 +57,10 @@ ${ssgRoutes.map((route) => `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <las
         indexHtml.substring(0, appDivStart) +
         '<div id="app" class="h-full"></div>\n' +
         indexHtml.substring(afterAppDiv);
-      mkdirSync(resolve("dist", "app"), { recursive: true });
-      writeFileSync(resolve("dist", "app", "index.html"), appFallback);
+      for (const dir of ["app", "advisories"]) {
+        mkdirSync(resolve("dist", dir), { recursive: true });
+        writeFileSync(resolve("dist", dir, "index.html"), appFallback);
+      }
     },
   },
   ssr: {

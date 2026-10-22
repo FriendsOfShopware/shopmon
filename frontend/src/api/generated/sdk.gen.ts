@@ -258,29 +258,17 @@ export const adminGetStats = <ThrowOnError extends boolean = false>(options?: Op
 /**
  * List visible Composer security advisories for Shopware packages
  */
-export const listAdvisories = <ThrowOnError extends boolean = false>(options?: Options<ListAdvisoriesData, ThrowOnError>): RequestResult<ListAdvisoriesResponses, ListAdvisoriesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdvisoriesResponses, ListAdvisoriesErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/advisories',
-    ...options
-});
+export const listAdvisories = <ThrowOnError extends boolean = false>(options?: Options<ListAdvisoriesData, ThrowOnError>): RequestResult<ListAdvisoriesResponses, ListAdvisoriesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdvisoriesResponses, ListAdvisoriesErrors, ThrowOnError>({ url: '/advisories', ...options });
 
 /**
  * List package names that have visible advisories
  */
-export const listAdvisoryPackages = <ThrowOnError extends boolean = false>(options?: Options<ListAdvisoryPackagesData, ThrowOnError>): RequestResult<ListAdvisoryPackagesResponses, ListAdvisoryPackagesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdvisoryPackagesResponses, ListAdvisoryPackagesErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/advisories/packages',
-    ...options
-});
+export const listAdvisoryPackages = <ThrowOnError extends boolean = false>(options?: Options<ListAdvisoryPackagesData, ThrowOnError>): RequestResult<ListAdvisoryPackagesResponses, ListAdvisoryPackagesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdvisoryPackagesResponses, ListAdvisoryPackagesErrors, ThrowOnError>({ url: '/advisories/packages', ...options });
 
 /**
  * Get a visible advisory by Packagist advisory ID
  */
-export const getAdvisory = <ThrowOnError extends boolean = false>(options: Options<GetAdvisoryData, ThrowOnError>): RequestResult<GetAdvisoryResponses, GetAdvisoryErrors, ThrowOnError> => (options.client ?? client).get<GetAdvisoryResponses, GetAdvisoryErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/advisories/{advisoryId}',
-    ...options
-});
+export const getAdvisory = <ThrowOnError extends boolean = false>(options: Options<GetAdvisoryData, ThrowOnError>): RequestResult<GetAdvisoryResponses, GetAdvisoryErrors, ThrowOnError> => (options.client ?? client).get<GetAdvisoryResponses, GetAdvisoryErrors, ThrowOnError>({ url: '/advisories/{advisoryId}', ...options });
 
 /**
  * List the caller's environments affected by an advisory

@@ -305,6 +305,7 @@ export const routes: RouteRecordRaw[] = [
       {
         name: "account.advisories.list",
         path: "advisories",
+        alias: "/advisories",
         component: () => import("@/views/advisories/ListAdvisories.vue"),
         meta: {
           titleKey: "nav.advisories",
@@ -314,6 +315,7 @@ export const routes: RouteRecordRaw[] = [
       {
         name: "account.advisories.detail",
         path: "advisories/:id",
+        alias: "/advisories/:id",
         component: () => import("@/views/advisories/DetailAdvisory.vue"),
         meta: {
           titleKey: "nav.advisories",

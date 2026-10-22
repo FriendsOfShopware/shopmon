@@ -7,6 +7,7 @@
          the filter row. Counts are always shown so the other tab is honest. -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div
+        v-if="session"
         role="tablist"
         :aria-label="$t('advisories.scope.label')"
         class="inline-flex items-center gap-1 rounded-lg bg-muted p-1"
@@ -81,7 +82,7 @@
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem v-for="s in sortOptions" :key="s" :value="s">
+          <SelectItem v-for="s in availableSortOptions" :key="s" :value="s">
             {{ $t(`advisories.sort.${s}`) }}
           </SelectItem>
         </SelectContent>
@@ -278,6 +279,7 @@ import {
   listAdvisories,
   listAdvisoryPackages,
 } from "@/api/generated";
+import { useSession } from "@/composables/useSession";
 import { severityTileClass } from "@/helpers/advisory";
 import { formatDate } from "@/helpers/formatter";
 import { computed, onMounted, ref } from "vue";
@@ -296,6 +298,7 @@ type SortOption = (typeof sortOptions)[number];
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const { session } = useSession();
 
 const advisories = ref<Advisory[]>([]);
 const packages = ref<string[]>([]);
@@ -306,12 +309,15 @@ const error = ref("");
 const search = ref("");
 const packageFilter = ref("all");
 const severityFilter = ref<Severity | "all">("all");
-const scope = ref<Scope>("affected");
+const scope = ref<Scope>(session.value ? "affected" : "all");
 const sort = ref<SortOption>("reported");
 const page = ref(1);
 const perPage = 25;
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage)));
+const availableSortOptions = computed(() =>
+  session.value ? sortOptions : sortOptions.filter((s) => s !== "affected"),
+);
 
 // The suppressed tab only appears once something is in it (or while it is the
 // active scope), so it stays out of the way for the common case of a user who
@@ -373,9 +379,13 @@ function goToPage(next: number) {
 // Mirror state into the URL so a filtered view can be bookmarked, shared, and
 // survives a reload or back-navigation.
 function syncUrl() {
-  // Scope is always written, even at its default: a shared link should keep
-  // showing what the sender saw if the default ever changes.
-  const query: Record<string, string> = { scope: scope.value };
+  // Scope is always written for signed-in users, even at its default: a shared
+  // link should keep showing what the sender saw if the default ever changes.
+  // Anonymous visitors have no shops and always view the full catalog.
+  const query: Record<string, string> = {};
+  if (session.value) {
+    query.scope = scope.value;
+  }
   if (sort.value !== "reported") query.sort = sort.value;
   if (search.value.trim()) query.q = search.value.trim();
   if (packageFilter.value !== "all") query.package = packageFilter.value;
@@ -387,9 +397,14 @@ function syncUrl() {
 
 function readUrl() {
   const q = route.query;
-  scope.value = q.scope === "all" || q.scope === "suppressed" ? (q.scope as Scope) : "affected";
+  if (!session.value) {
+    scope.value = "all";
+  } else {
+    scope.value = q.scope === "all" || q.scope === "suppressed" ? (q.scope as Scope) : "affected";
+  }
+  const allowedSorts = availableSortOptions.value as readonly string[];
   sort.value =
-    typeof q.sort === "string" && (sortOptions as readonly string[]).includes(q.sort)
+    typeof q.sort === "string" && allowedSorts.includes(q.sort)
       ? (q.sort as SortOption)
       : "reported";
   search.value = typeof q.q === "string" ? q.q : "";

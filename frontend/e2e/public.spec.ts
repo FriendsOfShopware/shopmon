@@ -37,4 +37,12 @@ test.describe("public pages", () => {
     await page.getByRole("link", { name: "Legal Notice" }).click();
     await expect(page).toHaveURL(/\/imprint/);
   });
+
+  test("advisories page is accessible without authentication", async ({ page }) => {
+    await page.goto("/app/advisories");
+    await expect(page).toHaveURL(/\/app\/advisories/);
+    await expect(
+      page.getByRole("heading", { name: "Security Advisories", level: 1 }),
+    ).toBeVisible();
+  });
 });

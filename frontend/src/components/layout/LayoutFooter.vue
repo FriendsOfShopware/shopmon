@@ -20,6 +20,13 @@
           {{ $t("footer.whatsNew") }}
         </button>
         <RouterLink
+          v-else
+          :to="{ name: 'account.advisories.list' }"
+          class="text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {{ $t("nav.advisories") }}
+        </RouterLink>
+        <RouterLink
           :to="{ name: 'privacy' }"
           class="text-muted-foreground transition-colors hover:text-foreground"
         >

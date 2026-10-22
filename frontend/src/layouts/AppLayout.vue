@@ -1,5 +1,5 @@
 <template>
-  <SidebarProvider>
+  <SidebarProvider v-if="session">
     <MobileSidebarAutoClose />
     <Sidebar collapsible="icon">
       <!-- Logo + brand -->
@@ -263,6 +263,62 @@
       </main>
     </SidebarInset>
   </SidebarProvider>
+
+  <div v-else class="flex min-h-screen flex-col bg-background">
+    <header class="sticky top-0 z-20 border-b bg-background/80 backdrop-blur-md">
+      <div class="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div class="flex items-center gap-6">
+          <RouterLink :to="{ name: 'home' }" class="flex items-center gap-2.5">
+            <Logo class="size-7 shrink-0" />
+            <span class="text-base font-bold tracking-tight">{{ $t("common.appName") }}</span>
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'account.advisories.list' }"
+            class="text-sm font-medium text-foreground transition-colors hover:text-primary"
+          >
+            {{ $t("nav.advisories") }}
+          </RouterLink>
+        </div>
+
+        <div class="flex items-center gap-1 sm:gap-2">
+          <Button as-child size="sm" variant="ghost">
+            <RouterLink :to="{ name: 'account.login' }">
+              {{ $t("nav.login") }}
+            </RouterLink>
+          </Button>
+          <Button v-if="instanceConfig?.registrationEnabled !== false" as-child size="sm">
+            <RouterLink :to="{ name: 'account.register' }">
+              {{ $t("nav.register") }}
+            </RouterLink>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            :aria-label="$t('nav.toggleTheme')"
+            class="size-8 text-muted-foreground hover:text-foreground"
+            @click="toggleDarkMode"
+          >
+            <icon-fa6-regular:moon v-if="darkMode" class="size-4" />
+            <icon-octicon:sun-16 v-else class="size-4" />
+          </Button>
+          <button
+            class="px-1.5 text-xs font-bold tracking-wide text-muted-foreground hover:text-foreground"
+            type="button"
+            @click="toggleLocale"
+          >
+            {{ String(locale) === "en" ? "DE" : "EN" }}
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:py-8">
+      <Notification />
+      <RouterView />
+    </main>
+
+    <LayoutFooter />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -279,11 +335,19 @@ import StatusIcon from "@/components/StatusIcon.vue";
 import Logo from "@/components/Logo.vue";
 
 import { useDarkMode } from "@/composables/useDarkMode";
+import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { useLocale } from "@/composables/useLocale";
 import { useNotifications } from "@/composables/useNotifications";
 import { useSession, clearSession } from "@/composables/useSession";
-import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
-import { useAccountShops } from "@/composables/useAccountShops";
+import {
+  useAccountEnvironments,
+  resetAccountEnvironments,
+} from "@/composables/useAccountEnvironments";
+import {
+  useAccountShops,
+  fetchAccountShops,
+  resetAccountShops,
+} from "@/composables/useAccountShops";
 import { clearAdminToken, setToken } from "@/helpers/api";
 import { formatDateTime } from "@/helpers/formatter";
 import {
@@ -325,11 +389,16 @@ import {
 
 const router = useRouter();
 const { session, activeOrganizationId } = useSession();
-const { environments } = useAccountEnvironments();
-const { shops, fetchAccountShops } = useAccountShops();
+const { config: instanceConfig } = useInstanceConfig();
+const environments = computed(() =>
+  session.value ? useAccountEnvironments().environments.value : [],
+);
+const shops = computed(() => (session.value ? useAccountShops().shops.value : []));
 
 watch(activeOrganizationId, () => {
-  void fetchAccountShops();
+  if (session.value) {
+    void fetchAccountShops();
+  }
 });
 
 function shopLink(shop: AccountShop) {
@@ -354,20 +423,23 @@ function defaultEnvStatus(shop: AccountShop): string | null {
 
 const userAvatar = ref("https://api.dicebear.com/7.x/personas/svg?seed=default?d=identicon");
 
-if (session.value?.user.email) {
-  try {
-    crypto.subtle
-      .digest("SHA-256", new TextEncoder().encode(session.value.user.email))
-      .then((hash) => {
+watch(
+  () => session.value?.user.email,
+  (email) => {
+    if (!email) return;
+    try {
+      crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)).then((hash) => {
         const seed = Array.from(new Uint8Array(hash))
           .map((b) => b.toString(16).padStart(2, "0"))
           .join("");
         userAvatar.value = `https://api.dicebear.com/7.x/personas/svg?seed=${seed}&d=identicon`;
       });
-  } catch {
-    // Silent fallback
-  }
-}
+    } catch {
+      // Silent fallback
+    }
+  },
+  { immediate: true },
+);
 
 const {
   notifications,
@@ -414,6 +486,8 @@ async function logout() {
     setToken(null);
     clearAdminToken();
     clearSession();
+    resetAccountShops();
+    resetAccountEnvironments();
     router.push({ name: "home" });
   }
 }
