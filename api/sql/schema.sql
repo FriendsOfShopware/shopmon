@@ -515,7 +515,7 @@ CREATE TABLE "composer_advisory" (
   CONSTRAINT composer_advisory_origin_check CHECK (origin IN ('upstream', 'shopmon', 'github'))
 );
 
--- Numbering for Shopmon advisory ids; see migration 000026.
+-- Numbering for Shopmon advisory ids; see migration 000027.
 CREATE SEQUENCE shopmon_advisory_seq;
 
 CREATE TABLE "composer_advisory_package" (
