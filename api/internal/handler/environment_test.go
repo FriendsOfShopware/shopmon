@@ -357,6 +357,11 @@ func TestCreateEnvironment(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "client-secret", decryptedSecret)
 	assert.Equal(t, "6.5.0.0", version)
+
+	var environmentToken string
+	err = env.Pool.QueryRow(t.Context(), `SELECT environment_token FROM environment WHERE id = $1`, result.ID).Scan(&environmentToken)
+	require.NoError(t, err)
+	assert.Regexp(t, `^[0-9a-f]{64}$`, environmentToken)
 }
 
 func TestCreateEnvironmentWithToken(t *testing.T) {
@@ -569,7 +574,7 @@ func TestUpdateEnvironmentTaskGrace(t *testing.T) {
 	update := func(t *testing.T, grace int) int {
 		t.Helper()
 		body, err := json.Marshal(api.UpdateEnvironmentRequest{
-			ShopId:                  shopID,
+			ShopId:           shopID,
 			TaskGraceMinutes: &grace,
 		})
 		require.NoError(t, err)

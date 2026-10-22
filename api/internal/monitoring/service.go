@@ -2,6 +2,8 @@ package monitoring
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -171,6 +173,12 @@ func (s *Service) CreateShop(ctx context.Context, cmd CreateShopCommand) (Create
 		return CreateShopResult{}, err
 	}
 
+	token, err := ensureEnvironmentToken(cmd.EnvironmentToken)
+	if err != nil {
+		return CreateShopResult{}, err
+	}
+	cmd.EnvironmentToken = token
+
 	shopInfo, err := s.environments.ValidateConnection(ctx, ConnectionCredentials{
 		URL:              cmd.EnvironmentURL,
 		ClientID:         cmd.ClientID,
@@ -227,6 +235,12 @@ func (s *Service) CreateEnvironment(ctx context.Context, cmd CreateEnvironmentCo
 		return 0, err
 	}
 
+	token, err := ensureEnvironmentToken(cmd.EnvironmentToken)
+	if err != nil {
+		return 0, err
+	}
+	cmd.EnvironmentToken = token
+
 	shopInfo, err := s.environments.ValidateConnection(ctx, ConnectionCredentials{
 		URL:              cmd.URL,
 		ClientID:         cmd.ClientID,
@@ -257,6 +271,18 @@ func (s *Service) CreateEnvironment(ctx context.Context, cmd CreateEnvironmentCo
 
 	s.dispatchInitialScrape(ctx, environmentID)
 	return environmentID, nil
+}
+
+// Preserve client-generated tokens already displayed during environment setup.
+func ensureEnvironmentToken(token string) (string, error) {
+	if token != "" {
+		return token, nil
+	}
+	value := make([]byte, 32)
+	if _, err := rand.Read(value); err != nil {
+		return "", fmt.Errorf("generate environment token: %w", err)
+	}
+	return hex.EncodeToString(value), nil
 }
 
 type UpdateShopCommand struct {
