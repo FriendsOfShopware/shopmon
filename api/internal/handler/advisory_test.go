@@ -30,10 +30,11 @@ func seedAdvisory(t *testing.T, q *queries.Queries, id string, packages []string
 		ReportedAt: pgtype.Timestamp{Time: time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC), Valid: true},
 	}))
 	for i, pkg := range packages {
+		pksaID := fmt.Sprintf("PKSA-%s-%d", id, i)
 		require.NoError(t, q.UpsertComposerAdvisoryPackage(ctx, queries.UpsertComposerAdvisoryPackageParams{
 			AdvisoryID:          id,
 			PackageName:         pkg,
-			PackagistAdvisoryID: fmt.Sprintf("PKSA-%s-%d", id, i),
+			PackagistAdvisoryID: &pksaID,
 			AffectedVersions:    ">=6.7.0.0,<6.7.10.1",
 		}))
 	}

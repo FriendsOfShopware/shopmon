@@ -1,6 +1,8 @@
 package sbom
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -82,6 +84,27 @@ func (i *Index) Match(installed map[string]string) []Match {
 		}
 	}
 	return out
+}
+
+// ValidateAffectedVersions reports whether a Composer constraint can ever be
+// matched by affects, using exactly its rules: empty and "*" are rejected as
+// bad data, anything the constraint parser cannot read is rejected. Admin
+// advisory authoring uses it to refuse a range that would silently never
+// match (or, for "*", flag every shop) instead of storing it.
+func ValidateAffectedVersions(constraint string) error {
+	constraint = strings.TrimSpace(constraint)
+	if constraint == "" {
+		return errors.New("affected versions must not be empty")
+	}
+	if constraint == "*" {
+		return errors.New("affected versions must be a concrete range, not \"*\"")
+	}
+	// The probe version only exists so the parser reads the constraint; its
+	// value is irrelevant to whether the constraint is well-formed.
+	if _, err := version.Satisfies("1.0.0", constraint); err != nil {
+		return fmt.Errorf("unparseable affected versions %q: %w", constraint, err)
+	}
+	return nil
 }
 
 // affects reports whether installedVersion falls inside a Composer affected

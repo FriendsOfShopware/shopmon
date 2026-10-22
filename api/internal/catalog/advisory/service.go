@@ -3,12 +3,14 @@ package advisory
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
@@ -271,6 +273,24 @@ func (s *Service) upsertOne(ctx context.Context, adv repository.SecurityAdvisory
 	// One logical row per CVE/GHSA; package ranges live in the child table.
 	canonicalID := canonicalAdvisoryID(cve, ghsa, adv.AdvisoryID)
 
+	// A manually tracked advisory (Shopmon-authored under its stable
+	// SHOPMON-… id, or imported from GitHub under its GHSA id) already linked
+	// to this CVE/GHSA is the same vulnerability. Upsert under that id so
+	// upstream data lands on the row shops were already matched and alerted
+	// against, instead of creating a duplicate canonical-CVE row. The upsert
+	// never touches origin or the admin enrichment columns, so the row keeps
+	// its provenance marking with its enrichment intact.
+	if cvePtr != nil || ghsaPtr != nil {
+		if manualRow, lookupErr := s.queries.GetManualAdvisoryByIdentifiers(ctx, queries.GetManualAdvisoryByIdentifiersParams{
+			Cve:    cvePtr,
+			GhsaID: ghsaPtr,
+		}); lookupErr == nil {
+			canonicalID = manualRow.AdvisoryID
+		} else if !errors.Is(lookupErr, pgx.ErrNoRows) {
+			return fmt.Errorf("lookup manual advisory for %s: %w", canonicalID, lookupErr)
+		}
+	}
+
 	if err := s.queries.UpsertComposerAdvisory(ctx, queries.UpsertComposerAdvisoryParams{
 		AdvisoryID:         canonicalID,
 		Title:              adv.Title,
@@ -288,7 +308,7 @@ func (s *Service) upsertOne(ctx context.Context, adv repository.SecurityAdvisory
 	if err := s.queries.UpsertComposerAdvisoryPackage(ctx, queries.UpsertComposerAdvisoryPackageParams{
 		AdvisoryID:          canonicalID,
 		PackageName:         adv.PackageName,
-		PackagistAdvisoryID: adv.AdvisoryID,
+		PackagistAdvisoryID: &adv.AdvisoryID,
 		AffectedVersions:    affected,
 	}); err != nil {
 		return fmt.Errorf("upsert advisory package %s/%s: %w", canonicalID, adv.PackageName, err)

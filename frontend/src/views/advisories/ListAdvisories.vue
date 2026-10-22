@@ -173,6 +173,7 @@
             <span class="font-medium transition-colors group-hover:text-primary">{{
               adv.title
             }}</span>
+            <ShopmonAdvisoryBadge :advisory="adv" class="text-[10px]" />
             <!-- Blast radius. Icon + text, never colour alone, so the signal
                  survives greyscale and colour-vision differences. -->
             <Badge
@@ -260,6 +261,7 @@
 import EmptyState from "@/components/EmptyState.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import SeverityBadge from "@/components/advisories/SeverityBadge.vue";
+import ShopmonAdvisoryBadge from "@/components/advisories/ShopmonAdvisoryBadge.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

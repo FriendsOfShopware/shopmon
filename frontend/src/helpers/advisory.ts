@@ -1,5 +1,41 @@
 // Shared severity styling and link safety for the advisory pages.
 
+type AdvisoryOriginLike = {
+  origin?: string | null;
+  cve?: string | null;
+  ghsaId?: string | null;
+};
+
+// Whether the advisory was authored by Shopmon rather than synced from an
+// upstream registry. Shopmon reports are badged everywhere they surface.
+export function isShopmonAdvisory(advisory: AdvisoryOriginLike): boolean {
+  return advisory.origin === "shopmon";
+}
+
+// The official identifier a Shopmon advisory was linked to, if any: CVE first,
+// then GHSA — the same precedence the backend uses for public ids.
+export function advisoryOfficialId(advisory: AdvisoryOriginLike): string | null {
+  return advisory.cve || advisory.ghsaId || null;
+}
+
+export function isLinkedShopmonAdvisory(advisory: AdvisoryOriginLike): boolean {
+  return isShopmonAdvisory(advisory) && advisoryOfficialId(advisory) !== null;
+}
+
+// Whether the advisory is tracked manually (authored by Shopmon or imported
+// from GitHub) rather than synced from Packagist. Manual advisories expose
+// content editing and official linking in the admin UI.
+export function isManualAdvisory(advisory: AdvisoryOriginLike): boolean {
+  return advisory.origin === "shopmon" || advisory.origin === "github";
+}
+
+// Whether the sync owns the advisory's core fields: once an official CVE is
+// linked, upstream data wins and content editing closes. A GHSA-only manual
+// advisory stays editable.
+export function isAdvisoryContentLocked(advisory: AdvisoryOriginLike): boolean {
+  return !!advisory.cve;
+}
+
 // Advisory URLs come from Packagist, NVD, and admin enrichment — none of which
 // Shopmon controls. rel="noopener noreferrer" does not stop a javascript: or
 // data: href from executing on click, so only http(s) links are ever rendered

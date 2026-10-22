@@ -176,7 +176,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	catalogService := catalog.NewService(catalogRepository, catalogGateway)
 	accountReadModel := accountread.NewService(q)
 	adminReadModel := adminread.NewService(q)
-	advisoryReadModel := advisoryread.NewService(q)
+	advisoryReadModel := advisoryread.NewService(pool, q, nil)
 	suppressionService := suppression.NewService(suppressionpostgres.NewRepository(pool, q), organizationAuthorizer)
 	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
 	jobDispatcher := jobs.NewDispatcher(bus)

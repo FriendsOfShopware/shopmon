@@ -65,9 +65,19 @@ services:
 
   rustfs:
     image: rustfs/rustfs:latest
+    environment:
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
     ports:
       - "9000:9000"
       - "9001:9001"
+    volumes:
+      - rustfs-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   jaeger:
     image: jaegertracing/all-in-one:latest
@@ -78,12 +88,14 @@ services:
       - "4318:4318"
 
   createbuckets:
-    image: minio/mc
+    image: rustfs/rc:latest
     depends_on:
-      - rustfs
+      rustfs:
+        condition: service_healthy
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://rustfs:9000 rustfsadmin rustfsadmin; /usr/bin/mc mb -p myminio/sitespeed-results; /usr/bin/mc mb -p myminio/shopmon; exit 0; "
+      /bin/sh -c " rc alias set local http://rustfs:9000 rustfsadmin rustfsadmin; rc bucket create -p local/sitespeed-results; rc bucket create -p local/shopmon; exit 0; "
 
 volumes:
   db-data:
   lavinmq-data:
+  rustfs-data:

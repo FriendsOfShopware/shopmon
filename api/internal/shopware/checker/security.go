@@ -10,8 +10,9 @@ import (
 )
 
 // SecurityAdvisory is a catalog entry used to flag vulnerable Shopware
-// installs. Populated from the local composer_advisory table (Packagist sync).
-// One entry is one logical CVE/GHSA, which may cover multiple packages.
+// installs. Populated from the local composer_advisory table (Packagist sync,
+// plus advisories authored by Shopmon admins). One entry is one logical
+// CVE/GHSA, which may cover multiple packages.
 type SecurityAdvisory struct {
 	ID       string
 	Title    string
@@ -19,6 +20,9 @@ type SecurityAdvisory struct {
 	GHSA     string
 	Link     string
 	Severity string
+	// Origin is "shopmon" for Shopmon-authored advisories and "upstream" for
+	// synced ones; it selects the message keys that mark Shopmon reports.
+	Origin   string
 	Packages []SecurityAdvisoryPackage
 }
 
@@ -65,10 +69,10 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 	matched := matchAdvisories(shopwareVersion, input.InstalledPackages, input.SecurityAdvisories)
 	for _, adv := range matched {
 		id := securityCheckID(adv.SecurityAdvisory)
-		params := map[string]any{"title": adv.Title, "cve": adv.CVE}
-		messageKey := "check.security.advisory"
+		params := map[string]any{"title": adv.Title, "cve": adv.CVE, "id": adv.ID}
+		messageKey := advisoryMessageKey("check.security.advisory", adv.Origin)
 		if adv.CVE != "" {
-			messageKey = "check.security.advisoryCve"
+			messageKey = advisoryMessageKey("check.security.advisoryCve", adv.Origin)
 		}
 		// When the hit came from a dependency rather than the core itself, name
 		// the package so the check is actionable.
@@ -76,7 +80,7 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 		if isDependency {
 			params["package"] = adv.PackageName
 			params["installedVersion"] = adv.InstalledVersion
-			messageKey = "check.security.advisoryPackage"
+			messageKey = advisoryMessageKey("check.security.advisoryPackage", adv.Origin)
 		}
 		link := adv.Link
 
@@ -93,19 +97,19 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 			// naming the plugin version is auditable, a missing row is not.
 			params["securityPluginVersion"] = resolution.InstalledVersion
 			params["securityPluginFixVersion"] = resolution.RequiredVersion
-			output.Success(id, "check.security.advisoryMitigated", params, SourceSecurity, link)
+			output.Success(id, advisoryMessageKey("check.security.advisoryMitigated", adv.Origin), params, SourceSecurity, link)
 			continue
 		case CoverageOutdated:
 			// Exposed, but one plugin update away rather than a core upgrade.
 			params["securityPluginVersion"] = resolution.InstalledVersion
 			params["securityPluginFixVersion"] = resolution.RequiredVersion
-			output.Warning(id, "check.security.advisoryPluginOutdated", params, SourceSecurity, link)
+			output.Warning(id, advisoryMessageKey("check.security.advisoryPluginOutdated", adv.Origin), params, SourceSecurity, link)
 			continue
 		case CoverageNotInstalled:
 			params["securityPluginFixVersion"] = resolution.RequiredVersion
-			messageKey = "check.security.advisoryInstallPlugin"
+			messageKey = advisoryMessageKey("check.security.advisoryInstallPlugin", adv.Origin)
 		case CoverageNotBackported:
-			messageKey = "check.security.advisoryNotBackported"
+			messageKey = advisoryMessageKey("check.security.advisoryNotBackported", adv.Origin)
 		}
 
 		switch strings.ToLower(adv.Severity) {
@@ -200,6 +204,17 @@ func lookupInstalledVersion(installed map[string]string, packageName string) (st
 	}
 	v, ok := installed[strings.ToLower(strings.TrimSpace(packageName))]
 	return v, ok
+}
+
+// advisoryMessageKey picks the message key variant that marks a
+// Shopmon-authored advisory as a Shopmon report — users must be able to tell
+// a Shopmon early warning apart from an official CVE at a glance. Every
+// advisory* locale key has a *Shopmon twin carrying that marker.
+func advisoryMessageKey(base, origin string) string {
+	if origin == "shopmon" {
+		return base + "Shopmon"
+	}
+	return base
 }
 
 // SecurityCheckID is the stable check id for an advisory. It is exported so

@@ -420,6 +420,23 @@ spec:
           ports:
             - containerPort: 9000
             - containerPort: 9001
+          env:
+            - name: RUSTFS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: shopmon-secrets
+                  key: APP_S3_ACCESS_KEY_ID
+            - name: RUSTFS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: shopmon-secrets
+                  key: APP_S3_SECRET_ACCESS_KEY
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 5
           resources:
             requests:
               memory: "64Mi"
@@ -462,17 +479,17 @@ spec:
           command:
             - sh
             - -c
-            - "until wget -qO- http://rustfs:9000/minio/health/live; do sleep 2; done"
+            - "until wget -qO- http://rustfs:9000/health; do sleep 2; done"
       containers:
-        - name: mc
-          image: minio/mc
+        - name: rc
+          image: rustfs/rc:latest
           command:
             - sh
             - -c
             - |
-              /usr/bin/mc alias set myminio http://rustfs:9000 rustfsadmin rustfsadmin
-              /usr/bin/mc mb -p myminio/sitespeed-results
-              /usr/bin/mc mb -p myminio/shopmon
+              rc alias set local http://rustfs:9000 rustfsadmin rustfsadmin
+              rc bucket create -p local/sitespeed-results
+              rc bucket create -p local/shopmon
           resources:
             requests:
               memory: "32Mi"

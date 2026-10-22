@@ -164,6 +164,10 @@ WHERE
     OR sqlc.narg('tag') = ANY(a.tags)
   )
   AND (
+    sqlc.narg('origin')::text IS NULL
+    OR a.origin = sqlc.narg('origin')
+  )
+  AND (
     sqlc.narg('search')::text IS NULL
     OR a.title ILIKE '%' || sqlc.narg('search') || '%'
     OR COALESCE(a.cve, '') ILIKE '%' || sqlc.narg('search') || '%'
@@ -200,6 +204,10 @@ WHERE
   AND (
     sqlc.narg('tag')::text IS NULL
     OR sqlc.narg('tag') = ANY(a.tags)
+  )
+  AND (
+    sqlc.narg('origin')::text IS NULL
+    OR a.origin = sqlc.narg('origin')
   )
   AND (
     sqlc.narg('search')::text IS NULL
@@ -241,6 +249,156 @@ UPDATE composer_advisory SET
   updated_at = NOW()
 WHERE advisory_id = $1
 RETURNING *;
+
+-- Shopmon-authored advisory numbering ("SHOPMON-2026-0001"); the sequence is
+-- global so an id is never reissued for a different vulnerability.
+-- name: NextShopmonAdvisoryNumber :one
+SELECT nextval('shopmon_advisory_seq')::bigint AS number;
+
+-- name: InsertManualAdvisory :one
+INSERT INTO composer_advisory (
+  advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at,
+  summary, description, cvss_score, cvss_vector, cwes, external_references,
+  details_source, details_synced_at, github_synced_at,
+  is_visible, notes_public, notes_internal,
+  remediation_summary, remediation_url, recommended_upgrade,
+  shopware_impact_summary, affected_components, tags, origin, created_by,
+  synced_at, created_at, updated_at
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8,
+  $9, $10, $11, $12, $13, $14,
+  $15, $16, $17,
+  $18, $19, $20,
+  $21, $22, $23,
+  $24, $25, $26, $27, $28,
+  NOW(), NOW(), NOW()
+)
+RETURNING *;
+
+-- Full content rewrite for Shopmon-authored rows (admin edit) and for the
+-- link/merge path, where the service computes the surviving row's content
+-- from the Shopmon row and the official row being merged into it. Enrichment
+-- columns are deliberately absent; UpdateComposerAdvisoryEnrichment owns them.
+-- name: UpdateComposerAdvisoryContent :one
+UPDATE composer_advisory SET
+  title = $2,
+  link = $3,
+  cve = $4,
+  ghsa_id = $5,
+  severity = $6,
+  sources = $7,
+  reported_at = $8,
+  composer_repository = $9,
+  summary = $10,
+  description = $11,
+  cvss_score = $12,
+  cvss_vector = $13,
+  cwes = $14,
+  external_references = $15,
+  details_source = $16,
+  details_synced_at = $17,
+  github_synced_at = $18,
+  first_patched_versions = $19,
+  updated_at = NOW()
+WHERE advisory_id = $1
+RETURNING *;
+
+-- name: DeleteComposerAdvisoryPackages :exec
+DELETE FROM composer_advisory_package WHERE advisory_id = $1;
+
+-- name: GetComposerAdvisoryForUpdate :one
+SELECT * FROM composer_advisory WHERE advisory_id = $1 FOR UPDATE;
+
+-- Resolution fallbacks so a linked Shopmon advisory answers to its official
+-- identifiers, mirroring GetComposerAdvisoryByPackagistID. A Shopmon row wins
+-- over theoretical siblings sharing the identifier because it is the row
+-- suppressions and alerts were recorded against.
+-- name: GetComposerAdvisoryByCve :one
+SELECT * FROM composer_advisory
+WHERE cve = $1
+ORDER BY (origin = 'shopmon') DESC, advisory_id
+LIMIT 1;
+
+-- name: GetComposerAdvisoryByGhsa :one
+SELECT * FROM composer_advisory
+WHERE ghsa_id = $1
+ORDER BY (origin = 'shopmon') DESC, advisory_id
+LIMIT 1;
+
+-- Sync-time merge target: a manually tracked row (Shopmon-authored or
+-- GitHub-imported) already linked to the CVE/GHSA a Packagist advisory
+-- carries. Upserting under its id keeps one row per vulnerability instead
+-- of a manual row plus a canonical CVE row.
+-- name: GetManualAdvisoryByIdentifiers :one
+SELECT * FROM composer_advisory
+WHERE origin IN ('shopmon', 'github')
+  AND (
+    (sqlc.narg('cve')::text IS NOT NULL AND cve = sqlc.narg('cve'))
+    OR (sqlc.narg('ghsa_id')::text IS NOT NULL AND ghsa_id = sqlc.narg('ghsa_id'))
+  )
+ORDER BY advisory_id
+LIMIT 1;
+
+-- Every row claiming one of the identifiers, by column or by canonical id.
+-- Drives duplicate detection on create and merge-candidate lookup on link.
+-- name: ListComposerAdvisoriesByIdentifiers :many
+SELECT * FROM composer_advisory
+WHERE
+  (sqlc.narg('cve')::text IS NOT NULL AND (cve = sqlc.narg('cve') OR advisory_id = sqlc.narg('cve')))
+  OR (sqlc.narg('ghsa_id')::text IS NOT NULL AND (ghsa_id = sqlc.narg('ghsa_id') OR advisory_id = sqlc.narg('ghsa_id')))
+ORDER BY advisory_id;
+
+-- Merge of an already-synced official row ($2) into the surviving Shopmon row
+-- ($1). Matches and notification markers move first so affected shops keep
+-- their state and are never re-alerted; whatever cannot move without
+-- colliding with the survivor's own rows is left behind and removed by the
+-- cascade when the official row is deleted.
+-- name: MergeEnvironmentAdvisoryMatches :exec
+UPDATE environment_advisory_match m SET advisory_id = $1
+WHERE m.advisory_id = $2
+  AND NOT EXISTS (
+    SELECT 1 FROM environment_advisory_match keep
+    WHERE keep.environment_id = m.environment_id
+      AND keep.advisory_id = $1
+      AND keep.package_name = m.package_name
+  );
+
+-- name: MergeEnvironmentAdvisoryNotifications :exec
+INSERT INTO environment_advisory_notified (environment_id, advisory_id, notified_at)
+SELECT src.environment_id, $1, src.notified_at
+FROM environment_advisory_notified src
+WHERE src.advisory_id = $2
+ON CONFLICT (environment_id, advisory_id) DO NOTHING;
+
+-- Revoked suppressions are pure audit trail and move unconditionally; active
+-- ones move only where the survivor has no active suppression for the same
+-- shop/environment (the partial unique indexes would reject the rest, and
+-- those are duplicates of the survivor's own acknowledgement).
+-- name: MergeRevokedAdvisorySuppressions :exec
+UPDATE advisory_suppression SET advisory_id = $1
+WHERE advisory_id = $2 AND revoked_at IS NOT NULL;
+
+-- name: MergeActiveAdvisorySuppressions :exec
+UPDATE advisory_suppression s SET advisory_id = $1
+WHERE s.advisory_id = $2
+  AND s.revoked_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM advisory_suppression keep
+    WHERE keep.advisory_id = $1
+      AND keep.revoked_at IS NULL
+      AND keep.shop_id = s.shop_id
+      AND keep.environment_id IS NOT DISTINCT FROM s.environment_id
+  );
+
+-- Re-pointing the official package rows (after the survivor's own rows are
+-- deleted) adopts the upstream ranges and PKSA ids without ever holding two
+-- rows with the same packagist_advisory_id.
+-- name: MergeComposerAdvisoryPackages :exec
+UPDATE composer_advisory_package SET advisory_id = $1
+WHERE advisory_id = $2;
+
+-- name: DeleteComposerAdvisory :exec
+DELETE FROM composer_advisory WHERE advisory_id = $1;
 
 -- name: GetComposerAdvisorySyncState :one
 SELECT * FROM composer_advisory_sync_state WHERE id = 1;
