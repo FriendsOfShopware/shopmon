@@ -103,6 +103,39 @@ describe("advisory import form", () => {
 });
 
 describe("advisory editing", () => {
+  it.each([
+    { name: "updated disclosure", saved: "https://example.com/new", edited: undefined },
+    { name: "cleared disclosure", saved: "", edited: undefined },
+    {
+      name: "independent linking edit",
+      saved: "https://example.com/new",
+      edited: "https://example.com/official",
+    },
+    { name: "independently cleared linking field", saved: "https://example.com/new", edited: "" },
+  ])("keeps the linking URL correct after saving $name", async ({ saved, edited }) => {
+    api.adminGetAdvisory.mockResolvedValue({
+      data: { ...advisory, link: "https://example.com/old" },
+    });
+    api.adminUpdateAdvisory.mockResolvedValue({ data: { ...advisory, link: saved || undefined } });
+    const wrapper = mount(DetailAdvisory);
+    await flushPromises();
+    const linkInput = wrapper.get<HTMLInputElement>("#edit-advisory-linkForm-link");
+    if (edited !== undefined) {
+      await linkInput.setValue(edited);
+    }
+    await wrapper.get("#edit-advisory-contentForm-link").setValue(saved);
+    await click(wrapper, "Save");
+    const expected = edited ?? saved;
+    expect(linkInput.element.value).toBe(expected);
+    await wrapper.get("#edit-advisory-linkForm-ghsaId").setValue("GHSA-2345-2345-2345");
+    await click(wrapper, "Link official advisory");
+    expect(api.adminLinkAdvisoryOfficial).toHaveBeenCalledWith({
+      path: { advisoryId: advisory.advisoryId },
+      body: { cve: undefined, ghsaId: "GHSA-2345-2345-2345", link: expected || undefined },
+    });
+    wrapper.unmount();
+  });
+
   it("preserves unsaved enrichment and link inputs when saving content, including CWE names", async () => {
     const wrapper = mount(DetailAdvisory);
     await flushPromises();

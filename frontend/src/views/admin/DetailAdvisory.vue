@@ -602,6 +602,11 @@ async function saveContent() {
         (apiError as { message?: string } | undefined)?.message ?? t("admin.coreSaveFailed");
       return;
     }
+    // Both cards edit the disclosure URL. Keep an untouched linking field
+    // current without replacing an independent, unsaved edit in that card.
+    if (linkForm.link === (advisory.value.link ?? "")) {
+      linkForm.link = data.link ?? "";
+    }
     advisory.value = data;
     loadContentForm(data);
     contentSuccess.value = true;
