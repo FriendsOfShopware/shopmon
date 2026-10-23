@@ -128,4 +128,19 @@ describe("FilterSelect", () => {
     await flushPromises();
     expect(wrapper.emitted("update:modelValue")).toEqual([["shopware/core"]]);
   });
+
+  it("updates the empty state when matching options are removed", async () => {
+    const { wrapper, input } = await setup();
+    await search(input, "core");
+    expect(document.querySelectorAll('[role="option"]')).toHaveLength(1);
+    await wrapper.setProps({ options: [{ value: "all", label: "All packages" }] });
+    await flushPromises();
+    expect(document.querySelectorAll('[role="option"]')).toHaveLength(0);
+    expect(document.body.textContent).toContain("No matching options.");
+    expect(document.querySelector('[data-slot="command-group"]')?.hasAttribute("hidden")).toBe(
+      true,
+    );
+    expect(input.value).toBe("core");
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+  });
 });

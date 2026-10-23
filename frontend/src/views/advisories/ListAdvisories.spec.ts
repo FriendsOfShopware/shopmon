@@ -233,6 +233,68 @@ describe("advisory listing", () => {
     await flushPromises();
   });
 
+  it("shows late package suggestions for an existing search without reopening the dropdown", async () => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const originalScrollIntoView = Object.getOwnPropertyDescriptor(
+      Element.prototype,
+      "scrollIntoView",
+    );
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn(),
+    });
+    try {
+      const packages = deferred<Awaited<ReturnType<typeof listAdvisoryPackages<false>>>>();
+      vi.mocked(listAdvisoryPackages).mockReturnValueOnce(packages.promise);
+      const { wrapper, router } = await setup();
+      await wrapper.get("#advisory-package").trigger("click");
+      await flushPromises();
+      const input = document.querySelector<HTMLInputElement>('input[role="combobox"]')!;
+      input.value = "CORE";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await flushPromises();
+      expect(document.body.textContent).toContain("No matching options.");
+
+      packages.resolve({
+        data: ["shopware/core", "shopware/storefront"],
+        error: undefined,
+        response: new Response(),
+      });
+      await flushPromises();
+      expect(document.body.textContent).not.toContain("No matching options.");
+      const options = [...document.querySelectorAll<HTMLElement>('[role="option"]')];
+      expect(options.map((option) => option.textContent?.trim())).toEqual(["shopware/core"]);
+      expect(options[0].closest("[hidden]")).toBeNull();
+      expect(document.querySelector('input[role="combobox"]')).toBe(input);
+      expect(input.value).toBe("CORE");
+      expect(router.currentRoute.value.query.package).toBeUndefined();
+
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
+      );
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+      );
+      await flushPromises();
+      expect(router.currentRoute.value.query.package).toBe("shopware/core");
+      wrapper.unmount();
+    } finally {
+      vi.unstubAllGlobals();
+      if (originalScrollIntoView) {
+        Object.defineProperty(Element.prototype, "scrollIntoView", originalScrollIntoView);
+      } else {
+        Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+      }
+    }
+  });
+
   it("recovers an out-of-range bookmarked page", async () => {
     vi.mocked(listAdvisories)
       .mockResolvedValueOnce(response([], 26))
