@@ -21,6 +21,7 @@ vi.mock("vue-router", () => ({
 const cwes = [{ id: "CWE-79", name: "Cross-site Scripting" }];
 const advisory: AdminAdvisory = {
   advisoryId: "SHOPMON-2026-0001",
+  impact: { shopCount: 2, environmentCount: 3, activeShopCount: 1, suppressedEnvironmentCount: 2 },
   title: "Original title",
   origin: "shopmon",
   isVisible: false,
@@ -103,6 +104,41 @@ describe("advisory import form", () => {
 });
 
 describe("advisory editing", () => {
+  it("shows distinct shop impact for a draft and refreshes it after saving", async () => {
+    const wrapper = mount(DetailAdvisory);
+    await flushPromises();
+    const metrics = () => wrapper.findAll("dl > div").map((metric) => metric.text());
+    expect(metrics()).toEqual([
+      "Affected shops2",
+      "Affected environments3",
+      "Shops with unsuppressed matches1",
+      "Suppressed environments2",
+    ]);
+    expect(wrapper.text()).toContain(
+      "Includes drafts; shops without inventory data are not included.",
+    );
+    api.adminUpdateAdvisory.mockResolvedValueOnce({
+      data: {
+        ...advisory,
+        impact: {
+          shopCount: 0,
+          environmentCount: 0,
+          activeShopCount: 0,
+          suppressedEnvironmentCount: 0,
+        },
+      },
+    });
+    await wrapper.get("#edit-advisory-form-notesInternal").setValue("Reviewed");
+    await click(wrapper, "Save", 1);
+    expect(metrics()).toEqual([
+      "Affected shops0",
+      "Affected environments0",
+      "Shops with unsuppressed matches0",
+      "Suppressed environments0",
+    ]);
+    wrapper.unmount();
+  });
+
   it.each([
     { name: "updated disclosure", saved: "https://example.com/new", edited: undefined },
     { name: "cleared disclosure", saved: "", edited: undefined },

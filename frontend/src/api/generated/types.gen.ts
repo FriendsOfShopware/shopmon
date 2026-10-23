@@ -110,6 +110,7 @@ export type AdminAdvisory = {
         [key: string]: string;
     };
     ghsaId?: string;
+    impact: AdminAdvisoryImpact;
     isVisible: boolean;
     link?: string;
     notesInternal?: string;
@@ -131,6 +132,13 @@ export type AdminAdvisory = {
     tags: Array<string>;
     title: string;
     updatedAt: string;
+};
+
+export type AdminAdvisoryImpact = {
+    activeShopCount: number;
+    environmentCount: number;
+    shopCount: number;
+    suppressedEnvironmentCount: number;
 };
 
 export type AdminAdvisoryListResponse = {

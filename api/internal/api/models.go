@@ -480,8 +480,20 @@ type AccountShop struct {
 	OrganizationName     string  `json:"organizationName"`
 }
 
+// AdminAdvisoryImpact reports distinct shops and environments across all
+// organizations, matched against the latest collected Composer inventories.
+// Includes hidden drafts; suppressions do not reduce the total impact.
+type AdminAdvisoryImpact struct {
+	ShopCount        int `json:"shopCount"`
+	EnvironmentCount int `json:"environmentCount"`
+	// ActiveShopCount Shops with at least one matching, unsuppressed environment.
+	ActiveShopCount            int `json:"activeShopCount"`
+	SuppressedEnvironmentCount int `json:"suppressedEnvironmentCount"`
+}
+
 // AdminAdvisory defines model for AdminAdvisory.
 type AdminAdvisory struct {
+	Impact AdminAdvisoryImpact `json:"impact"`
 	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA; SHOPMON-YYYY-NNNN for Shopmon-authored advisories)
 	AdvisoryId         string   `json:"advisoryId"`
 	AffectedComponents []string `json:"affectedComponents"`

@@ -1068,6 +1068,16 @@
     "created": "Created",
     "backToDashboard": "Back to Dashboard",
     "advisories": "Advisories",
+    "advisoryImpact": {
+      "title": "Shop impact",
+      "hint": "Across all organizations, based on the latest collected Composer inventories. Includes drafts; shops without inventory data are not included.",
+      "shopsCount": "{count} shop affected | {count} shops affected",
+      "shopCount": "Affected shops",
+      "environmentCount": "Affected environments",
+      "activeShopCount": "Shops with unsuppressed matches",
+      "suppressedEnvironmentCount": "Suppressed environments",
+      "suppressionHint": "Each shop is counted once, even if several environments or packages match. A suppression acknowledges a match and does not reduce the affected totals."
+    },
     "backToAdvisories": "Back to advisories",
     "syncAdvisories": "Sync from Packagist",
     "syncEnqueued": "Advisory sync job enqueued",

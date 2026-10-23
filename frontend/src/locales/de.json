@@ -1068,6 +1068,16 @@
     "environmentHealth": "Umgebungs-Zustand",
     "backToDashboard": "Zurück zum Dashboard",
     "advisories": "Sicherheitsmeldungen",
+    "advisoryImpact": {
+      "title": "Auswirkungen auf Shops",
+      "hint": "Über alle Organisationen hinweg, basierend auf den zuletzt erfassten Composer-Inventaren. Einschließlich Entwürfen; Shops ohne Inventardaten werden nicht berücksichtigt.",
+      "shopsCount": "{count} Shop betroffen | {count} Shops betroffen",
+      "shopCount": "Betroffene Shops",
+      "environmentCount": "Betroffene Umgebungen",
+      "activeShopCount": "Shops mit nicht unterdrückten Treffern",
+      "suppressedEnvironmentCount": "Unterdrückte Umgebungen",
+      "suppressionHint": "Jeder Shop wird nur einmal gezählt, auch wenn mehrere Umgebungen oder Pakete betroffen sind. Eine Unterdrückung bestätigt einen Treffer und verringert die Gesamtzahl der Betroffenen nicht."
+    },
     "backToAdvisories": "Zurück zu den Meldungen",
     "syncAdvisories": "Von Packagist synchronisieren",
     "syncEnqueued": "Synchronisierungsauftrag eingereiht",

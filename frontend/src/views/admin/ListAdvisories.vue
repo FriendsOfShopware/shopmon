@@ -45,6 +45,8 @@
       <span v-if="syncMessage" class="text-sm text-muted-foreground">{{ syncMessage }}</span>
     </div>
 
+    <p class="mb-4 text-sm text-muted-foreground">{{ $t("admin.advisoryImpact.hint") }}</p>
+
     <Alert v-if="error" variant="destructive" class="mb-4">
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
@@ -98,6 +100,13 @@
                 class="font-mono text-[10px]"
                 >{{ pkg.packageName }}</Badge
               >
+            </span>
+            <span
+              class="inline-flex items-center gap-1 font-medium tabular-nums"
+              :class="adv.impact.shopCount > 0 ? 'text-amber-700 dark:text-amber-400' : ''"
+            >
+              <icon-fa6-solid:store class="size-3" />
+              {{ $t("admin.advisoryImpact.shopsCount", adv.impact.shopCount) }}
             </span>
             <span v-if="adv.cve" class="font-mono">{{ adv.cve }}</span>
             <span v-if="adv.reportedAt" class="inline-flex items-center gap-1">
