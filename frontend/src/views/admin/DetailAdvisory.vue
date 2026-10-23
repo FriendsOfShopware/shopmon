@@ -54,6 +54,11 @@
         </div>
       </div>
 
+      <AdvisoryImpactPreview
+        :key="advisory.advisoryId"
+        :packages="isManual && !isLocked ? contentForm.packages : advisory.packages"
+      />
+
       <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         <!-- Main column -->
         <div class="min-w-0 space-y-6">
@@ -438,6 +443,7 @@
 </template>
 
 <script setup lang="ts">
+import AdvisoryImpactPreview from "@/components/advisories/AdvisoryImpactPreview.vue";
 import AdvisoryPackageEditor from "@/components/advisories/AdvisoryPackageEditor.vue";
 import SeverityBadge from "@/components/advisories/SeverityBadge.vue";
 import ShopmonAdvisoryBadge from "@/components/advisories/ShopmonAdvisoryBadge.vue";

@@ -480,6 +480,34 @@ type AccountShop struct {
 	OrganizationName     string  `json:"organizationName"`
 }
 
+// AdminAdvisoryImpact is a read-only preview of submitted package constraints
+// against collected inventories across all organizations, including suppressed matches.
+type AdminAdvisoryImpact struct {
+	ShopCount        int                       `json:"shopCount"`
+	EnvironmentCount int                       `json:"environmentCount"`
+	Shops            []AdminAdvisoryImpactShop `json:"shops"`
+}
+
+type AdminAdvisoryImpactShop struct {
+	ShopId           int                        `json:"shopId"`
+	ShopName         string                     `json:"shopName"`
+	OrganizationId   string                     `json:"organizationId"`
+	OrganizationName string                     `json:"organizationName"`
+	Matches          []AdminAdvisoryImpactMatch `json:"matches"`
+}
+
+type AdminAdvisoryImpactMatch struct {
+	EnvironmentId    int    `json:"environmentId"`
+	EnvironmentName  string `json:"environmentName"`
+	PackageName      string `json:"packageName"`
+	InstalledVersion string `json:"installedVersion"`
+	AffectedVersions string `json:"affectedVersions"`
+}
+
+type AdminPreviewAdvisoryImpactRequest struct {
+	Packages []AdvisoryPackageInput `json:"packages" maxItems:"100"`
+}
+
 // AdminAdvisory defines model for AdminAdvisory.
 type AdminAdvisory struct {
 	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA; SHOPMON-YYYY-NNNN for Shopmon-authored advisories)

@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import type { AdminAdvisory, GhsaAdvisoryPreview } from "@/api/generated";
+import AdvisoryImpactPreview from "@/components/advisories/AdvisoryImpactPreview.vue";
+import AdvisoryPackageEditor from "@/components/advisories/AdvisoryPackageEditor.vue";
 import CreateAdvisory from "./CreateAdvisory.vue";
 import DetailAdvisory from "./DetailAdvisory.vue";
 
 const api = vi.hoisted(() => ({
   adminGetAdvisory: vi.fn(),
+  adminPreviewAdvisoryImpact: vi.fn(),
   adminUpdateAdvisory: vi.fn(),
   adminLinkAdvisoryOfficial: vi.fn(),
   adminPreviewGhsaImport: vi.fn(),
@@ -103,6 +106,32 @@ describe("advisory import form", () => {
 });
 
 describe("advisory editing", () => {
+  it("previews current unsaved constraints without saving the advisory", async () => {
+    const wrapper = mount(DetailAdvisory);
+    await flushPromises();
+    const editor = wrapper.getComponent(AdvisoryPackageEditor);
+    await editor.findAll("input")[1].setValue("<1.5.0");
+    expect(wrapper.getComponent(AdvisoryImpactPreview).props("packages")).toEqual([
+      { packageName: "vendor/package", affectedVersions: "<1.5.0" },
+    ]);
+    expect(api.adminUpdateAdvisory).not.toHaveBeenCalled();
+    expect(api.adminPreviewAdvisoryImpact).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("previews saved constraints for locked upstream advisories", async () => {
+    api.adminGetAdvisory.mockResolvedValue({
+      data: { ...advisory, origin: "upstream", cve: "CVE-2026-1234" },
+    });
+    const wrapper = mount(DetailAdvisory);
+    await flushPromises();
+    expect(wrapper.findComponent(AdvisoryPackageEditor).exists()).toBe(false);
+    expect(wrapper.getComponent(AdvisoryImpactPreview).props("packages")).toEqual(
+      advisory.packages,
+    );
+    wrapper.unmount();
+  });
+
   it.each([
     { name: "updated disclosure", saved: "https://example.com/new", edited: undefined },
     { name: "cleared disclosure", saved: "", edited: undefined },

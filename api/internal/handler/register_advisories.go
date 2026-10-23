@@ -91,6 +91,16 @@ func registerAdvisories(api huma.API, h *Handler) {
 	}, h.AdminListAdvisories)
 
 	huma.Register(api, huma.Operation{
+		OperationID: "adminPreviewAdvisoryImpact",
+		Method:      http.MethodPost,
+		Path:        "/admin/advisories/impact",
+		Summary:     "Preview affected shops for package constraints (admin only)",
+		Description: "Checks the submitted Composer package constraints against collected inventories across all organizations. Returns distinct shops and their matching environments and packages, including suppressed matches. Does not save or publish an advisory.",
+		Tags:        []string{"Admin"},
+		Errors:      []int{http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden},
+	}, h.AdminPreviewAdvisoryImpact)
+
+	huma.Register(api, huma.Operation{
 		OperationID:   "adminCreateAdvisory",
 		Method:        http.MethodPost,
 		Path:          "/admin/advisories",
