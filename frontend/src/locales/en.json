@@ -98,6 +98,8 @@
     }
   },
   "common": {
+    "searchOptions": "Search options…",
+    "noMatchingOptions": "No matching options.",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -220,6 +222,7 @@
     "title": "Security Advisories",
     "subtitle": "Packagist security advisories for official Shopware Composer packages, with Shopmon context when available.",
     "searchPlaceholder": "Search title, CVE, GHSA, package…",
+    "searchPackages": "Search packages…",
     "allPackages": "All packages",
     "allSeverities": "All severities",
     "loading": "Loading advisories…",
@@ -284,6 +287,8 @@
     },
     "affectedCount": "{count} shop | {count} shops",
     "totalCount": "{count} advisory | {count} advisories",
+    "resultRange": "Showing {start}–{end} of {total} advisories",
+    "pagination": "Advisory pagination",
     "search": "Search",
     "kpi": {
       "severity": "Severity",

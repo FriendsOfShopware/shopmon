@@ -98,6 +98,8 @@
     }
   },
   "common": {
+    "searchOptions": "Optionen suchen…",
+    "noMatchingOptions": "Keine passenden Optionen.",
     "save": "Speichern",
     "cancel": "Abbrechen",
     "delete": "Löschen",
@@ -220,6 +222,7 @@
     "title": "Sicherheitsmeldungen",
     "subtitle": "Packagist-Sicherheitsmeldungen für offizielle Shopware-Composer-Pakete, ergänzt um Shopmon-Kontext.",
     "searchPlaceholder": "Titel, CVE, GHSA, Paket suchen…",
+    "searchPackages": "Pakete suchen…",
     "allPackages": "Alle Pakete",
     "allSeverities": "Alle Schweregrade",
     "loading": "Meldungen werden geladen…",
@@ -284,6 +287,8 @@
     },
     "affectedCount": "{count} Shop | {count} Shops",
     "totalCount": "{count} Meldung | {count} Meldungen",
+    "resultRange": "{start}–{end} von {total} Meldungen",
+    "pagination": "Seitennavigation der Sicherheitsmeldungen",
     "search": "Suchen",
     "kpi": {
       "severity": "Schweregrad",
