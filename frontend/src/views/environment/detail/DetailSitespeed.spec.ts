@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount, flushPromises } from "@vue/test-utils";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { mount, flushPromises, enableAutoUnmount } from "@vue/test-utils";
 import { ref } from "vue";
 import type { ChartConfiguration } from "chart.js";
 
@@ -20,6 +20,10 @@ vi.mock("chart.js", () => {
 });
 vi.mock("chartjs-plugin-annotation", () => ({ default: {} }));
 vi.mock("chartjs-adapter-date-fns", () => ({}));
+
+// Unmount between tests: a still-mounted component keeps watching the shared
+// `environment` ref and would render stale charts into `chartConfigs`.
+enableAutoUnmount(afterEach);
 
 const DAY = 24 * 60 * 60 * 1000;
 
