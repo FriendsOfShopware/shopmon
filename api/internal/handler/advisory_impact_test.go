@@ -1,17 +1,16 @@
 package handler_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -53,96 +52,91 @@ func TestAdminAdvisoryImpactFromInventory(t *testing.T) {
 	// Stale background matches must not inflate current inventory counts.
 	seedAdvisoryMatch(t, env.Queries, int32(patched), "CVE-VISIBLE", "shopware/core", "6.7.8.2")
 
-	get := func(path string, target any) {
+	preview := func(token string, packages []api.AdvisoryPackageInput, status int) api.AdminAdvisoryImpact {
 		t.Helper()
-		req := testutil.NewRequest(t, "GET", env.Server.URL+"/api"+path, nil)
-		req.Header.Set("Authorization", "Bearer "+adminToken)
+		body, err := json.Marshal(api.AdminPreviewAdvisoryImpactRequest{Packages: packages})
+		require.NoError(t, err)
+		req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/admin/advisories/impact", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-		require.NoError(t, json.NewDecoder(resp.Body).Decode(target))
-	}
-	want := api.AdminAdvisoryImpact{ShopCount: 2, EnvironmentCount: 3, ActiveShopCount: 2}
-	var list api.AdminAdvisoryListResponse
-	get("/admin/advisories", &list)
-	require.Len(t, list.Advisories, 3)
-	for _, item := range list.Advisories {
-		if item.AdvisoryId == "CVE-ZERO" {
-			assert.Equal(t, api.AdminAdvisoryImpact{}, item.Impact)
-		} else {
-			assert.Equal(t, want, item.Impact, item.AdvisoryId)
+		require.Equal(t, status, resp.StatusCode)
+		var result api.AdminAdvisoryImpact
+		if status == http.StatusOK {
+			require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 		}
-		var detail api.AdminAdvisory
-		get("/admin/advisories/"+item.AdvisoryId, &detail)
-		assert.Equal(t, item.Impact, detail.Impact)
+		return result
 	}
-	// Aliases resolve to the same impact; pagination does not change counts.
-	var alias api.AdminAdvisory
-	get("/admin/advisories/PKSA-CVE-DRAFT-0", &alias)
-	assert.Equal(t, want, alias.Impact)
-	get("/admin/advisories?limit=1&offset=1&package=shopware/core", &list)
-	require.Len(t, list.Advisories, 1)
-	assert.Equal(t, 2, list.Total)
-	assert.Equal(t, want, list.Advisories[0].Impact)
+	packages := []api.AdvisoryPackageInput{
+		{PackageName: " SHOPWARE/CORE ", AffectedVersions: " >=6.7.0.0,<6.7.10.1 "},
+		{PackageName: "shopware/storefront", AffectedVersions: ">=6.7.0.0,<6.7.10.1"},
+	}
+	result := preview(adminToken, packages, http.StatusOK)
+	assert.Equal(t, 2, result.ShopCount)
+	assert.Equal(t, 3, result.EnvironmentCount)
+	require.Len(t, result.Shops, 2)
+	assert.Equal(t, shop1, result.Shops[0].ShopId)
+	assert.Equal(t, "One", result.Shops[0].ShopName)
+	assert.Equal(t, "org-1", result.Shops[0].OrganizationId)
+	assert.Equal(t, "One", result.Shops[0].OrganizationName)
+	require.Len(t, result.Shops[0].Matches, 4)
+	assert.Equal(t, api.AdminAdvisoryImpactMatch{
+		EnvironmentId: prod, EnvironmentName: "Production", PackageName: "shopware/core",
+		InstalledVersion: "6.7.8.2", AffectedVersions: ">=6.7.0.0,<6.7.10.1",
+	}, result.Shops[0].Matches[0])
+	assert.Equal(t, shop2, result.Shops[1].ShopId)
+	assert.Equal(t, "org-2", result.Shops[1].OrganizationId)
+	require.Len(t, result.Shops[1].Matches, 1)
+	assert.Equal(t, other, result.Shops[1].Matches[0].EnvironmentId)
 
-	suppress := func(org string, shop int, environmentID *int32, expires pgtype.Timestamp) int64 {
-		t.Helper()
-		row, err := env.Queries.CreateAdvisorySuppression(ctx, queries.CreateAdvisorySuppressionParams{
-			OrganizationID: org, ShopID: int32(shop), EnvironmentID: environmentID,
-			AdvisoryID: "CVE-DRAFT", Reason: "Mitigated", ExpiresAt: expires,
-		})
-		require.NoError(t, err)
-		return row.ID
-	}
-	checkDraft := func(active, suppressed int) {
-		t.Helper()
-		var detail api.AdminAdvisory
-		get("/admin/advisories/CVE-DRAFT", &detail)
-		assert.Equal(t, api.AdminAdvisoryImpact{
-			ShopCount: 2, EnvironmentCount: 3, ActiveShopCount: active, SuppressedEnvironmentCount: suppressed,
-		}, detail.Impact)
-	}
-	suppress("org-1", shop1, new(int32(prod)), pgtype.Timestamp{})
-	checkDraft(2, 1) // staging keeps the first shop active
-	shopSuppression := suppress("org-1", shop1, nil, pgtype.Timestamp{})
-	checkDraft(1, 2) // overlapping suppressions still count each environment once
-	suppress("org-2", shop2, nil, pgtype.Timestamp{Time: time.Now().UTC().Add(-time.Hour), Valid: true})
-	checkDraft(1, 2) // expired suppression has no effect
-	_, err := env.Queries.RevokeAdvisorySuppression(ctx, queries.RevokeAdvisorySuppressionParams{
-		ID: shopSuppression, OrganizationIds: []string{"org-1"},
+	// Suppression does not change inventory-based previews of arbitrary constraints.
+	_, err := env.Queries.CreateAdvisorySuppression(ctx, queries.CreateAdvisorySuppressionParams{
+		OrganizationID: "org-1", ShopID: int32(shop1), AdvisoryID: "CVE-DRAFT", Reason: "Mitigated",
 	})
 	require.NoError(t, err)
-	checkDraft(2, 1)
+	assert.Equal(t, result, preview(adminToken, packages, http.StatusOK))
 
-	// Counts update immediately when inventory changes, without a rematch job.
+	// Submitted ranges, not the saved advisory, determine the preview.
+	wider := []api.AdvisoryPackageInput{{PackageName: "shopware/core", AffectedVersions: "<6.8.0.0"}}
+	expanded := preview(adminToken, wider, http.StatusOK)
+	assert.Equal(t, 3, expanded.ShopCount)
+	assert.Equal(t, 4, expanded.EnvironmentCount)
+	none := preview(adminToken, []api.AdvisoryPackageInput{{PackageName: "shopware/core", AffectedVersions: "<6.7.0.0"}}, http.StatusOK)
+	assert.Equal(t, api.AdminAdvisoryImpact{Shops: []api.AdminAdvisoryImpactShop{}}, none)
+
 	seedInventory(other, "shopware/core", "6.7.10.1")
-	get("/admin/advisories/CVE-DRAFT", &alias)
-	assert.Equal(t, api.AdminAdvisoryImpact{
-		ShopCount: 1, EnvironmentCount: 2, ActiveShopCount: 1, SuppressedEnvironmentCount: 1,
-	}, alias.Impact)
+	updated := preview(adminToken, packages, http.StatusOK)
+	assert.Equal(t, 1, updated.ShopCount)
+	assert.Equal(t, 2, updated.EnvironmentCount)
+
+	// Previewing neither saves package ranges nor publishes match rows.
+	saved, err := env.Queries.ListComposerAdvisoryPackagesForAdvisory(ctx, "CVE-DRAFT")
+	require.NoError(t, err)
+	require.Len(t, saved, 2)
+	assert.Equal(t, ">=6.7.0.0,<6.7.10.1", saved[0].AffectedVersions)
 	var matchCount int
 	require.NoError(t, env.Pool.QueryRow(ctx, "SELECT count(*) FROM environment_advisory_match WHERE advisory_id = 'CVE-DRAFT'").Scan(&matchCount))
-	assert.Zero(t, matchCount, "previewing a draft must not publish matches")
+	assert.Zero(t, matchCount)
 
-	// Global impact is available only through admin responses.
-	for _, path := range []string{"/admin/advisories", "/admin/advisories/CVE-VISIBLE"} {
-		for _, token := range []string{"", userToken} {
-			req := testutil.NewRequest(t, "GET", env.Server.URL+"/api"+path, nil)
-			if token != "" {
-				req.Header.Set("Authorization", "Bearer "+token)
-			}
-			resp, err := http.DefaultClient.Do(req)
-			require.NoError(t, err)
-			require.NoError(t, resp.Body.Close())
-			wantStatus := http.StatusUnauthorized
-			if token != "" {
-				wantStatus = http.StatusForbidden
-			}
-			assert.Equal(t, wantStatus, resp.StatusCode, fmt.Sprintf("%s token=%t", path, token != ""))
-		}
+	preview("", packages, http.StatusUnauthorized)
+	preview(userToken, packages, http.StatusForbidden)
+	for _, invalid := range [][]api.AdvisoryPackageInput{
+		{},
+		{{PackageName: "invalid", AffectedVersions: "<2.0"}},
+		{{PackageName: "shopware/core", AffectedVersions: "*"}},
+		{{PackageName: "shopware/core", AffectedVersions: "not-a-range"}},
+		{{PackageName: "shopware/core", AffectedVersions: ""}},
+		{{PackageName: "shopware/core", AffectedVersions: "<2.0"}, {PackageName: "SHOPWARE/CORE", AffectedVersions: "<3.0"}},
+	} {
+		preview(adminToken, invalid, http.StatusBadRequest)
 	}
-	var public map[string]any
-	get("/advisories/CVE-VISIBLE", &public)
-	assert.NotContains(t, public, "impact")
+	tooMany := make([]api.AdvisoryPackageInput, 101)
+	for i := range tooMany {
+		tooMany[i] = api.AdvisoryPackageInput{PackageName: fmt.Sprintf("vendor/package-%d", i), AffectedVersions: "<2.0"}
+	}
+	preview(adminToken, tooMany, http.StatusBadRequest)
 }

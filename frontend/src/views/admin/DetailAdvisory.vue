@@ -54,23 +54,10 @@
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle class="text-base">{{ $t("admin.advisoryImpact.title") }}</CardTitle>
-          <p class="text-sm text-muted-foreground">{{ $t("admin.advisoryImpact.hint") }}</p>
-        </CardHeader>
-        <CardContent>
-          <dl class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div v-for="metric in impactMetrics" :key="metric.key">
-              <dt class="text-xs font-medium text-muted-foreground">{{ metric.label }}</dt>
-              <dd class="mt-1 text-2xl font-semibold tabular-nums">{{ metric.value }}</dd>
-            </div>
-          </dl>
-          <p class="mt-4 text-xs text-muted-foreground">
-            {{ $t("admin.advisoryImpact.suppressionHint") }}
-          </p>
-        </CardContent>
-      </Card>
+      <AdvisoryImpactPreview
+        :key="advisory.advisoryId"
+        :packages="isManual && !isLocked ? contentForm.packages : advisory.packages"
+      />
 
       <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         <!-- Main column -->
@@ -456,6 +443,7 @@
 </template>
 
 <script setup lang="ts">
+import AdvisoryImpactPreview from "@/components/advisories/AdvisoryImpactPreview.vue";
 import AdvisoryPackageEditor from "@/components/advisories/AdvisoryPackageEditor.vue";
 import SeverityBadge from "@/components/advisories/SeverityBadge.vue";
 import ShopmonAdvisoryBadge from "@/components/advisories/ShopmonAdvisoryBadge.vue";
@@ -498,16 +486,6 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 const { t } = useI18n();
 const advisory = ref<AdminAdvisory | null>(null);
-const impactMetrics = computed(() => {
-  const impact = advisory.value?.impact;
-  return (
-    ["shopCount", "environmentCount", "activeShopCount", "suppressedEnvironmentCount"] as const
-  ).map((key) => ({
-    key,
-    label: t(`admin.advisoryImpact.${key}`),
-    value: impact?.[key] ?? "—",
-  }));
-});
 const loading = ref(true);
 const error = ref("");
 const saving = ref(false);

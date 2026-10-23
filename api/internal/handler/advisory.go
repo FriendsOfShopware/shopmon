@@ -258,10 +258,14 @@ func (h *Handler) AdminListAdvisories(ctx context.Context, input *adminListAdvis
 		return nil, huma.Error500InternalServerError("failed to list advisories")
 	}
 
-	items, err := h.advisories.AdminAdvisories(ctx, rows)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to load admin advisory impact", "error", err)
-		return nil, huma.Error500InternalServerError("failed to list advisories")
+	items := make([]api.AdminAdvisory, 0, len(rows))
+	for _, view := range rows {
+		item, err := advisoryread.ToAdminAdvisory(view)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", view.Advisory.AdvisoryID, "error", err)
+			return nil, huma.Error500InternalServerError("failed to list advisories")
+		}
+		items = append(items, item)
 	}
 
 	return &adminListAdvisoriesOutput{Body: api.AdminAdvisoryListResponse{
@@ -288,7 +292,7 @@ func (h *Handler) AdminGetAdvisory(ctx context.Context, input *advisoryIDInput) 
 		return nil, huma.Error500InternalServerError("failed to get advisory")
 	}
 
-	item, err := h.advisories.AdminAdvisory(ctx, view)
+	item, err := advisoryread.ToAdminAdvisory(view)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", input.AdvisoryID, "error", err)
 		return nil, huma.Error500InternalServerError("failed to get advisory")
@@ -345,7 +349,7 @@ func (h *Handler) AdminUpdateAdvisory(ctx context.Context, input *adminUpdateAdv
 		h.enqueueAdvisorySync(ctx, view.Advisory.AdvisoryID, "advisory updated")
 	}
 
-	item, err := h.advisories.AdminAdvisory(ctx, view)
+	item, err := advisoryread.ToAdminAdvisory(view)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", input.AdvisoryID, "error", err)
 		return nil, huma.Error500InternalServerError("failed to update advisory")
@@ -403,7 +407,7 @@ func (h *Handler) AdminCreateAdvisory(ctx context.Context, input *adminCreateAdv
 		h.enqueueAdvisorySync(ctx, view.Advisory.AdvisoryID, "advisory published on create")
 	}
 
-	item, err := h.advisories.AdminAdvisory(ctx, view)
+	item, err := advisoryread.ToAdminAdvisory(view)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", view.Advisory.AdvisoryID, "error", err)
 		return nil, huma.Error500InternalServerError("failed to create advisory")
@@ -547,7 +551,7 @@ func (h *Handler) AdminImportGhsaAdvisory(ctx context.Context, input *adminImpor
 		h.enqueueAdvisorySync(ctx, view.Advisory.AdvisoryID, "ghsa advisory published on import")
 	}
 
-	item, err := h.advisories.AdminAdvisory(ctx, view)
+	item, err := advisoryread.ToAdminAdvisory(view)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", view.Advisory.AdvisoryID, "error", err)
 		return nil, huma.Error500InternalServerError("failed to import advisory")
@@ -592,7 +596,7 @@ func (h *Handler) AdminLinkAdvisoryOfficial(ctx context.Context, input *adminLin
 	// the NVD/GitHub detail enrichment; both happen in the advisory sync.
 	h.enqueueAdvisorySync(ctx, view.Advisory.AdvisoryID, "advisory linked to official")
 
-	item, err := h.advisories.AdminAdvisory(ctx, view)
+	item, err := advisoryread.ToAdminAdvisory(view)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", input.AdvisoryID, "error", err)
 		return nil, huma.Error500InternalServerError("failed to link advisory")

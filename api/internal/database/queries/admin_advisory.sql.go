@@ -9,56 +9,31 @@ import (
 	"context"
 )
 
-const listActiveSuppressionsForAdvisories = `-- name: ListActiveSuppressionsForAdvisories :many
-SELECT advisory_id, shop_id, environment_id
-FROM advisory_suppression
-WHERE advisory_id = ANY($1::text[])
-  AND revoked_at IS NULL
-  AND (expires_at IS NULL OR expires_at > NOW())
-`
-
-type ListActiveSuppressionsForAdvisoriesRow struct {
-	AdvisoryID    string `json:"advisory_id"`
-	ShopID        int32  `json:"shop_id"`
-	EnvironmentID *int32 `json:"environment_id"`
-}
-
-func (q *Queries) ListActiveSuppressionsForAdvisories(ctx context.Context, advisoryIds []string) ([]ListActiveSuppressionsForAdvisoriesRow, error) {
-	rows, err := q.db.Query(ctx, listActiveSuppressionsForAdvisories, advisoryIds)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListActiveSuppressionsForAdvisoriesRow{}
-	for rows.Next() {
-		var i ListActiveSuppressionsForAdvisoriesRow
-		if err := rows.Scan(&i.AdvisoryID, &i.ShopID, &i.EnvironmentID); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listAdminAdvisoryInventory = `-- name: ListAdminAdvisoryInventory :many
-SELECT c.environment_id, e.shop_id, c.package_name, c.version
+SELECT c.environment_id, e.name AS environment_name,
+       e.shop_id, s.name AS shop_name,
+       e.organization_id, o.name AS organization_name,
+       c.package_name, c.version
 FROM environment_sbom_component c
 JOIN environment e ON e.id = c.environment_id
+JOIN shop s ON s.id = e.shop_id
+JOIN organization o ON o.id = e.organization_id
 WHERE c.package_name = ANY($1::text[])
+ORDER BY o.name, o.id, s.name, s.id, e.name, e.id, c.package_name
 `
 
 type ListAdminAdvisoryInventoryRow struct {
-	EnvironmentID int32  `json:"environment_id"`
-	ShopID        int32  `json:"shop_id"`
-	PackageName   string `json:"package_name"`
-	Version       string `json:"version"`
+	EnvironmentID    int32  `json:"environment_id"`
+	EnvironmentName  string `json:"environment_name"`
+	ShopID           int32  `json:"shop_id"`
+	ShopName         string `json:"shop_name"`
+	OrganizationID   string `json:"organization_id"`
+	OrganizationName string `json:"organization_name"`
+	PackageName      string `json:"package_name"`
+	Version          string `json:"version"`
 }
 
-// Read the latest collected inventory directly so draft imports and edited
-// ranges have impact counts before the background rematch has run.
+// On-demand preview against the latest inventory, independent of saved advisories.
 func (q *Queries) ListAdminAdvisoryInventory(ctx context.Context, packageNames []string) ([]ListAdminAdvisoryInventoryRow, error) {
 	rows, err := q.db.Query(ctx, listAdminAdvisoryInventory, packageNames)
 	if err != nil {
@@ -70,7 +45,11 @@ func (q *Queries) ListAdminAdvisoryInventory(ctx context.Context, packageNames [
 		var i ListAdminAdvisoryInventoryRow
 		if err := rows.Scan(
 			&i.EnvironmentID,
+			&i.EnvironmentName,
 			&i.ShopID,
+			&i.ShopName,
+			&i.OrganizationID,
+			&i.OrganizationName,
 			&i.PackageName,
 			&i.Version,
 		); err != nil {

@@ -1070,13 +1070,17 @@
     "advisories": "Advisories",
     "advisoryImpact": {
       "title": "Shop impact",
-      "hint": "Across all organizations, based on the latest collected Composer inventories. Includes drafts; shops without inventory data are not included.",
-      "shopsCount": "{count} shop affected | {count} shops affected",
+      "button": "Check shop impact",
+      "hint": "Checks the current package constraints against collected Composer inventories across all organizations without saving changes. Shops without inventory data are not included.",
       "shopCount": "Affected shops",
       "environmentCount": "Affected environments",
-      "activeShopCount": "Shops with unsuppressed matches",
-      "suppressedEnvironmentCount": "Suppressed environments",
-      "suppressionHint": "Each shop is counted once, even if several environments or packages match. A suppression acknowledges a match and does not reduce the affected totals."
+      "matchingHint": "Includes all matching inventories, even if an advisory was previously suppressed.",
+      "loading": "Checking shop impact…",
+      "failed": "Could not check shop impact. Please try again.",
+      "retry": "Try again",
+      "empty": "No shops match these package constraints.",
+      "constraints": "Checked package constraints",
+      "installedVersion": "Installed version"
     },
     "backToAdvisories": "Back to advisories",
     "syncAdvisories": "Sync from Packagist",

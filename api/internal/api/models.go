@@ -480,20 +480,36 @@ type AccountShop struct {
 	OrganizationName     string  `json:"organizationName"`
 }
 
-// AdminAdvisoryImpact reports distinct shops and environments across all
-// organizations, matched against the latest collected Composer inventories.
-// Includes hidden drafts; suppressions do not reduce the total impact.
+// AdminAdvisoryImpact is a read-only preview of submitted package constraints
+// against collected inventories across all organizations, including suppressed matches.
 type AdminAdvisoryImpact struct {
-	ShopCount        int `json:"shopCount"`
-	EnvironmentCount int `json:"environmentCount"`
-	// ActiveShopCount Shops with at least one matching, unsuppressed environment.
-	ActiveShopCount            int `json:"activeShopCount"`
-	SuppressedEnvironmentCount int `json:"suppressedEnvironmentCount"`
+	ShopCount        int                       `json:"shopCount"`
+	EnvironmentCount int                       `json:"environmentCount"`
+	Shops            []AdminAdvisoryImpactShop `json:"shops"`
+}
+
+type AdminAdvisoryImpactShop struct {
+	ShopId           int                        `json:"shopId"`
+	ShopName         string                     `json:"shopName"`
+	OrganizationId   string                     `json:"organizationId"`
+	OrganizationName string                     `json:"organizationName"`
+	Matches          []AdminAdvisoryImpactMatch `json:"matches"`
+}
+
+type AdminAdvisoryImpactMatch struct {
+	EnvironmentId    int    `json:"environmentId"`
+	EnvironmentName  string `json:"environmentName"`
+	PackageName      string `json:"packageName"`
+	InstalledVersion string `json:"installedVersion"`
+	AffectedVersions string `json:"affectedVersions"`
+}
+
+type AdminPreviewAdvisoryImpactRequest struct {
+	Packages []AdvisoryPackageInput `json:"packages" maxItems:"100"`
 }
 
 // AdminAdvisory defines model for AdminAdvisory.
 type AdminAdvisory struct {
-	Impact AdminAdvisoryImpact `json:"impact"`
 	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA; SHOPMON-YYYY-NNNN for Shopmon-authored advisories)
 	AdvisoryId         string   `json:"advisoryId"`
 	AffectedComponents []string `json:"affectedComponents"`

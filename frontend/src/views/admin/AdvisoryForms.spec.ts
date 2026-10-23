@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import type { AdminAdvisory, GhsaAdvisoryPreview } from "@/api/generated";
+import AdvisoryImpactPreview from "@/components/advisories/AdvisoryImpactPreview.vue";
+import AdvisoryPackageEditor from "@/components/advisories/AdvisoryPackageEditor.vue";
 import CreateAdvisory from "./CreateAdvisory.vue";
 import DetailAdvisory from "./DetailAdvisory.vue";
 
 const api = vi.hoisted(() => ({
   adminGetAdvisory: vi.fn(),
+  adminPreviewAdvisoryImpact: vi.fn(),
   adminUpdateAdvisory: vi.fn(),
   adminLinkAdvisoryOfficial: vi.fn(),
   adminPreviewGhsaImport: vi.fn(),
@@ -21,7 +24,6 @@ vi.mock("vue-router", () => ({
 const cwes = [{ id: "CWE-79", name: "Cross-site Scripting" }];
 const advisory: AdminAdvisory = {
   advisoryId: "SHOPMON-2026-0001",
-  impact: { shopCount: 2, environmentCount: 3, activeShopCount: 1, suppressedEnvironmentCount: 2 },
   title: "Original title",
   origin: "shopmon",
   isVisible: false,
@@ -104,38 +106,29 @@ describe("advisory import form", () => {
 });
 
 describe("advisory editing", () => {
-  it("shows distinct shop impact for a draft and refreshes it after saving", async () => {
+  it("previews current unsaved constraints without saving the advisory", async () => {
     const wrapper = mount(DetailAdvisory);
     await flushPromises();
-    const metrics = () => wrapper.findAll("dl > div").map((metric) => metric.text());
-    expect(metrics()).toEqual([
-      "Affected shops2",
-      "Affected environments3",
-      "Shops with unsuppressed matches1",
-      "Suppressed environments2",
+    const editor = wrapper.getComponent(AdvisoryPackageEditor);
+    await editor.findAll("input")[1].setValue("<1.5.0");
+    expect(wrapper.getComponent(AdvisoryImpactPreview).props("packages")).toEqual([
+      { packageName: "vendor/package", affectedVersions: "<1.5.0" },
     ]);
-    expect(wrapper.text()).toContain(
-      "Includes drafts; shops without inventory data are not included.",
-    );
-    api.adminUpdateAdvisory.mockResolvedValueOnce({
-      data: {
-        ...advisory,
-        impact: {
-          shopCount: 0,
-          environmentCount: 0,
-          activeShopCount: 0,
-          suppressedEnvironmentCount: 0,
-        },
-      },
+    expect(api.adminUpdateAdvisory).not.toHaveBeenCalled();
+    expect(api.adminPreviewAdvisoryImpact).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("previews saved constraints for locked upstream advisories", async () => {
+    api.adminGetAdvisory.mockResolvedValue({
+      data: { ...advisory, origin: "upstream", cve: "CVE-2026-1234" },
     });
-    await wrapper.get("#edit-advisory-form-notesInternal").setValue("Reviewed");
-    await click(wrapper, "Save", 1);
-    expect(metrics()).toEqual([
-      "Affected shops0",
-      "Affected environments0",
-      "Shops with unsuppressed matches0",
-      "Suppressed environments0",
-    ]);
+    const wrapper = mount(DetailAdvisory);
+    await flushPromises();
+    expect(wrapper.findComponent(AdvisoryPackageEditor).exists()).toBe(false);
+    expect(wrapper.getComponent(AdvisoryImpactPreview).props("packages")).toEqual(
+      advisory.packages,
+    );
     wrapper.unmount();
   });
 

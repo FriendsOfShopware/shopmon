@@ -110,7 +110,6 @@ export type AdminAdvisory = {
         [key: string]: string;
     };
     ghsaId?: string;
-    impact: AdminAdvisoryImpact;
     isVisible: boolean;
     link?: string;
     notesInternal?: string;
@@ -135,10 +134,25 @@ export type AdminAdvisory = {
 };
 
 export type AdminAdvisoryImpact = {
-    activeShopCount: number;
     environmentCount: number;
     shopCount: number;
-    suppressedEnvironmentCount: number;
+    shops: Array<AdminAdvisoryImpactShop>;
+};
+
+export type AdminAdvisoryImpactMatch = {
+    affectedVersions: string;
+    environmentId: number;
+    environmentName: string;
+    installedVersion: string;
+    packageName: string;
+};
+
+export type AdminAdvisoryImpactShop = {
+    matches: Array<AdminAdvisoryImpactMatch>;
+    organizationId: string;
+    organizationName: string;
+    shopId: number;
+    shopName: string;
 };
 
 export type AdminAdvisoryListResponse = {
@@ -308,6 +322,10 @@ export type AdminOrganizationShop = {
 export type AdminOrganizationsResponse = {
     organizations: Array<AccountOrganization>;
     total: number;
+};
+
+export type AdminPreviewAdvisoryImpactRequest = {
+    packages: Array<AdvisoryPackageInput>;
 };
 
 export type AdminRecentActivity = {
@@ -1783,6 +1801,47 @@ export type AdminCreateAdvisoryResponses = {
 };
 
 export type AdminCreateAdvisoryResponse = AdminCreateAdvisoryResponses[keyof AdminCreateAdvisoryResponses];
+
+export type AdminPreviewAdvisoryImpactData = {
+    body: AdminPreviewAdvisoryImpactRequest;
+    path?: never;
+    query?: never;
+    url: '/admin/advisories/impact';
+};
+
+export type AdminPreviewAdvisoryImpactErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminPreviewAdvisoryImpactError = AdminPreviewAdvisoryImpactErrors[keyof AdminPreviewAdvisoryImpactErrors];
+
+export type AdminPreviewAdvisoryImpactResponses = {
+    /**
+     * OK
+     */
+    200: AdminAdvisoryImpact;
+};
+
+export type AdminPreviewAdvisoryImpactResponse = AdminPreviewAdvisoryImpactResponses[keyof AdminPreviewAdvisoryImpactResponses];
 
 export type AdminImportGhsaAdvisoryData = {
     body: CreateAdvisoryRequest;
