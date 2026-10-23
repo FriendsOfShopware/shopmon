@@ -34,16 +34,20 @@ WHERE
   )
   AND (
     $5::text IS NULL
-    OR a.title ILIKE '%' || $5 || '%'
-    OR COALESCE(a.cve, '') ILIKE '%' || $5 || '%'
-    OR COALESCE(a.ghsa_id, '') ILIKE '%' || $5 || '%'
-    OR a.advisory_id ILIKE '%' || $5 || '%'
+    OR a.origin = $5
+  )
+  AND (
+    $6::text IS NULL
+    OR a.title ILIKE '%' || $6 || '%'
+    OR COALESCE(a.cve, '') ILIKE '%' || $6 || '%'
+    OR COALESCE(a.ghsa_id, '') ILIKE '%' || $6 || '%'
+    OR a.advisory_id ILIKE '%' || $6 || '%'
     OR EXISTS (
       SELECT 1 FROM composer_advisory_package p
       WHERE p.advisory_id = a.advisory_id
         AND (
-          p.package_name ILIKE '%' || $5 || '%'
-          OR p.packagist_advisory_id ILIKE '%' || $5 || '%'
+          p.package_name ILIKE '%' || $6 || '%'
+          OR p.packagist_advisory_id ILIKE '%' || $6 || '%'
         )
     )
   )
@@ -54,6 +58,7 @@ type CountComposerAdvisoriesParams struct {
 	PackageName *string `json:"package_name"`
 	Severity    *string `json:"severity"`
 	Tag         *string `json:"tag"`
+	Origin      *string `json:"origin"`
 	Search      *string `json:"search"`
 }
 
@@ -63,6 +68,7 @@ func (q *Queries) CountComposerAdvisories(ctx context.Context, arg CountComposer
 		arg.PackageName,
 		arg.Severity,
 		arg.Tag,
+		arg.Origin,
 		arg.Search,
 	)
 	var column_1 int32
@@ -70,8 +76,38 @@ func (q *Queries) CountComposerAdvisories(ctx context.Context, arg CountComposer
 	return column_1, err
 }
 
+const deleteComposerAdvisory = `-- name: DeleteComposerAdvisory :exec
+DELETE FROM composer_advisory WHERE advisory_id = $1
+`
+
+func (q *Queries) DeleteComposerAdvisory(ctx context.Context, advisoryID string) error {
+	_, err := q.db.Exec(ctx, deleteComposerAdvisory, advisoryID)
+	return err
+}
+
+const deleteComposerAdvisoryPackages = `-- name: DeleteComposerAdvisoryPackages :exec
+DELETE FROM composer_advisory_package WHERE advisory_id = $1
+`
+
+func (q *Queries) DeleteComposerAdvisoryPackages(ctx context.Context, advisoryID string) error {
+	_, err := q.db.Exec(ctx, deleteComposerAdvisoryPackages, advisoryID)
+	return err
+}
+
+const deleteManualComposerAdvisoryPackages = `-- name: DeleteManualComposerAdvisoryPackages :exec
+DELETE FROM composer_advisory_package
+WHERE advisory_id = $1 AND packagist_advisory_id IS NULL
+`
+
+// Official data replaces manual ranges on first takeover. Preserve already
+// synced packages, including those outside the current package-scoped fetch.
+func (q *Queries) DeleteManualComposerAdvisoryPackages(ctx context.Context, advisoryID string) error {
+	_, err := q.db.Exec(ctx, deleteManualComposerAdvisoryPackages, advisoryID)
+	return err
+}
+
 const getComposerAdvisory = `-- name: GetComposerAdvisory :one
-SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions FROM composer_advisory WHERE advisory_id = $1
+SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by FROM composer_advisory WHERE advisory_id = $1
 `
 
 func (q *Queries) GetComposerAdvisory(ctx context.Context, advisoryID string) (ComposerAdvisory, error) {
@@ -113,19 +149,129 @@ func (q *Queries) GetComposerAdvisory(ctx context.Context, advisoryID string) (C
 		&i.EnrichedAt,
 		&i.EnrichedBy,
 		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
+	)
+	return i, err
+}
+
+const getComposerAdvisoryByCve = `-- name: GetComposerAdvisoryByCve :one
+SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by FROM composer_advisory
+WHERE cve = $1
+ORDER BY (origin = 'shopmon') DESC, advisory_id
+LIMIT 1
+`
+
+// Resolution fallbacks so a linked Shopmon advisory answers to its official
+// identifiers, mirroring GetComposerAdvisoryByPackagistID. A Shopmon row wins
+// over theoretical siblings sharing the identifier because it is the row
+// suppressions and alerts were recorded against.
+func (q *Queries) GetComposerAdvisoryByCve(ctx context.Context, cve *string) (ComposerAdvisory, error) {
+	row := q.db.QueryRow(ctx, getComposerAdvisoryByCve, cve)
+	var i ComposerAdvisory
+	err := row.Scan(
+		&i.AdvisoryID,
+		&i.Title,
+		&i.Link,
+		&i.Cve,
+		&i.GhsaID,
+		&i.Severity,
+		&i.Sources,
+		&i.ReportedAt,
+		&i.ComposerRepository,
+		&i.SyncedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Summary,
+		&i.Description,
+		&i.CvssScore,
+		&i.CvssVector,
+		&i.Cwes,
+		&i.ExternalReferences,
+		&i.DetailsSource,
+		&i.DetailsSyncedAt,
+		&i.GithubSyncedAt,
+		&i.DetailsAttemptedAt,
+		&i.SeverityOverride,
+		&i.IsVisible,
+		&i.NotesPublic,
+		&i.NotesInternal,
+		&i.RemediationSummary,
+		&i.RemediationUrl,
+		&i.RecommendedUpgrade,
+		&i.ShopwareImpactSummary,
+		&i.AffectedComponents,
+		&i.Tags,
+		&i.EnrichedAt,
+		&i.EnrichedBy,
+		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
+	)
+	return i, err
+}
+
+const getComposerAdvisoryByGhsa = `-- name: GetComposerAdvisoryByGhsa :one
+SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by FROM composer_advisory
+WHERE ghsa_id = $1
+ORDER BY (origin = 'shopmon') DESC, advisory_id
+LIMIT 1
+`
+
+func (q *Queries) GetComposerAdvisoryByGhsa(ctx context.Context, ghsaID *string) (ComposerAdvisory, error) {
+	row := q.db.QueryRow(ctx, getComposerAdvisoryByGhsa, ghsaID)
+	var i ComposerAdvisory
+	err := row.Scan(
+		&i.AdvisoryID,
+		&i.Title,
+		&i.Link,
+		&i.Cve,
+		&i.GhsaID,
+		&i.Severity,
+		&i.Sources,
+		&i.ReportedAt,
+		&i.ComposerRepository,
+		&i.SyncedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Summary,
+		&i.Description,
+		&i.CvssScore,
+		&i.CvssVector,
+		&i.Cwes,
+		&i.ExternalReferences,
+		&i.DetailsSource,
+		&i.DetailsSyncedAt,
+		&i.GithubSyncedAt,
+		&i.DetailsAttemptedAt,
+		&i.SeverityOverride,
+		&i.IsVisible,
+		&i.NotesPublic,
+		&i.NotesInternal,
+		&i.RemediationSummary,
+		&i.RemediationUrl,
+		&i.RecommendedUpgrade,
+		&i.ShopwareImpactSummary,
+		&i.AffectedComponents,
+		&i.Tags,
+		&i.EnrichedAt,
+		&i.EnrichedBy,
+		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
 	)
 	return i, err
 }
 
 const getComposerAdvisoryByPackagistID = `-- name: GetComposerAdvisoryByPackagistID :one
-SELECT a.advisory_id, a.title, a.link, a.cve, a.ghsa_id, a.severity, a.sources, a.reported_at, a.composer_repository, a.synced_at, a.created_at, a.updated_at, a.summary, a.description, a.cvss_score, a.cvss_vector, a.cwes, a.external_references, a.details_source, a.details_synced_at, a.github_synced_at, a.details_attempted_at, a.severity_override, a.is_visible, a.notes_public, a.notes_internal, a.remediation_summary, a.remediation_url, a.recommended_upgrade, a.shopware_impact_summary, a.affected_components, a.tags, a.enriched_at, a.enriched_by, a.first_patched_versions
+SELECT a.advisory_id, a.title, a.link, a.cve, a.ghsa_id, a.severity, a.sources, a.reported_at, a.composer_repository, a.synced_at, a.created_at, a.updated_at, a.summary, a.description, a.cvss_score, a.cvss_vector, a.cwes, a.external_references, a.details_source, a.details_synced_at, a.github_synced_at, a.details_attempted_at, a.severity_override, a.is_visible, a.notes_public, a.notes_internal, a.remediation_summary, a.remediation_url, a.recommended_upgrade, a.shopware_impact_summary, a.affected_components, a.tags, a.enriched_at, a.enriched_by, a.first_patched_versions, a.origin, a.created_by
 FROM composer_advisory a
 JOIN composer_advisory_package p ON p.advisory_id = a.advisory_id
 WHERE p.packagist_advisory_id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetComposerAdvisoryByPackagistID(ctx context.Context, packagistAdvisoryID string) (ComposerAdvisory, error) {
+func (q *Queries) GetComposerAdvisoryByPackagistID(ctx context.Context, packagistAdvisoryID *string) (ComposerAdvisory, error) {
 	row := q.db.QueryRow(ctx, getComposerAdvisoryByPackagistID, packagistAdvisoryID)
 	var i ComposerAdvisory
 	err := row.Scan(
@@ -164,6 +310,57 @@ func (q *Queries) GetComposerAdvisoryByPackagistID(ctx context.Context, packagis
 		&i.EnrichedAt,
 		&i.EnrichedBy,
 		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
+	)
+	return i, err
+}
+
+const getComposerAdvisoryForUpdate = `-- name: GetComposerAdvisoryForUpdate :one
+SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by FROM composer_advisory WHERE advisory_id = $1 FOR UPDATE
+`
+
+func (q *Queries) GetComposerAdvisoryForUpdate(ctx context.Context, advisoryID string) (ComposerAdvisory, error) {
+	row := q.db.QueryRow(ctx, getComposerAdvisoryForUpdate, advisoryID)
+	var i ComposerAdvisory
+	err := row.Scan(
+		&i.AdvisoryID,
+		&i.Title,
+		&i.Link,
+		&i.Cve,
+		&i.GhsaID,
+		&i.Severity,
+		&i.Sources,
+		&i.ReportedAt,
+		&i.ComposerRepository,
+		&i.SyncedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Summary,
+		&i.Description,
+		&i.CvssScore,
+		&i.CvssVector,
+		&i.Cwes,
+		&i.ExternalReferences,
+		&i.DetailsSource,
+		&i.DetailsSyncedAt,
+		&i.GithubSyncedAt,
+		&i.DetailsAttemptedAt,
+		&i.SeverityOverride,
+		&i.IsVisible,
+		&i.NotesPublic,
+		&i.NotesInternal,
+		&i.RemediationSummary,
+		&i.RemediationUrl,
+		&i.RecommendedUpgrade,
+		&i.ShopwareImpactSummary,
+		&i.AffectedComponents,
+		&i.Tags,
+		&i.EnrichedAt,
+		&i.EnrichedBy,
+		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
 	)
 	return i, err
 }
@@ -186,8 +383,199 @@ func (q *Queries) GetComposerAdvisorySyncState(ctx context.Context) (ComposerAdv
 	return i, err
 }
 
+const getManualAdvisoryByIdentifiers = `-- name: GetManualAdvisoryByIdentifiers :one
+SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by FROM composer_advisory
+WHERE origin IN ('shopmon', 'github')
+  AND (
+    ($1::text IS NOT NULL AND cve = $1)
+    OR ($2::text IS NOT NULL AND ghsa_id = $2)
+  )
+ORDER BY advisory_id
+LIMIT 1
+`
+
+type GetManualAdvisoryByIdentifiersParams struct {
+	Cve    *string `json:"cve"`
+	GhsaID *string `json:"ghsa_id"`
+}
+
+// Sync-time merge target: a manually tracked row (Shopmon-authored or
+// GitHub-imported) already linked to the CVE/GHSA a Packagist advisory
+// carries. Upserting under its id keeps one row per vulnerability instead
+// of a manual row plus a canonical CVE row.
+func (q *Queries) GetManualAdvisoryByIdentifiers(ctx context.Context, arg GetManualAdvisoryByIdentifiersParams) (ComposerAdvisory, error) {
+	row := q.db.QueryRow(ctx, getManualAdvisoryByIdentifiers, arg.Cve, arg.GhsaID)
+	var i ComposerAdvisory
+	err := row.Scan(
+		&i.AdvisoryID,
+		&i.Title,
+		&i.Link,
+		&i.Cve,
+		&i.GhsaID,
+		&i.Severity,
+		&i.Sources,
+		&i.ReportedAt,
+		&i.ComposerRepository,
+		&i.SyncedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Summary,
+		&i.Description,
+		&i.CvssScore,
+		&i.CvssVector,
+		&i.Cwes,
+		&i.ExternalReferences,
+		&i.DetailsSource,
+		&i.DetailsSyncedAt,
+		&i.GithubSyncedAt,
+		&i.DetailsAttemptedAt,
+		&i.SeverityOverride,
+		&i.IsVisible,
+		&i.NotesPublic,
+		&i.NotesInternal,
+		&i.RemediationSummary,
+		&i.RemediationUrl,
+		&i.RecommendedUpgrade,
+		&i.ShopwareImpactSummary,
+		&i.AffectedComponents,
+		&i.Tags,
+		&i.EnrichedAt,
+		&i.EnrichedBy,
+		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
+	)
+	return i, err
+}
+
+const insertManualAdvisory = `-- name: InsertManualAdvisory :one
+INSERT INTO composer_advisory (
+  advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at,
+  summary, description, cvss_score, cvss_vector, cwes, external_references,
+  details_source, details_synced_at, github_synced_at,
+  is_visible, notes_public, notes_internal,
+  remediation_summary, remediation_url, recommended_upgrade,
+  shopware_impact_summary, affected_components, tags, origin, created_by,
+  synced_at, created_at, updated_at
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8,
+  $9, $10, $11, $12, $13, $14,
+  $15, $16, $17,
+  $18, $19, $20,
+  $21, $22, $23,
+  $24, $25, $26, $27, $28,
+  NOW(), NOW(), NOW()
+)
+RETURNING advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by
+`
+
+type InsertManualAdvisoryParams struct {
+	AdvisoryID            string           `json:"advisory_id"`
+	Title                 string           `json:"title"`
+	Link                  *string          `json:"link"`
+	Cve                   *string          `json:"cve"`
+	GhsaID                *string          `json:"ghsa_id"`
+	Severity              *string          `json:"severity"`
+	Sources               json.RawMessage  `json:"sources"`
+	ReportedAt            pgtype.Timestamp `json:"reported_at"`
+	Summary               *string          `json:"summary"`
+	Description           *string          `json:"description"`
+	CvssScore             *float64         `json:"cvss_score"`
+	CvssVector            *string          `json:"cvss_vector"`
+	Cwes                  json.RawMessage  `json:"cwes"`
+	ExternalReferences    json.RawMessage  `json:"external_references"`
+	DetailsSource         *string          `json:"details_source"`
+	DetailsSyncedAt       pgtype.Timestamp `json:"details_synced_at"`
+	GithubSyncedAt        pgtype.Timestamp `json:"github_synced_at"`
+	IsVisible             bool             `json:"is_visible"`
+	NotesPublic           *string          `json:"notes_public"`
+	NotesInternal         *string          `json:"notes_internal"`
+	RemediationSummary    *string          `json:"remediation_summary"`
+	RemediationUrl        *string          `json:"remediation_url"`
+	RecommendedUpgrade    *string          `json:"recommended_upgrade"`
+	ShopwareImpactSummary *string          `json:"shopware_impact_summary"`
+	AffectedComponents    []string         `json:"affected_components"`
+	Tags                  []string         `json:"tags"`
+	Origin                string           `json:"origin"`
+	CreatedBy             *string          `json:"created_by"`
+}
+
+func (q *Queries) InsertManualAdvisory(ctx context.Context, arg InsertManualAdvisoryParams) (ComposerAdvisory, error) {
+	row := q.db.QueryRow(ctx, insertManualAdvisory,
+		arg.AdvisoryID,
+		arg.Title,
+		arg.Link,
+		arg.Cve,
+		arg.GhsaID,
+		arg.Severity,
+		arg.Sources,
+		arg.ReportedAt,
+		arg.Summary,
+		arg.Description,
+		arg.CvssScore,
+		arg.CvssVector,
+		arg.Cwes,
+		arg.ExternalReferences,
+		arg.DetailsSource,
+		arg.DetailsSyncedAt,
+		arg.GithubSyncedAt,
+		arg.IsVisible,
+		arg.NotesPublic,
+		arg.NotesInternal,
+		arg.RemediationSummary,
+		arg.RemediationUrl,
+		arg.RecommendedUpgrade,
+		arg.ShopwareImpactSummary,
+		arg.AffectedComponents,
+		arg.Tags,
+		arg.Origin,
+		arg.CreatedBy,
+	)
+	var i ComposerAdvisory
+	err := row.Scan(
+		&i.AdvisoryID,
+		&i.Title,
+		&i.Link,
+		&i.Cve,
+		&i.GhsaID,
+		&i.Severity,
+		&i.Sources,
+		&i.ReportedAt,
+		&i.ComposerRepository,
+		&i.SyncedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Summary,
+		&i.Description,
+		&i.CvssScore,
+		&i.CvssVector,
+		&i.Cwes,
+		&i.ExternalReferences,
+		&i.DetailsSource,
+		&i.DetailsSyncedAt,
+		&i.GithubSyncedAt,
+		&i.DetailsAttemptedAt,
+		&i.SeverityOverride,
+		&i.IsVisible,
+		&i.NotesPublic,
+		&i.NotesInternal,
+		&i.RemediationSummary,
+		&i.RemediationUrl,
+		&i.RecommendedUpgrade,
+		&i.ShopwareImpactSummary,
+		&i.AffectedComponents,
+		&i.Tags,
+		&i.EnrichedAt,
+		&i.EnrichedBy,
+		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
+	)
+	return i, err
+}
+
 const listComposerAdvisories = `-- name: ListComposerAdvisories :many
-SELECT a.advisory_id, a.title, a.link, a.cve, a.ghsa_id, a.severity, a.sources, a.reported_at, a.composer_repository, a.synced_at, a.created_at, a.updated_at, a.summary, a.description, a.cvss_score, a.cvss_vector, a.cwes, a.external_references, a.details_source, a.details_synced_at, a.github_synced_at, a.details_attempted_at, a.severity_override, a.is_visible, a.notes_public, a.notes_internal, a.remediation_summary, a.remediation_url, a.recommended_upgrade, a.shopware_impact_summary, a.affected_components, a.tags, a.enriched_at, a.enriched_by, a.first_patched_versions
+SELECT a.advisory_id, a.title, a.link, a.cve, a.ghsa_id, a.severity, a.sources, a.reported_at, a.composer_repository, a.synced_at, a.created_at, a.updated_at, a.summary, a.description, a.cvss_score, a.cvss_vector, a.cwes, a.external_references, a.details_source, a.details_synced_at, a.github_synced_at, a.details_attempted_at, a.severity_override, a.is_visible, a.notes_public, a.notes_internal, a.remediation_summary, a.remediation_url, a.recommended_upgrade, a.shopware_impact_summary, a.affected_components, a.tags, a.enriched_at, a.enriched_by, a.first_patched_versions, a.origin, a.created_by
 FROM composer_advisory a
 WHERE
   ($3::boolean IS NULL OR a.is_visible = $3)
@@ -208,16 +596,20 @@ WHERE
   )
   AND (
     $7::text IS NULL
-    OR a.title ILIKE '%' || $7 || '%'
-    OR COALESCE(a.cve, '') ILIKE '%' || $7 || '%'
-    OR COALESCE(a.ghsa_id, '') ILIKE '%' || $7 || '%'
-    OR a.advisory_id ILIKE '%' || $7 || '%'
+    OR a.origin = $7
+  )
+  AND (
+    $8::text IS NULL
+    OR a.title ILIKE '%' || $8 || '%'
+    OR COALESCE(a.cve, '') ILIKE '%' || $8 || '%'
+    OR COALESCE(a.ghsa_id, '') ILIKE '%' || $8 || '%'
+    OR a.advisory_id ILIKE '%' || $8 || '%'
     OR EXISTS (
       SELECT 1 FROM composer_advisory_package p
       WHERE p.advisory_id = a.advisory_id
         AND (
-          p.package_name ILIKE '%' || $7 || '%'
-          OR p.packagist_advisory_id ILIKE '%' || $7 || '%'
+          p.package_name ILIKE '%' || $8 || '%'
+          OR p.packagist_advisory_id ILIKE '%' || $8 || '%'
         )
     )
   )
@@ -232,6 +624,7 @@ type ListComposerAdvisoriesParams struct {
 	PackageName *string `json:"package_name"`
 	Severity    *string `json:"severity"`
 	Tag         *string `json:"tag"`
+	Origin      *string `json:"origin"`
 	Search      *string `json:"search"`
 }
 
@@ -243,6 +636,7 @@ func (q *Queries) ListComposerAdvisories(ctx context.Context, arg ListComposerAd
 		arg.PackageName,
 		arg.Severity,
 		arg.Tag,
+		arg.Origin,
 		arg.Search,
 	)
 	if err != nil {
@@ -288,6 +682,81 @@ func (q *Queries) ListComposerAdvisories(ctx context.Context, arg ListComposerAd
 			&i.EnrichedAt,
 			&i.EnrichedBy,
 			&i.FirstPatchedVersions,
+			&i.Origin,
+			&i.CreatedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listComposerAdvisoriesByIdentifiers = `-- name: ListComposerAdvisoriesByIdentifiers :many
+SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by FROM composer_advisory
+WHERE
+  ($1::text IS NOT NULL AND (cve = $1 OR advisory_id = $1))
+  OR ($2::text IS NOT NULL AND (ghsa_id = $2 OR advisory_id = $2))
+ORDER BY advisory_id
+`
+
+type ListComposerAdvisoriesByIdentifiersParams struct {
+	Cve    *string `json:"cve"`
+	GhsaID *string `json:"ghsa_id"`
+}
+
+// Every row claiming one of the identifiers, by column or by canonical id.
+// Drives duplicate detection on create and merge-candidate lookup on link.
+func (q *Queries) ListComposerAdvisoriesByIdentifiers(ctx context.Context, arg ListComposerAdvisoriesByIdentifiersParams) ([]ComposerAdvisory, error) {
+	rows, err := q.db.Query(ctx, listComposerAdvisoriesByIdentifiers, arg.Cve, arg.GhsaID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ComposerAdvisory{}
+	for rows.Next() {
+		var i ComposerAdvisory
+		if err := rows.Scan(
+			&i.AdvisoryID,
+			&i.Title,
+			&i.Link,
+			&i.Cve,
+			&i.GhsaID,
+			&i.Severity,
+			&i.Sources,
+			&i.ReportedAt,
+			&i.ComposerRepository,
+			&i.SyncedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Summary,
+			&i.Description,
+			&i.CvssScore,
+			&i.CvssVector,
+			&i.Cwes,
+			&i.ExternalReferences,
+			&i.DetailsSource,
+			&i.DetailsSyncedAt,
+			&i.GithubSyncedAt,
+			&i.DetailsAttemptedAt,
+			&i.SeverityOverride,
+			&i.IsVisible,
+			&i.NotesPublic,
+			&i.NotesInternal,
+			&i.RemediationSummary,
+			&i.RemediationUrl,
+			&i.RecommendedUpgrade,
+			&i.ShopwareImpactSummary,
+			&i.AffectedComponents,
+			&i.Tags,
+			&i.EnrichedAt,
+			&i.EnrichedBy,
+			&i.FirstPatchedVersions,
+			&i.Origin,
+			&i.CreatedBy,
 		); err != nil {
 			return nil, err
 		}
@@ -450,7 +919,7 @@ ORDER BY package_name
 
 type ListComposerAdvisoryPackagesForAdvisoryRow struct {
 	PackageName         string           `json:"package_name"`
-	PackagistAdvisoryID string           `json:"packagist_advisory_id"`
+	PackagistAdvisoryID *string          `json:"packagist_advisory_id"`
 	AffectedVersions    string           `json:"affected_versions"`
 	SyncedAt            pgtype.Timestamp `json:"synced_at"`
 }
@@ -481,7 +950,7 @@ func (q *Queries) ListComposerAdvisoryPackagesForAdvisory(ctx context.Context, a
 }
 
 const listVisibleComposerAdvisories = `-- name: ListVisibleComposerAdvisories :many
-SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions
+SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by
 FROM composer_advisory
 WHERE is_visible = true
 ORDER BY reported_at DESC NULLS LAST, advisory_id DESC
@@ -532,6 +1001,8 @@ func (q *Queries) ListVisibleComposerAdvisories(ctx context.Context) ([]Composer
 			&i.EnrichedAt,
 			&i.EnrichedBy,
 			&i.FirstPatchedVersions,
+			&i.Origin,
+			&i.CreatedBy,
 		); err != nil {
 			return nil, err
 		}
@@ -541,6 +1012,17 @@ func (q *Queries) ListVisibleComposerAdvisories(ctx context.Context) ([]Composer
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockComposerAdvisoryCatalog = `-- name: LockComposerAdvisoryCatalog :exec
+SELECT pg_advisory_xact_lock(hashtextextended('shopmon:composer-advisory-catalog', 0))
+`
+
+// Serialize catalog identity changes before resolving aliases or moving
+// packages. Held only during database work, never while fetching upstream.
+func (q *Queries) LockComposerAdvisoryCatalog(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, lockComposerAdvisoryCatalog)
+	return err
 }
 
 const markComposerAdvisoryDetailsAttemptedByCve = `-- name: MarkComposerAdvisoryDetailsAttemptedByCve :exec
@@ -571,6 +1053,252 @@ WHERE ghsa_id = $1
 func (q *Queries) MarkComposerAdvisoryGithubSyncedByGhsa(ctx context.Context, ghsaID *string) error {
 	_, err := q.db.Exec(ctx, markComposerAdvisoryGithubSyncedByGhsa, ghsaID)
 	return err
+}
+
+const mergeActiveAdvisorySuppressions = `-- name: MergeActiveAdvisorySuppressions :exec
+UPDATE advisory_suppression s SET advisory_id = $1
+WHERE s.advisory_id = $2
+  AND s.revoked_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM advisory_suppression keep
+    WHERE keep.advisory_id = $1
+      AND keep.revoked_at IS NULL
+      AND keep.shop_id = s.shop_id
+      AND keep.environment_id IS NOT DISTINCT FROM s.environment_id
+  )
+`
+
+type MergeActiveAdvisorySuppressionsParams struct {
+	AdvisoryID   string `json:"advisory_id"`
+	AdvisoryID_2 string `json:"advisory_id_2"`
+}
+
+func (q *Queries) MergeActiveAdvisorySuppressions(ctx context.Context, arg MergeActiveAdvisorySuppressionsParams) error {
+	_, err := q.db.Exec(ctx, mergeActiveAdvisorySuppressions, arg.AdvisoryID, arg.AdvisoryID_2)
+	return err
+}
+
+const mergeComposerAdvisoryPackages = `-- name: MergeComposerAdvisoryPackages :exec
+UPDATE composer_advisory_package SET advisory_id = $1
+WHERE advisory_id = $2
+`
+
+type MergeComposerAdvisoryPackagesParams struct {
+	AdvisoryID   string `json:"advisory_id"`
+	AdvisoryID_2 string `json:"advisory_id_2"`
+}
+
+// Re-pointing the official package rows (after the survivor's own rows are
+// deleted) adopts the upstream ranges and PKSA ids without ever holding two
+// rows with the same packagist_advisory_id.
+func (q *Queries) MergeComposerAdvisoryPackages(ctx context.Context, arg MergeComposerAdvisoryPackagesParams) error {
+	_, err := q.db.Exec(ctx, mergeComposerAdvisoryPackages, arg.AdvisoryID, arg.AdvisoryID_2)
+	return err
+}
+
+const mergeEnvironmentAdvisoryMatches = `-- name: MergeEnvironmentAdvisoryMatches :exec
+UPDATE environment_advisory_match m SET advisory_id = $1
+WHERE m.advisory_id = $2
+  AND NOT EXISTS (
+    SELECT 1 FROM environment_advisory_match keep
+    WHERE keep.environment_id = m.environment_id
+      AND keep.advisory_id = $1
+      AND keep.package_name = m.package_name
+  )
+`
+
+type MergeEnvironmentAdvisoryMatchesParams struct {
+	AdvisoryID   string `json:"advisory_id"`
+	AdvisoryID_2 string `json:"advisory_id_2"`
+}
+
+// Merge of an already-synced official row ($2) into the surviving Shopmon row
+// ($1). Matches and notification markers move first so affected shops keep
+// their state and are never re-alerted; whatever cannot move without
+// colliding with the survivor's own rows is left behind and removed by the
+// cascade when the official row is deleted.
+func (q *Queries) MergeEnvironmentAdvisoryMatches(ctx context.Context, arg MergeEnvironmentAdvisoryMatchesParams) error {
+	_, err := q.db.Exec(ctx, mergeEnvironmentAdvisoryMatches, arg.AdvisoryID, arg.AdvisoryID_2)
+	return err
+}
+
+const mergeEnvironmentAdvisoryNotifications = `-- name: MergeEnvironmentAdvisoryNotifications :exec
+INSERT INTO environment_advisory_notified (environment_id, advisory_id, notified_at)
+SELECT src.environment_id, $1, src.notified_at
+FROM environment_advisory_notified src
+WHERE src.advisory_id = $2
+ON CONFLICT (environment_id, advisory_id) DO NOTHING
+`
+
+type MergeEnvironmentAdvisoryNotificationsParams struct {
+	AdvisoryID   string `json:"advisory_id"`
+	AdvisoryID_2 string `json:"advisory_id_2"`
+}
+
+func (q *Queries) MergeEnvironmentAdvisoryNotifications(ctx context.Context, arg MergeEnvironmentAdvisoryNotificationsParams) error {
+	_, err := q.db.Exec(ctx, mergeEnvironmentAdvisoryNotifications, arg.AdvisoryID, arg.AdvisoryID_2)
+	return err
+}
+
+const mergeRevokedAdvisorySuppressions = `-- name: MergeRevokedAdvisorySuppressions :exec
+UPDATE advisory_suppression SET advisory_id = $1
+WHERE advisory_id = $2 AND revoked_at IS NOT NULL
+`
+
+type MergeRevokedAdvisorySuppressionsParams struct {
+	AdvisoryID   string `json:"advisory_id"`
+	AdvisoryID_2 string `json:"advisory_id_2"`
+}
+
+// Revoked suppressions are pure audit trail and move unconditionally; active
+// ones move only where the survivor has no active suppression for the same
+// shop/environment (the partial unique indexes would reject the rest, and
+// those are duplicates of the survivor's own acknowledgement).
+func (q *Queries) MergeRevokedAdvisorySuppressions(ctx context.Context, arg MergeRevokedAdvisorySuppressionsParams) error {
+	_, err := q.db.Exec(ctx, mergeRevokedAdvisorySuppressions, arg.AdvisoryID, arg.AdvisoryID_2)
+	return err
+}
+
+const nextShopmonAdvisoryNumber = `-- name: NextShopmonAdvisoryNumber :one
+SELECT nextval('shopmon_advisory_seq')::bigint AS number
+`
+
+// Shopmon-authored advisory numbering ("SHOPMON-2026-0001"); the sequence is
+// global so an id is never reissued for a different vulnerability.
+func (q *Queries) NextShopmonAdvisoryNumber(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, nextShopmonAdvisoryNumber)
+	var number int64
+	err := row.Scan(&number)
+	return number, err
+}
+
+const revokeExpiredSuppressionsForAdvisoryMerge = `-- name: RevokeExpiredSuppressionsForAdvisoryMerge :exec
+UPDATE advisory_suppression SET revoked_at = NOW()
+WHERE advisory_id = ANY($1::text[])
+  AND revoked_at IS NULL AND expires_at <= NOW()
+`
+
+// Expired rows still occupy the partial unique indexes. Retire them on both
+// sides before moving suppressions so a valid acknowledgement can survive.
+func (q *Queries) RevokeExpiredSuppressionsForAdvisoryMerge(ctx context.Context, advisoryIds []string) error {
+	_, err := q.db.Exec(ctx, revokeExpiredSuppressionsForAdvisoryMerge, advisoryIds)
+	return err
+}
+
+const updateComposerAdvisoryContent = `-- name: UpdateComposerAdvisoryContent :one
+UPDATE composer_advisory SET
+  title = $2,
+  link = $3,
+  cve = $4,
+  ghsa_id = $5,
+  severity = $6,
+  sources = $7,
+  reported_at = $8,
+  composer_repository = $9,
+  summary = $10,
+  description = $11,
+  cvss_score = $12,
+  cvss_vector = $13,
+  cwes = $14,
+  external_references = $15,
+  details_source = $16,
+  details_synced_at = $17,
+  github_synced_at = $18,
+  first_patched_versions = $19,
+  updated_at = NOW()
+WHERE advisory_id = $1
+RETURNING advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by
+`
+
+type UpdateComposerAdvisoryContentParams struct {
+	AdvisoryID           string           `json:"advisory_id"`
+	Title                string           `json:"title"`
+	Link                 *string          `json:"link"`
+	Cve                  *string          `json:"cve"`
+	GhsaID               *string          `json:"ghsa_id"`
+	Severity             *string          `json:"severity"`
+	Sources              json.RawMessage  `json:"sources"`
+	ReportedAt           pgtype.Timestamp `json:"reported_at"`
+	ComposerRepository   *string          `json:"composer_repository"`
+	Summary              *string          `json:"summary"`
+	Description          *string          `json:"description"`
+	CvssScore            *float64         `json:"cvss_score"`
+	CvssVector           *string          `json:"cvss_vector"`
+	Cwes                 json.RawMessage  `json:"cwes"`
+	ExternalReferences   json.RawMessage  `json:"external_references"`
+	DetailsSource        *string          `json:"details_source"`
+	DetailsSyncedAt      pgtype.Timestamp `json:"details_synced_at"`
+	GithubSyncedAt       pgtype.Timestamp `json:"github_synced_at"`
+	FirstPatchedVersions json.RawMessage  `json:"first_patched_versions"`
+}
+
+// Full content rewrite for Shopmon-authored rows (admin edit) and for the
+// link/merge path, where the service computes the surviving row's content
+// from the Shopmon row and the official row being merged into it. Enrichment
+// columns are deliberately absent; UpdateComposerAdvisoryEnrichment owns them.
+func (q *Queries) UpdateComposerAdvisoryContent(ctx context.Context, arg UpdateComposerAdvisoryContentParams) (ComposerAdvisory, error) {
+	row := q.db.QueryRow(ctx, updateComposerAdvisoryContent,
+		arg.AdvisoryID,
+		arg.Title,
+		arg.Link,
+		arg.Cve,
+		arg.GhsaID,
+		arg.Severity,
+		arg.Sources,
+		arg.ReportedAt,
+		arg.ComposerRepository,
+		arg.Summary,
+		arg.Description,
+		arg.CvssScore,
+		arg.CvssVector,
+		arg.Cwes,
+		arg.ExternalReferences,
+		arg.DetailsSource,
+		arg.DetailsSyncedAt,
+		arg.GithubSyncedAt,
+		arg.FirstPatchedVersions,
+	)
+	var i ComposerAdvisory
+	err := row.Scan(
+		&i.AdvisoryID,
+		&i.Title,
+		&i.Link,
+		&i.Cve,
+		&i.GhsaID,
+		&i.Severity,
+		&i.Sources,
+		&i.ReportedAt,
+		&i.ComposerRepository,
+		&i.SyncedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Summary,
+		&i.Description,
+		&i.CvssScore,
+		&i.CvssVector,
+		&i.Cwes,
+		&i.ExternalReferences,
+		&i.DetailsSource,
+		&i.DetailsSyncedAt,
+		&i.GithubSyncedAt,
+		&i.DetailsAttemptedAt,
+		&i.SeverityOverride,
+		&i.IsVisible,
+		&i.NotesPublic,
+		&i.NotesInternal,
+		&i.RemediationSummary,
+		&i.RemediationUrl,
+		&i.RecommendedUpgrade,
+		&i.ShopwareImpactSummary,
+		&i.AffectedComponents,
+		&i.Tags,
+		&i.EnrichedAt,
+		&i.EnrichedBy,
+		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
+	)
+	return i, err
 }
 
 const updateComposerAdvisoryDetailsByCve = `-- name: UpdateComposerAdvisoryDetailsByCve :exec
@@ -671,7 +1399,7 @@ UPDATE composer_advisory SET
   enriched_by = $12,
   updated_at = NOW()
 WHERE advisory_id = $1
-RETURNING advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions
+RETURNING advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by
 `
 
 type UpdateComposerAdvisoryEnrichmentParams struct {
@@ -741,6 +1469,8 @@ func (q *Queries) UpdateComposerAdvisoryEnrichment(ctx context.Context, arg Upda
 		&i.EnrichedAt,
 		&i.EnrichedBy,
 		&i.FirstPatchedVersions,
+		&i.Origin,
+		&i.CreatedBy,
 	)
 	return i, err
 }
@@ -828,10 +1558,10 @@ ON CONFLICT (advisory_id, package_name) DO UPDATE SET
 `
 
 type UpsertComposerAdvisoryPackageParams struct {
-	AdvisoryID          string `json:"advisory_id"`
-	PackageName         string `json:"package_name"`
-	PackagistAdvisoryID string `json:"packagist_advisory_id"`
-	AffectedVersions    string `json:"affected_versions"`
+	AdvisoryID          string  `json:"advisory_id"`
+	PackageName         string  `json:"package_name"`
+	PackagistAdvisoryID *string `json:"packagist_advisory_id"`
+	AffectedVersions    string  `json:"affected_versions"`
 }
 
 func (q *Queries) UpsertComposerAdvisoryPackage(ctx context.Context, arg UpsertComposerAdvisoryPackageParams) error {

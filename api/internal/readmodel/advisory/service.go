@@ -6,11 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/ghsa"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/russross/blackfriday/v2"
 )
 
@@ -20,12 +24,27 @@ var ErrNotFound = errors.New("advisory not found")
 // 400 rather than 500.
 var ErrInvalidInput = errors.New("invalid advisory input")
 
-type Service struct {
-	queries *queries.Queries
+// ErrConflict marks a create/link that collides with an advisory already
+// tracked under another id, so the handler can answer 409.
+var ErrConflict = errors.New("advisory conflict")
+
+// GHSAFetcher loads one GitHub security advisory for the admin import flow.
+// Implemented by the catalog's GitHub client; nil disables the preview.
+type GHSAFetcher interface {
+	FetchGHSA(ctx context.Context, ref string) (*ghsa.Advisory, error)
 }
 
-func NewService(q *queries.Queries) *Service {
-	return &Service{queries: q}
+type Service struct {
+	// pool is needed alongside queries because advisory authoring (create,
+	// content update, official link/merge) writes the advisory and its
+	// package rows transactionally.
+	pool    *pgxpool.Pool
+	queries *queries.Queries
+	ghsa    GHSAFetcher
+}
+
+func NewService(pool *pgxpool.Pool, q *queries.Queries, ghsa GHSAFetcher) *Service {
+	return &Service{pool: pool, queries: q, ghsa: ghsa}
 }
 
 type ListParams struct {
@@ -35,6 +54,8 @@ type ListParams struct {
 	Severity    *string
 	Tag         *string
 	Search      *string
+	// Origin filters to Shopmon-authored or upstream advisories when non-nil.
+	Origin *string
 	// IsVisible filters by visibility when non-nil. User listing always passes true.
 	IsVisible *bool
 }
@@ -71,6 +92,7 @@ func (s *Service) List(ctx context.Context, params ListParams) ([]AdvisoryView, 
 		PackageName: emptyToNil(params.PackageName),
 		Severity:    emptyToNil(params.Severity),
 		Tag:         emptyToNil(params.Tag),
+		Origin:      emptyToNil(params.Origin),
 		Search:      emptyToNil(params.Search),
 	}
 
@@ -84,6 +106,7 @@ func (s *Service) List(ctx context.Context, params ListParams) ([]AdvisoryView, 
 		PackageName: filter.PackageName,
 		Severity:    filter.Severity,
 		Tag:         filter.Tag,
+		Origin:      filter.Origin,
 		Search:      filter.Search,
 	})
 	if err != nil {
@@ -112,17 +135,30 @@ func (s *Service) List(ctx context.Context, params ListParams) ([]AdvisoryView, 
 func (s *Service) Get(ctx context.Context, advisoryID string, visibleOnly bool) (AdvisoryView, error) {
 	row, err := s.queries.GetComposerAdvisory(ctx, advisoryID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			// Allow old Packagist PKSA URLs to resolve to the canonical advisory.
-			row, err = s.queries.GetComposerAdvisoryByPackagistID(ctx, advisoryID)
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return AdvisoryView{}, fmt.Errorf("get advisory: %w", err)
+		}
+		// Allow old Packagist PKSA URLs to resolve to the canonical advisory.
+		row, err = s.queries.GetComposerAdvisoryByPackagistID(ctx, &advisoryID)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return AdvisoryView{}, fmt.Errorf("get advisory by packagist id: %w", err)
+		}
+		if err != nil {
+			// A linked Shopmon advisory keeps its SHOPMON-… id, so resolve it
+			// by the official identifiers a user may arrive with instead.
+			upper := strings.ToUpper(strings.TrimSpace(advisoryID))
+			switch {
+			case strings.HasPrefix(upper, "CVE-"):
+				row, err = s.queries.GetComposerAdvisoryByCve(ctx, &upper)
+			case strings.HasPrefix(upper, "GHSA-"):
+				row, err = s.queries.GetComposerAdvisoryByGhsa(ctx, &advisoryID)
+			}
 			if err != nil {
 				if errors.Is(err, pgx.ErrNoRows) {
 					return AdvisoryView{}, ErrNotFound
 				}
-				return AdvisoryView{}, fmt.Errorf("get advisory by packagist id: %w", err)
+				return AdvisoryView{}, fmt.Errorf("get advisory by official id: %w", err)
 			}
-		} else {
-			return AdvisoryView{}, fmt.Errorf("get advisory: %w", err)
 		}
 	}
 	if visibleOnly && !row.IsVisible {
@@ -191,6 +227,30 @@ type EnrichmentUpdate struct {
 	AffectedComponents    *[]string
 	Tags                  *[]string
 	EnrichedBy            string
+
+	// CoreFields, when non-nil, rewrites the advisory's synced content. It is
+	// accepted only for manually tracked advisories (Shopmon-authored or
+	// GitHub-imported) without a linked CVE; upstream rows take content from
+	// the sync.
+	CoreFields *CoreFieldsUpdate
+}
+
+// CoreFieldsUpdate is a partial edit of an advisory's content fields. The
+// pointer semantics mirror the enrichment patch: omitted keeps the stored
+// value, present-but-blank clears it (except the title, which must not be
+// blank). CVSS uses a second pointer to distinguish omission from clearing.
+type CoreFieldsUpdate struct {
+	Title              *string
+	Packages           *[]PackageInput
+	Severity           *string
+	Summary            *string
+	Description        *string
+	CvssScore          **float64
+	CvssVector         *string
+	Cwes               *[]api.AdvisoryCWE
+	Link               *string
+	ExternalReferences *[]string
+	ReportedAt         *time.Time
 }
 
 // UpdateEnrichment applies admin enrichment as a partial update: a field the
@@ -199,12 +259,33 @@ type EnrichmentUpdate struct {
 // as "clear" would let a request that only sets tags silently wipe an
 // advisory's notes — or, worse, republish one an admin had deliberately hidden.
 func (s *Service) UpdateEnrichment(ctx context.Context, advisoryID string, update EnrichmentUpdate) (AdvisoryView, error) {
+	// Resolve aliases (PKSA, linked CVE/GHSA) to the canonical id first; all
+	// writes below key off it.
 	view, err := s.Get(ctx, advisoryID, false)
 	if err != nil {
 		return AdvisoryView{}, err
 	}
-	current := view.Advisory
-	advisoryID = current.AdvisoryID
+	advisoryID = view.Advisory.AdvisoryID
+
+	if s.pool == nil {
+		return AdvisoryView{}, errors.New("update advisory: database pool is required")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return AdvisoryView{}, fmt.Errorf("begin advisory update transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	txq := s.queries.WithTx(tx)
+
+	// Lock the row so the omitted-keeps-value patch logic reads the values it
+	// is about to overwrite, not a concurrent admin's half-applied edit.
+	current, err := txq.GetComposerAdvisoryForUpdate(ctx, advisoryID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdvisoryView{}, ErrNotFound
+		}
+		return AdvisoryView{}, fmt.Errorf("lock advisory: %w", err)
+	}
 
 	severityOverride := current.SeverityOverride
 	if update.SeverityOverride != nil {
@@ -250,7 +331,7 @@ func (s *Service) UpdateEnrichment(ctx context.Context, advisoryID string, updat
 	recommendedUpgrade := patchString(current.RecommendedUpgrade, update.RecommendedUpgrade)
 	impact := patchString(current.ShopwareImpactSummary, update.ShopwareImpactSummary)
 
-	row, err := s.queries.UpdateComposerAdvisoryEnrichment(ctx, queries.UpdateComposerAdvisoryEnrichmentParams{
+	row, err := txq.UpdateComposerAdvisoryEnrichment(ctx, queries.UpdateComposerAdvisoryEnrichmentParams{
 		AdvisoryID:            advisoryID,
 		SeverityOverride:      severityOverride,
 		IsVisible:             isVisible,
@@ -270,7 +351,129 @@ func (s *Service) UpdateEnrichment(ctx context.Context, advisoryID string, updat
 		}
 		return AdvisoryView{}, fmt.Errorf("update advisory enrichment: %w", err)
 	}
-	return AdvisoryView{Advisory: row, Packages: view.Packages}, nil
+
+	packages := view.Packages
+	if update.CoreFields != nil {
+		row, packages, err = s.applyCoreFieldsUpdate(ctx, txq, current, row, update.CoreFields)
+		if err != nil {
+			return AdvisoryView{}, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return AdvisoryView{}, fmt.Errorf("commit advisory update transaction: %w", err)
+	}
+	return AdvisoryView{Advisory: row, Packages: packages}, nil
+}
+
+// applyCoreFieldsUpdate rewrites a manually tracked advisory's content
+// inside the enrichment transaction. The guards keep admin edits and the
+// Packagist sync from fighting over the same columns: once an official CVE
+// is linked, the sync owns the content and only enrichment stays editable.
+func (s *Service) applyCoreFieldsUpdate(ctx context.Context, txq *queries.Queries, current, enriched queries.ComposerAdvisory, core *CoreFieldsUpdate) (queries.ComposerAdvisory, []queries.ComposerAdvisoryPackage, error) {
+	if current.Origin != originShopmon && current.Origin != originGitHub {
+		return enriched, nil, fmt.Errorf("%w: core fields can only be edited on Shopmon-authored or GitHub-imported advisories", ErrInvalidInput)
+	}
+	if contentLocked(current) {
+		return enriched, nil, fmt.Errorf("%w: advisory %s is linked to an official CVE, so its core fields are maintained by the sync", ErrConflict, current.AdvisoryID)
+	}
+
+	content := contentParamsFromRow(enriched)
+
+	if core.Title != nil {
+		title := strings.TrimSpace(*core.Title)
+		if title == "" {
+			return enriched, nil, fmt.Errorf("%w: title must not be empty", ErrInvalidInput)
+		}
+		content.Title = title
+	}
+	if core.Severity != nil {
+		severity, err := normalizeSeverity(core.Severity)
+		if err != nil {
+			return enriched, nil, err
+		}
+		content.Severity = severity
+	}
+	content.Summary = patchString(content.Summary, core.Summary)
+	content.Description = patchString(content.Description, core.Description)
+	content.Link = patchString(content.Link, core.Link)
+	if content.Link != nil {
+		if err := validateHTTPURL("link", *content.Link); err != nil {
+			return enriched, nil, err
+		}
+	}
+	if core.CvssScore != nil {
+		if err := validateCVSSScore(*core.CvssScore); err != nil {
+			return enriched, nil, err
+		}
+		content.CvssScore = *core.CvssScore
+	}
+	content.CvssVector = patchString(content.CvssVector, core.CvssVector)
+	if core.Cwes != nil {
+		cwesJSON, err := encodeCWEs(*core.Cwes)
+		if err != nil {
+			return enriched, nil, err
+		}
+		content.Cwes = cwesJSON
+	}
+	if core.ExternalReferences != nil {
+		refsJSON, err := encodeReferences(*core.ExternalReferences)
+		if err != nil {
+			return enriched, nil, err
+		}
+		content.ExternalReferences = refsJSON
+	}
+	if core.ReportedAt != nil {
+		content.ReportedAt = pgtype.Timestamp{Time: core.ReportedAt.UTC(), Valid: true}
+	}
+	// Hand-written details are the disclosure until an official source
+	// replaces them after linking. The source follows the row's origin so a
+	// GitHub import stays attributed to GitHub after an admin edit.
+	if content.Summary != nil || content.Description != nil || content.CvssScore != nil {
+		source := detailsSourceShopmon
+		if current.Origin == originGitHub {
+			source = detailsSourceGitHub
+		}
+		content.DetailsSource = &source
+	}
+
+	row, err := txq.UpdateComposerAdvisoryContent(ctx, content)
+	if err != nil {
+		return enriched, nil, fmt.Errorf("update advisory content: %w", err)
+	}
+
+	if core.Packages == nil {
+		pkgs, err := s.listPackagesTx(ctx, txq, row.AdvisoryID)
+		if err != nil {
+			return enriched, nil, err
+		}
+		return row, pkgs, nil
+	}
+
+	packages, err := normalizePackages(*core.Packages)
+	if err != nil {
+		return enriched, nil, err
+	}
+	if err := txq.DeleteComposerAdvisoryPackages(ctx, row.AdvisoryID); err != nil {
+		return enriched, nil, fmt.Errorf("replace advisory packages: %w", err)
+	}
+	out := make([]queries.ComposerAdvisoryPackage, 0, len(packages))
+	for _, pkg := range packages {
+		if err := txq.UpsertComposerAdvisoryPackage(ctx, queries.UpsertComposerAdvisoryPackageParams{
+			AdvisoryID:          row.AdvisoryID,
+			PackageName:         pkg.PackageName,
+			PackagistAdvisoryID: nil,
+			AffectedVersions:    pkg.AffectedVersions,
+		}); err != nil {
+			return enriched, nil, fmt.Errorf("replace advisory packages: %w", err)
+		}
+		out = append(out, queries.ComposerAdvisoryPackage{
+			AdvisoryID:       row.AdvisoryID,
+			PackageName:      pkg.PackageName,
+			AffectedVersions: pkg.AffectedVersions,
+		})
+	}
+	return row, out, nil
 }
 
 func ToUserAdvisory(view AdvisoryView) (api.Advisory, error) {
@@ -305,6 +508,7 @@ func ToUserAdvisory(view AdvisoryView) (api.Advisory, error) {
 
 	return api.Advisory{
 		AdvisoryId:                 row.AdvisoryID,
+		Origin:                     toOrigin(row.Origin),
 		Packages:                   packages,
 		Title:                      row.Title,
 		Link:                       row.Link,
@@ -349,6 +553,8 @@ func ToAdminAdvisory(view AdvisoryView) (api.AdminAdvisory, error) {
 	}
 	return api.AdminAdvisory{
 		AdvisoryId:            base.AdvisoryId,
+		Origin:                base.Origin,
+		CreatedBy:             view.Advisory.CreatedBy,
 		Packages:              base.Packages,
 		Title:                 base.Title,
 		Link:                  base.Link,
@@ -504,4 +710,14 @@ func nilIfEmpty(s string) *string {
 	}
 	v := s
 	return &v
+}
+
+// toOrigin maps the stored origin onto the API enum. Unknown values (which
+// the CHECK constraint should prevent) fall back to upstream rather than
+// leaking an out-of-enum value into the API.
+func toOrigin(origin string) api.AdvisoryOrigin {
+	if v := api.AdvisoryOrigin(origin); v.Valid() {
+		return v
+	}
+	return api.AdvisoryOriginUpstream
 }

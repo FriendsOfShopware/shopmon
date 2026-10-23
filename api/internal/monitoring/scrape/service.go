@@ -404,7 +404,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		},
 		Client:             client,
 		Ignores:            ignores,
-		TaskGrace:   taskGrace(env),
+		TaskGrace:          taskGrace(env),
 		Missing:            missing,
 		SecurityAdvisories: securityAdvisories,
 		// Composer package inventory from the FroshTools SBOM. Empty when the
@@ -563,6 +563,7 @@ func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) ([]checker.
 			GHSA:     ghsa,
 			Link:     link,
 			Severity: sev,
+			Origin:   row.Origin,
 			Packages: pkgsByID[row.AdvisoryID],
 		})
 	}

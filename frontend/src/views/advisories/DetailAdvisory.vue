@@ -13,8 +13,8 @@
         <Skeleton class="h-4 w-1/2" />
         <Skeleton class="h-4 w-1/3" />
       </div>
-      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Skeleton v-for="i in 4" :key="i" class="h-[68px] rounded-xl" />
+      <div class="grid grid-cols-2 gap-4" :class="session ? 'lg:grid-cols-4' : 'sm:grid-cols-3'">
+        <Skeleton v-for="i in session ? 4 : 3" :key="i" class="h-[68px] rounded-xl" />
       </div>
       <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Skeleton class="h-72 rounded-xl" />
@@ -31,6 +31,7 @@
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl font-bold tracking-tight">{{ advisory.title }}</h1>
           <SeverityBadge :severity="advisory.effectiveSeverity" />
+          <ShopmonAdvisoryBadge :advisory="advisory" />
         </div>
         <p v-if="advisory.summary" class="mt-2 max-w-3xl text-sm text-muted-foreground">
           {{ advisory.summary }}
@@ -55,8 +56,26 @@
         </div>
       </div>
 
+      <!-- Shopmon reports are early warnings without an official registry
+           entry behind them (yet). The banner says so explicitly instead of
+           letting the missing CVE speak for itself. -->
+      <Alert v-if="isShopmon">
+        <icon-fa6-solid:shield-halved class="size-4" />
+        <AlertTitle>{{ $t("advisories.shopmonBannerTitle") }}</AlertTitle>
+        <AlertDescription>
+          {{
+            officialId
+              ? $t("advisories.shopmonBannerLinked", {
+                  id: advisory.advisoryId,
+                  official: officialId,
+                })
+              : $t("advisories.shopmonBannerUnlinked")
+          }}
+        </AlertDescription>
+      </Alert>
+
       <!-- Key facts at a glance -->
-      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div class="grid grid-cols-2 gap-4" :class="session ? 'lg:grid-cols-4' : 'sm:grid-cols-3'">
         <StatCard
           :icon="IconShield"
           :value="severityLabel"
@@ -73,6 +92,7 @@
              would be a false all-clear. Counts distinct environments, which is
              what the API returns, so the label says environments. -->
         <StatCard
+          v-if="session"
           :icon="IconStore"
           :value="affectedLoading ? '…' : affectedError ? '—' : affectedTotal"
           :label="$t('advisories.kpi.affectedEnvironments')"
@@ -103,7 +123,7 @@
             <AlertDescription>{{ $t("advisories.descriptionPending") }}</AlertDescription>
           </Alert>
 
-          <Card>
+          <Card v-if="session">
             <CardHeader>
               <CardTitle class="text-base">{{ $t("advisories.affected.title") }}</CardTitle>
               <CardDescription>
@@ -198,7 +218,7 @@
             </CardContent>
           </Card>
 
-          <Dialog v-model:open="suppressOpen">
+          <Dialog v-if="session" v-model:open="suppressOpen">
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{{ $t("advisories.suppressTitle") }}</DialogTitle>
@@ -505,7 +525,8 @@
 <script setup lang="ts">
 import StatCard from "@/components/StatCard.vue";
 import SeverityBadge from "@/components/advisories/SeverityBadge.vue";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import ShopmonAdvisoryBadge from "@/components/advisories/ShopmonAdvisoryBadge.vue";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -542,7 +563,14 @@ import {
   getAdvisory,
   listAdvisoryAffectedEnvironments,
 } from "@/api/generated";
-import { cvssStatColor, isSafeHttpUrl, severityStatColor } from "@/helpers/advisory";
+import { useSession } from "@/composables/useSession";
+import {
+  advisoryOfficialId,
+  cvssStatColor,
+  isSafeHttpUrl,
+  isShopmonAdvisory,
+  severityStatColor,
+} from "@/helpers/advisory";
 import { formatDate } from "@/helpers/formatter";
 import { sanitizeHtml } from "@/helpers/sanitize";
 import { computed, onMounted, ref } from "vue";
@@ -557,6 +585,7 @@ type AffectedEnvironment = AdvisoryAffectedEnvironment;
 
 const route = useRoute();
 const { t } = useI18n();
+const { session } = useSession();
 const advisory = ref<Advisory | null>(null);
 const loading = ref(true);
 const error = ref("");
@@ -567,6 +596,9 @@ const affectedTotal = ref(0);
 const globalTotal = ref<number | null>(null);
 
 const descriptionHtml = computed(() => sanitizeHtml(advisory.value?.descriptionHtml));
+
+const isShopmon = computed(() => (advisory.value ? isShopmonAdvisory(advisory.value) : false));
+const officialId = computed(() => (advisory.value ? advisoryOfficialId(advisory.value) : null));
 
 const severityLabel = computed(() => {
   const level = advisory.value?.effectiveSeverity;
@@ -698,6 +730,10 @@ onMounted(async () => {
   }
   advisory.value = data;
 
-  await loadAffected(id);
+  if (session.value) {
+    await loadAffected(id);
+  } else {
+    affectedLoading.value = false;
+  }
 });
 </script>

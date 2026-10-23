@@ -94,6 +94,7 @@ export type AdminAdvisory = {
     affectedEnvironmentCount?: number;
     composerRepository?: string;
     createdAt: string;
+    createdBy?: string;
     cve?: string;
     cvssScore?: number;
     cvssVector?: string;
@@ -113,6 +114,7 @@ export type AdminAdvisory = {
     link?: string;
     notesInternal?: string;
     notesPublic?: string;
+    origin: AdvisoryOrigin;
     packages: Array<AdvisoryAffectedPackage>;
     recommendedUpgrade?: string;
     remediationSummary?: string;
@@ -403,6 +405,7 @@ export type Advisory = {
     isVisible: boolean;
     link?: string;
     notesPublic?: string;
+    origin: AdvisoryOrigin;
     packages: Array<AdvisoryAffectedPackage>;
     recommendedUpgrade?: string;
     remediationSummary?: string;
@@ -440,7 +443,7 @@ export type AdvisoryAffectedEnvironment = {
 export type AdvisoryAffectedPackage = {
     affectedVersions: string;
     packageName: string;
-    packagistAdvisoryId: string;
+    packagistAdvisoryId?: string;
 };
 
 export type AdvisoryAffectedResponse = {
@@ -458,6 +461,13 @@ export type AdvisoryListResponse = {
     advisories: Array<Advisory>;
     scopeCounts?: AdvisoryScopeCounts;
     total: number;
+};
+
+export type AdvisoryOrigin = 'upstream' | 'shopmon' | 'github';
+
+export type AdvisoryPackageInput = {
+    affectedVersions: string;
+    packageName: string;
 };
 
 export type AdvisoryScopeCounts = {
@@ -558,6 +568,31 @@ export type ChangeEmailRequest = {
 export type ChangePasswordRequest = {
     currentPassword: string;
     newPassword: string;
+};
+
+export type CreateAdvisoryRequest = {
+    affectedComponents?: Array<string>;
+    cve?: string;
+    cvssScore?: number;
+    cvssVector?: string;
+    cwes?: Array<AdvisoryCwe>;
+    description?: string;
+    externalReferences?: Array<string>;
+    ghsaId?: string;
+    isVisible?: boolean;
+    link?: string;
+    notesInternal?: string;
+    notesPublic?: string;
+    packages: Array<AdvisoryPackageInput>;
+    recommendedUpgrade?: string;
+    remediationSummary?: string;
+    remediationUrl?: string;
+    reportedAt?: string;
+    severity?: 'none' | 'low' | 'medium' | 'high' | 'critical';
+    shopwareImpactSummary?: string;
+    summary?: string;
+    tags?: Array<string>;
+    title: string;
 };
 
 export type CreateAdvisorySuppressionRequest = {
@@ -811,6 +846,28 @@ export type FullOrganizationResponse = {
     name: string;
 };
 
+export type GhsaAdvisoryPreview = {
+    cve?: string;
+    cvssScore?: number;
+    cvssVector?: string;
+    cwes: Array<AdvisoryCwe>;
+    description?: string;
+    existingAdvisoryId?: string;
+    externalReferences: Array<string>;
+    ghsaId: string;
+    link?: string;
+    packages: Array<GhsaPreviewPackage>;
+    reportedAt?: string;
+    severity?: SeverityLevel;
+    title: string;
+};
+
+export type GhsaPreviewPackage = {
+    affectedVersions: string;
+    packageName: string;
+    patchedVersion?: string;
+};
+
 export type GrowthDataPoint = {
     count: number;
     month: string;
@@ -838,6 +895,10 @@ export type ImpersonationSessionResponse = {
     token: string;
 };
 
+export type ImportGhsaPreviewRequest = {
+    input: string;
+};
+
 export type InstanceConfig = {
     githubAuthEnabled: boolean;
     packageMirrorEnabled: boolean;
@@ -853,6 +914,12 @@ export type InviteMemberRequest = {
 export type Item = {
     name: string;
     version: string;
+};
+
+export type LinkAdvisoryOfficialRequest = {
+    cve?: string;
+    ghsaId?: string;
+    link?: string;
 };
 
 export type LinkedAccountResponse = {
@@ -1136,15 +1203,29 @@ export type UpdateAccountMeJsonBody = {
 
 export type UpdateAdvisoryEnrichmentRequest = {
     affectedComponents?: Array<string>;
+    /**
+     * Omit to keep the current score; null clears it.
+     */
+    cvssScore?: number | null;
+    cvssVector?: string;
+    cwes?: Array<AdvisoryCwe>;
+    description?: string;
+    externalReferences?: Array<string>;
     isVisible?: boolean;
+    link?: string;
     notesInternal?: string;
     notesPublic?: string;
+    packages?: Array<AdvisoryPackageInput>;
     recommendedUpgrade?: string;
     remediationSummary?: string;
     remediationUrl?: string;
+    reportedAt?: string;
+    severity?: string;
     severityOverride?: 'none' | 'low' | 'medium' | 'high' | 'critical';
     shopwareImpactSummary?: string;
+    summary?: string;
     tags?: Array<string>;
+    title?: string;
 };
 
 export type UpdateEnvironmentRequest = {
@@ -1609,6 +1690,10 @@ export type AdminListAdvisoriesData = {
         tag?: string;
         q?: string;
         /**
+         * When set, filter by origin (shopmon or upstream)
+         */
+        origin?: string;
+        /**
          * When set, filter by visibility
          */
         visible?: boolean;
@@ -1645,6 +1730,149 @@ export type AdminListAdvisoriesResponses = {
 };
 
 export type AdminListAdvisoriesResponse = AdminListAdvisoriesResponses[keyof AdminListAdvisoriesResponses];
+
+export type AdminCreateAdvisoryData = {
+    body: CreateAdvisoryRequest;
+    path?: never;
+    query?: never;
+    url: '/admin/advisories';
+};
+
+export type AdminCreateAdvisoryErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminCreateAdvisoryError = AdminCreateAdvisoryErrors[keyof AdminCreateAdvisoryErrors];
+
+export type AdminCreateAdvisoryResponses = {
+    /**
+     * Created
+     */
+    201: AdminAdvisory;
+};
+
+export type AdminCreateAdvisoryResponse = AdminCreateAdvisoryResponses[keyof AdminCreateAdvisoryResponses];
+
+export type AdminImportGhsaAdvisoryData = {
+    body: CreateAdvisoryRequest;
+    path?: never;
+    query?: never;
+    url: '/admin/advisories/import/ghsa';
+};
+
+export type AdminImportGhsaAdvisoryErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminImportGhsaAdvisoryError = AdminImportGhsaAdvisoryErrors[keyof AdminImportGhsaAdvisoryErrors];
+
+export type AdminImportGhsaAdvisoryResponses = {
+    /**
+     * Created
+     */
+    201: AdminAdvisory;
+};
+
+export type AdminImportGhsaAdvisoryResponse = AdminImportGhsaAdvisoryResponses[keyof AdminImportGhsaAdvisoryResponses];
+
+export type AdminPreviewGhsaImportData = {
+    body: ImportGhsaPreviewRequest;
+    path?: never;
+    query?: never;
+    url: '/admin/advisories/import/ghsa/preview';
+};
+
+export type AdminPreviewGhsaImportErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: ErrorResponse;
+};
+
+export type AdminPreviewGhsaImportError = AdminPreviewGhsaImportErrors[keyof AdminPreviewGhsaImportErrors];
+
+export type AdminPreviewGhsaImportResponses = {
+    /**
+     * OK
+     */
+    200: GhsaAdvisoryPreview;
+};
+
+export type AdminPreviewGhsaImportResponse = AdminPreviewGhsaImportResponses[keyof AdminPreviewGhsaImportResponses];
 
 export type AdminSyncAdvisoriesData = {
     body?: never;
@@ -1749,6 +1977,10 @@ export type AdminUpdateAdvisoryErrors = {
      */
     404: ErrorResponse;
     /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
      * Unprocessable Entity
      */
     422: ErrorResponse;
@@ -1768,6 +2000,57 @@ export type AdminUpdateAdvisoryResponses = {
 };
 
 export type AdminUpdateAdvisoryResponse = AdminUpdateAdvisoryResponses[keyof AdminUpdateAdvisoryResponses];
+
+export type AdminLinkAdvisoryOfficialData = {
+    body: LinkAdvisoryOfficialRequest;
+    path: {
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/admin/advisories/{advisoryId}/link-official';
+};
+
+export type AdminLinkAdvisoryOfficialErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminLinkAdvisoryOfficialError = AdminLinkAdvisoryOfficialErrors[keyof AdminLinkAdvisoryOfficialErrors];
+
+export type AdminLinkAdvisoryOfficialResponses = {
+    /**
+     * OK
+     */
+    200: AdminAdvisory;
+};
+
+export type AdminLinkAdvisoryOfficialResponse = AdminLinkAdvisoryOfficialResponses[keyof AdminLinkAdvisoryOfficialResponses];
 
 export type AdminGetAuditLogData = {
     body?: never;
@@ -2144,17 +2427,9 @@ export type ListAdvisoriesData = {
 
 export type ListAdvisoriesErrors = {
     /**
-     * Unauthorized
+     * Error
      */
-    401: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
+    default: ErrorResponse;
 };
 
 export type ListAdvisoriesError = ListAdvisoriesErrors[keyof ListAdvisoriesErrors];
@@ -2177,13 +2452,9 @@ export type ListAdvisoryPackagesData = {
 
 export type ListAdvisoryPackagesErrors = {
     /**
-     * Unauthorized
+     * Error
      */
-    401: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
+    default: ErrorResponse;
 };
 
 export type ListAdvisoryPackagesError = ListAdvisoryPackagesErrors[keyof ListAdvisoryPackagesErrors];
@@ -2207,10 +2478,6 @@ export type GetAdvisoryData = {
 };
 
 export type GetAdvisoryErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
     /**
      * Not Found
      */

@@ -86,12 +86,14 @@ type ComposerAdvisory struct {
 	EnrichedAt            pgtype.Timestamp `json:"enriched_at"`
 	EnrichedBy            *string          `json:"enriched_by"`
 	FirstPatchedVersions  json.RawMessage  `json:"first_patched_versions"`
+	Origin                string           `json:"origin"`
+	CreatedBy             *string          `json:"created_by"`
 }
 
 type ComposerAdvisoryPackage struct {
 	AdvisoryID          string           `json:"advisory_id"`
 	PackageName         string           `json:"package_name"`
-	PackagistAdvisoryID string           `json:"packagist_advisory_id"`
+	PackagistAdvisoryID *string          `json:"packagist_advisory_id"`
 	AffectedVersions    string           `json:"affected_versions"`
 	SyncedAt            pgtype.Timestamp `json:"synced_at"`
 }
@@ -403,16 +405,17 @@ type SsoProvider struct {
 }
 
 type StoreExtension struct {
-	Name            string           `json:"name"`
-	StoreID         *int32           `json:"store_id"`
-	IconUrl         *string          `json:"icon_url"`
-	ProducerName    *string          `json:"producer_name"`
-	ProducerWebsite *string          `json:"producer_website"`
-	RatingAverage   *int32           `json:"rating_average"`
-	StoreLink       *string          `json:"store_link"`
-	ReleaseDate     *string          `json:"release_date"`
-	LatestVersion   *string          `json:"latest_version"`
-	LastRefreshedAt pgtype.Timestamp `json:"last_refreshed_at"`
+	Name              string           `json:"name"`
+	StoreID           *int32           `json:"store_id"`
+	IconUrl           *string          `json:"icon_url"`
+	ProducerName      *string          `json:"producer_name"`
+	ProducerWebsite   *string          `json:"producer_website"`
+	RatingAverage     *int32           `json:"rating_average"`
+	StoreLink         *string          `json:"store_link"`
+	ReleaseDate       *string          `json:"release_date"`
+	LatestVersion     *string          `json:"latest_version"`
+	LastRefreshedAt   pgtype.Timestamp `json:"last_refreshed_at"`
+	AvailableVersions []string         `json:"available_versions"`
 }
 
 type StoreExtensionCompatibility struct {

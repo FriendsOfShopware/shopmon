@@ -556,6 +556,43 @@ func TestStoreExtensionSyncFeedFallback(t *testing.T) {
 	}
 }
 
+func TestStoreExtensionSyncWithdrawnRelease(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+	// Model the reported failure: the feed retains a higher withdrawn release
+	// on 6.6, while the Store also lists a newer branch requiring 6.7.
+	store.extensions["AcrisFilterCS"] = &mockExtension{
+		latestByShopwareVersion: map[string]string{"6.6.0.0": "9.0.0", "6.7.0.0": "9.0.1"},
+		changelogVersions:       []string{"9.0.1", "9.0.0", "8.13.4"},
+	}
+	store.feeds["acrisfiltercs"] = []mockFeedVersion{
+		{version: "9.0.1", constraint: "~6.7.0"},
+		{version: "9.0.0", constraint: "~6.6.0"},
+		{version: "8.13.4", constraint: "~6.6.0"},
+	}
+	seedEnvironment(t, pool, "New branch", "6.7.0.0")
+	require.NoError(t, h.SyncNames(ctx, []string{"AcrisFilterCS"}, "6.6.0.0", false))
+	readLatest := func() string {
+		var latest string
+		require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'AcrisFilterCS' AND shopware_version = '6.6.0.0'`).Scan(&latest))
+		return latest
+	}
+	assert.Equal(t, "9.0.0", readLatest())
+	store.extensions["AcrisFilterCS"].latestByShopwareVersion["6.6.0.0"] = "8.13.4"
+	store.extensions["AcrisFilterCS"].changelogVersions = []string{"9.0.1", "8.13.4"}
+	ageSyncBookkeeping(t, pool, "2 hours", "25 hours")
+	require.NoError(t, h.SyncNames(ctx, []string{"AcrisFilterCS"}, "6.6.0.0", false))
+	assert.Equal(t, "8.13.4", readLatest(), "withdrawn release excluded across Shopware branches")
+	var historyCount int
+	require.NoError(t, pool.QueryRow(ctx, `SELECT count(*) FROM store_extension_version WHERE extension_name = 'AcrisFilterCS' AND version = '9.0.0'`).Scan(&historyCount))
+	assert.Equal(t, 1, historyCount, "historical changelog retained")
+	requests := store.requests.Load()
+	ageSyncBookkeeping(t, pool, "2 hours", "2 hours")
+	require.NoError(t, h.SyncNames(ctx, []string{"AcrisFilterCS"}, "6.6.0.0", false))
+	assert.Equal(t, requests, store.requests.Load(), "hourly refresh does not require another Store call")
+	assert.Equal(t, "8.13.4", readLatest(), "feed cannot reintroduce the withdrawn release")
+}
+
 func TestLatestCompatibleVersion(t *testing.T) {
 	versions := []shopwarepackages.PackageVersion{
 		{Version: "1.2.0", Require: map[string]string{"shopware/core": "~6.6.0"}},
@@ -717,8 +754,8 @@ func TestStoreExtensionSyncNewReleaseEventProbe(t *testing.T) {
 
 // TestStoreExtensionSyncNewReleaseWithinEventWindow: a release detected
 // minutes after the last store probe does not immediately re-probe (the event
-// window deduplicates bursts), but the feed still updates the compatibility
-// rows, so update hints appear without waiting for the store probe.
+// window deduplicates bursts). Recommendations wait for Store confirmation:
+// a feed-only release could have been withdrawn.
 func TestStoreExtensionSyncNewReleaseWithinEventWindow(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	ctx := context.Background()
@@ -737,12 +774,11 @@ func TestStoreExtensionSyncNewReleaseWithinEventWindow(t *testing.T) {
 
 	assert.Equal(t, requestsAfterFirst, store.requests.Load(), "event window deduplicates the probe")
 
-	// The update hint still propagates through the feed-derived compatibility
-	// row; only the changelog text waits for the next probe.
+	// The previously confirmed release remains selected until the Store probe.
 	var latest66 *string
 	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = '6.6.0.0'`).Scan(&latest66), "read 6.6 compat")
 	require.NotNil(t, latest66, "6.6.0.0 compatible latest")
-	assert.Equal(t, "1.3.0", *latest66, "compat row updated from the feed without a store probe")
+	assert.Equal(t, "1.2.0", *latest66, "unconfirmed feed release is not recommended")
 
 	var globalLatest *string
 	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension WHERE name = 'FroshTools'`).Scan(&globalLatest), "read catalog row")

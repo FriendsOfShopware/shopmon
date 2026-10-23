@@ -40,6 +40,13 @@ WHERE extension_name = ANY($1::text[]);
 SELECT name, latest_version FROM store_extension
 WHERE name = ANY($1::text[]);
 
+-- name: GetStoreExtensionAvailableVersions :many
+-- Current Store release snapshot, separate from retained historical changelogs.
+SELECT name, available_versions FROM store_extension WHERE name = ANY($1::text[]);
+
+-- name: UpdateStoreExtensionAvailableVersions :exec
+UPDATE store_extension SET available_versions = $2 WHERE name = $1;
+
 -- name: UpsertStoreExtensionSyncStates :exec
 -- Marks all given names as feed-checked now, whether or not the store knows
 -- them. The store-probe tier is advanced separately by the probe claims

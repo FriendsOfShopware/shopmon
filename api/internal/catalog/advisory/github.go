@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/ghsa"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
@@ -40,11 +41,37 @@ type githubCWE struct {
 	Name string `json:"name"`
 }
 
+// githubPatchedVersion is the first fixed release of a vulnerable package.
+// GitHub spells it two ways — a plain string ("3.7.0") on some endpoints and
+// an object ({"identifier":"3.7.0"}) on others — and decoding the object form
+// into a string fails the whole advisory decode, so accept both.
+type githubPatchedVersion string
+
+func (v *githubPatchedVersion) UnmarshalJSON(data []byte) error {
+	var plain string
+	if err := json.Unmarshal(data, &plain); err == nil {
+		*v = githubPatchedVersion(plain)
+		return nil
+	}
+	var object struct {
+		Identifier string `json:"identifier"`
+	}
+	if err := json.Unmarshal(data, &object); err != nil {
+		return fmt.Errorf("decode first_patched_version: %w", err)
+	}
+	*v = githubPatchedVersion(object.Identifier)
+	return nil
+}
+
 type githubAdvisoryResponse struct {
 	GHSAID      string `json:"ghsa_id"`
+	CVEID       string `json:"cve_id"`
 	Summary     string `json:"summary"`
 	Description string `json:"description"`
 	HTMLURL     string `json:"html_url"`
+	Severity    string `json:"severity"`
+	PublishedAt string `json:"published_at"`
+	WithdrawnAt string `json:"withdrawn_at"`
 	CVSS        *struct {
 		Score        float64 `json:"score"`
 		VectorString string  `json:"vector_string"`
@@ -70,8 +97,8 @@ type githubAdvisoryResponse struct {
 			Name      string `json:"name"`
 			Ecosystem string `json:"ecosystem"`
 		} `json:"package"`
-		VulnerableVersionRange string  `json:"vulnerable_version_range"`
-		FirstPatchedVersion    *string `json:"first_patched_version"`
+		VulnerableVersionRange string                `json:"vulnerable_version_range"`
+		FirstPatchedVersion    *githubPatchedVersion `json:"first_patched_version"`
 		// The repository-scoped endpoint names the same value differently.
 		PatchedVersions string `json:"patched_versions"`
 	} `json:"vulnerabilities"`
@@ -159,6 +186,14 @@ func (c *githubClient) fetchAdvisory(ctx context.Context, ghsaID string) (*githu
 // link. Repository advisories are not mirrored globally and are not indexed by
 // cve_id or affects, so the link is the only route to them.
 func (c *githubClient) fetchAdvisoryWithLink(ctx context.Context, ghsaID, link string) (*githubAdvisoryDetails, error) {
+	raw, err := c.fetchRawAdvisoryWithLink(ctx, ghsaID, link)
+	if err != nil {
+		return nil, err
+	}
+	return detailsFromResponse(*raw), nil
+}
+
+func (c *githubClient) fetchRawAdvisoryWithLink(ctx context.Context, ghsaID, link string) (*githubAdvisoryResponse, error) {
 	ghsaID = strings.TrimSpace(ghsaID)
 	if ghsaID == "" {
 		return nil, fmt.Errorf("empty ghsa id")
@@ -170,9 +205,9 @@ func (c *githubClient) fetchAdvisoryWithLink(ctx context.Context, ghsaID, link s
 	// Escaped as well as validated: defence in depth if the pattern is ever
 	// loosened.
 	endpoint := fmt.Sprintf("%s/advisories/%s", c.baseURL, url.PathEscape(ghsaID))
-	details, err := c.fetchAdvisoryURL(ctx, ghsaID, endpoint)
+	raw, err := c.fetchAdvisoryURL(ctx, ghsaID, endpoint)
 	if err == nil || !errors.Is(err, errGitHubAdvisoryNotFound) {
-		return details, err
+		return raw, err
 	}
 
 	owner, repo := repoFromAdvisoryLink(link)
@@ -181,18 +216,14 @@ func (c *githubClient) fetchAdvisoryWithLink(ctx context.Context, ghsaID, link s
 	}
 	repoEndpoint := fmt.Sprintf("%s/repos/%s/%s/security-advisories/%s",
 		c.baseURL, url.PathEscape(owner), url.PathEscape(repo), url.PathEscape(ghsaID))
-	repoDetails, repoErr := c.fetchAdvisoryURL(ctx, ghsaID, repoEndpoint)
-	if repoErr != nil {
-		return nil, repoErr
-	}
-	return repoDetails, nil
+	return c.fetchAdvisoryURL(ctx, ghsaID, repoEndpoint)
 }
 
 // errGitHubAdvisoryNotFound signals a 404 so callers can decide whether another
 // endpoint is worth trying.
-var errGitHubAdvisoryNotFound = errors.New("github advisory not found")
+var errGitHubAdvisoryNotFound = ghsa.ErrAdvisoryNotFound
 
-func (c *githubClient) fetchAdvisoryURL(ctx context.Context, ghsaID, endpoint string) (*githubAdvisoryDetails, error) {
+func (c *githubClient) fetchAdvisoryURL(ctx context.Context, ghsaID, endpoint string) (*githubAdvisoryResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create github advisory request: %w", err)
@@ -228,7 +259,12 @@ func (c *githubClient) fetchAdvisoryURL(ctx context.Context, ghsaID, endpoint st
 	if err := json.Unmarshal(body, &raw); err != nil {
 		return nil, fmt.Errorf("decode github advisory %s: %w", ghsaID, err)
 	}
+	return &raw, nil
+}
 
+// detailsFromResponse projects a raw GitHub advisory onto the detail fields
+// the enrichment queues persist.
+func detailsFromResponse(raw githubAdvisoryResponse) *githubAdvisoryDetails {
 	details := &githubAdvisoryDetails{
 		Summary:     strings.TrimSpace(raw.Summary),
 		Description: strings.TrimSpace(raw.Description),
@@ -266,7 +302,7 @@ func (c *githubClient) fetchAdvisoryURL(ctx context.Context, ghsaID, endpoint st
 
 	details.FirstPatchedVersions = firstPatchedByLine(raw)
 
-	return details, nil
+	return details
 }
 
 // firstPatchedByLine folds GitHub's per-package patched versions into one entry
@@ -280,7 +316,7 @@ func firstPatchedByLine(raw githubAdvisoryResponse) map[string]string {
 	for _, vuln := range raw.Vulnerabilities {
 		patched := strings.TrimSpace(vuln.PatchedVersions)
 		if vuln.FirstPatchedVersion != nil {
-			patched = strings.TrimSpace(*vuln.FirstPatchedVersion)
+			patched = strings.TrimSpace(string(*vuln.FirstPatchedVersion))
 		}
 		if patched == "" {
 			continue

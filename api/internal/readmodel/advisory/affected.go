@@ -252,6 +252,8 @@ func scopedRowToAdvisory(row queries.ListComposerAdvisoriesScopedRow) queries.Co
 		EnrichedAt:            row.EnrichedAt,
 		EnrichedBy:            row.EnrichedBy,
 		FirstPatchedVersions:  row.FirstPatchedVersions,
+		Origin:                row.Origin,
+		CreatedBy:             row.CreatedBy,
 	}
 }
 

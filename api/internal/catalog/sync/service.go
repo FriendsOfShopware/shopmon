@@ -252,15 +252,17 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	// names whose compat map came from the feed. best[name] is the plugin data
 	// used to build the shared catalog subtree.
 	compat := make(map[string]map[string]*string, len(needed))
+	feeds := make(map[string][]shopwarepackages.PackageVersion, len(needed))
 	feedResolved := make(map[string]bool, len(needed))
 	for _, name := range needed {
-		byShopwareVersion, err := h.compatibleVersionsFromFeed(ctx, name, swvs)
+		byShopwareVersion, feedVersions, err := h.compatibleVersionsFromFeed(ctx, name, swvs)
 		if err != nil {
 			return err
 		}
 		if byShopwareVersion != nil {
 			compat[name] = byShopwareVersion
 			feedResolved[name] = true
+			feeds[name] = feedVersions
 		}
 	}
 
@@ -370,6 +372,40 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 		}
 	}
 	span.SetAttributes(attribute.Int("extension.probed", len(probedOK)))
+
+	// The Composer feed retains withdrawn releases. Only use releases present
+	// in the Store's current release snapshot; retain historical changelogs
+	// separately so past updates remain readable. Plan probes using the raw
+	// feed above, so newly published releases still trigger an early refresh.
+	availableRows, err := h.queries.GetStoreExtensionAvailableVersions(ctx, needed)
+	if err != nil {
+		return fmt.Errorf("get available store versions: %w", err)
+	}
+	available := make(map[string][]string, len(availableRows))
+	for _, row := range availableRows {
+		available[row.Name] = row.AvailableVersions
+	}
+	for name, versions := range feeds {
+		allowed := available[name]
+		if sd := best[name]; sd != nil {
+			allowed = storeAvailableVersions(sd)
+		}
+		if allowed == nil {
+			// Existing catalogs need a successful Store refresh before feed
+			// candidates can be verified. Preserve their prior compatibility.
+			delete(compat, name)
+			continue
+		}
+		filtered := make([]shopwarepackages.PackageVersion, 0, len(versions))
+		for _, v := range versions {
+			if slices.Contains(allowed, v.Version) {
+				filtered = append(filtered, v)
+			}
+		}
+		for _, swv := range swvs {
+			compat[name][swv], _ = latestCompatibleVersion(filtered, swv)
+		}
+	}
 
 	if len(claimed) > 0 && !anyProbeSucceeded {
 		if rateLimitErr != nil {
@@ -673,18 +709,18 @@ func (h *Service) probeVersion(ctx context.Context, client *shopwareaccount.Clie
 // on packages.shopware.com), request failure, or no version with an evaluable
 // shopware/core constraint — in which case the caller falls back to probing
 // the store API per Shopware version.
-func (h *Service) compatibleVersionsFromFeed(ctx context.Context, name string, shopwareVersions []string) (map[string]*string, error) {
+func (h *Service) compatibleVersionsFromFeed(ctx context.Context, name string, shopwareVersions []string) (map[string]*string, []shopwarepackages.PackageVersion, error) {
 	feed, err := h.packagesClient().PackageFeed(ctx, storePackageName(name))
 	if err != nil {
 		if ctx.Err() != nil {
-			return nil, ctx.Err()
+			return nil, nil, ctx.Err()
 		}
 		if errors.Is(err, shopwarepackages.ErrNotFound) {
 			slog.DebugContext(ctx, "no packages feed for extension, falling back to store probes", "extension", name)
 		} else {
 			slog.WarnContext(ctx, "failed to fetch packages feed, falling back to store probes", "extension", name, "error", err)
 		}
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	byShopwareVersion := make(map[string]*string, len(shopwareVersions))
@@ -698,9 +734,25 @@ func (h *Service) compatibleVersionsFromFeed(ctx context.Context, name string, s
 	}
 	if !evaluable {
 		slog.WarnContext(ctx, "packages feed has no evaluable versions, falling back to store probes", "extension", name)
-		return nil, nil
+		return nil, nil, nil
 	}
-	return byShopwareVersion, nil
+	return byShopwareVersion, feed.Versions, nil
+}
+
+// storeAvailableVersions snapshots the current Store response rather than the
+// historical catalog: withdrawn versions disappear from the Store changelog.
+// Include the selected version even when the publisher provides no changelog.
+func storeAvailableVersions(sd *storemodel.Data) []string {
+	versions := make([]string, 0)
+	for _, cl := range sd.MergedChangelogs() {
+		versions = append(versions, cl.Version)
+	}
+	for _, p := range []*shopwareaccount.StorePlugin{sd.English, sd.German} {
+		if p != nil && p.Version != "" {
+			versions = append(versions, p.Version)
+		}
+	}
+	return dedup(versions)
 }
 
 // latestCompatibleVersion returns the newest feed version whose shopware/core
@@ -916,6 +968,11 @@ func (h *Service) persistExtension(ctx context.Context, name string, sd *storemo
 
 	if err := persistStoreExtensionCatalog(ctx, qtx, name, sd); err != nil {
 		return err
+	}
+	if err := qtx.UpdateStoreExtensionAvailableVersions(ctx, queries.UpdateStoreExtensionAvailableVersionsParams{
+		Name: name, AvailableVersions: storeAvailableVersions(sd),
+	}); err != nil {
+		return fmt.Errorf("update available store versions %s: %w", name, err)
 	}
 
 	for swv, latest := range compat {

@@ -30,10 +30,11 @@ func seedAdvisory(t *testing.T, q *queries.Queries, id string, packages []string
 		ReportedAt: pgtype.Timestamp{Time: time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC), Valid: true},
 	}))
 	for i, pkg := range packages {
+		pksaID := fmt.Sprintf("PKSA-%s-%d", id, i)
 		require.NoError(t, q.UpsertComposerAdvisoryPackage(ctx, queries.UpsertComposerAdvisoryPackageParams{
 			AdvisoryID:          id,
 			PackageName:         pkg,
-			PackagistAdvisoryID: fmt.Sprintf("PKSA-%s-%d", id, i),
+			PackagistAdvisoryID: &pksaID,
 			AffectedVersions:    ">=6.7.0.0,<6.7.10.1",
 		}))
 	}
@@ -86,6 +87,67 @@ func TestListAdvisoriesHidesInvisibleAndInternalNotes(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+func TestPublicAdvisoryEndpointsAllowUnauthenticatedAccess(t *testing.T) {
+	env := testutil.Setup(t)
+	seedAdvisory(t, env.Queries, "CVE-PUBLIC", []string{"shopware/core"}, true, new("secret-internal"))
+	seedAdvisory(t, env.Queries, "CVE-HIDDEN", []string{"shopware/storefront"}, false, new("hidden-internal"))
+
+	// Unauthenticated list defaults to the full visible catalog ("all" scope).
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/advisories", nil)
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var listBody struct {
+		Advisories []map[string]any `json:"advisories"`
+		Total      int              `json:"total"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&listBody))
+	require.Equal(t, 1, listBody.Total)
+	require.Len(t, listBody.Advisories, 1)
+	assert.Equal(t, "CVE-PUBLIC", listBody.Advisories[0]["advisoryId"])
+	_, hasInternal := listBody.Advisories[0]["notesInternal"]
+	assert.False(t, hasInternal)
+
+	// Unauthenticated package list returns only packages from visible advisories.
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/advisories/packages", nil)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var packages []string
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&packages))
+	assert.Equal(t, []string{"shopware/core"}, packages)
+
+	// Unauthenticated detail returns visible advisory and 404s on hidden.
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/advisories/CVE-PUBLIC", nil)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var detail map[string]any
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&detail))
+	assert.Equal(t, "CVE-PUBLIC", detail["advisoryId"])
+	_, hasAffectedCount := detail["affectedEnvironmentCount"]
+	assert.False(t, hasAffectedCount)
+
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/advisories/CVE-HIDDEN", nil)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+
+	// Tenant-scoped affected environments endpoint still requires auth.
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/advisories/CVE-PUBLIC/affected", nil)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
 func TestAdminCanUpdateEnrichmentAndSeeHidden(t *testing.T) {

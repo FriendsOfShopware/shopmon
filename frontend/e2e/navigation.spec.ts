@@ -13,6 +13,7 @@ test.describe("primary navigation", () => {
     { name: "Dashboard", url: /\/app\/dashboard/, heading: "Dashboard" },
     { name: "My Shops", url: /\/app\/shops/, heading: "My Shops" },
     { name: "My Extensions", url: /\/app\/extensions/, heading: "My Extensions" },
+    { name: "Security Advisories", url: /\/app\/advisories/, heading: "Security Advisories" },
     { name: "Ecosystem", url: /\/app\/ecosystem/ },
     { name: "My Organisation", url: /\/app\/organization/ },
   ];
