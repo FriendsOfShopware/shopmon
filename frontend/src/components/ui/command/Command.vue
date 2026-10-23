@@ -40,7 +40,8 @@ function filterItems() {
     return;
   }
 
-  // Reset the groups
+  // Discard stale matches when options are removed as well as when search changes.
+  filterState.filtered.items = new Map();
   filterState.filtered.groups = new Set();
   let itemCount = 0;
 
@@ -64,12 +65,9 @@ function filterItems() {
   filterState.filtered.count = itemCount;
 }
 
-watch(
-  () => filterState.search,
-  () => {
-    filterItems();
-  },
-);
+// Async options register after the user may already have started searching.
+// Recompute both matches and group visibility without resetting the input.
+watch([() => filterState.search, allItems, allGroups], filterItems, { deep: true });
 
 provideCommandContext({
   allItems,
