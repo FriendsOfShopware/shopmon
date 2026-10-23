@@ -230,6 +230,7 @@ type adminListAdvisoriesInput struct {
 	Severity string            `query:"severity"`
 	Tag      string            `query:"tag"`
 	Q        string            `query:"q"`
+	Origin   string            `query:"origin" doc:"When set, filter by origin (shopmon or upstream)"`
 	Visible  optionalQueryBool `query:"visible" doc:"When set, filter by visibility"`
 }
 
@@ -249,6 +250,7 @@ func (h *Handler) AdminListAdvisories(ctx context.Context, input *adminListAdvis
 		Severity:    adminSeverityParamString(input.Severity),
 		Tag:         optionalString(input.Tag),
 		Search:      optionalString(input.Q),
+		Origin:      originParamString(input.Origin),
 		IsVisible:   input.Visible.ptr(),
 	})
 	if err != nil {
@@ -325,16 +327,26 @@ func (h *Handler) AdminUpdateAdvisory(ctx context.Context, input *adminUpdateAdv
 		AffectedComponents:    input.Body.AffectedComponents,
 		Tags:                  input.Body.Tags,
 		EnrichedBy:            user.ID,
+		CoreFields:            coreFieldsFromRequest(input.Body),
 	})
 	if err != nil {
 		if errors.Is(err, advisoryread.ErrNotFound) {
 			return nil, huma.Error404NotFound("advisory not found")
+		}
+		if errors.Is(err, advisoryread.ErrConflict) {
+			return nil, huma.Error409Conflict(err.Error())
 		}
 		if errors.Is(err, advisoryread.ErrInvalidInput) {
 			return nil, huma.Error400BadRequest(err.Error())
 		}
 		slog.ErrorContext(ctx, "failed to update advisory", "advisoryId", input.AdvisoryID, "error", err)
 		return nil, huma.Error500InternalServerError("failed to update advisory")
+	}
+
+	// Visibility flips and package-range edits change which shops match, so
+	// re-evaluate inventories now instead of at the next hourly sync.
+	if input.Body.IsVisible != nil || input.Body.Packages != nil {
+		h.enqueueAdvisorySync(ctx, view.Advisory.AdvisoryID, "advisory updated")
 	}
 
 	item, err := advisoryread.ToAdminAdvisory(view)
@@ -361,6 +373,303 @@ func (h *Handler) AdminSyncAdvisories(ctx context.Context, _ *struct{}) (*adminS
 		return nil, huma.Error500InternalServerError("failed to enqueue advisory sync")
 	}
 	return &adminSyncAdvisoriesOutput{Body: api.AdminAdvisorySyncResponse{Enqueued: true}}, nil
+}
+
+type adminCreateAdvisoryInput struct {
+	Body api.CreateAdvisoryRequest
+}
+
+type adminCreateAdvisoryOutput struct {
+	Body api.AdminAdvisory
+}
+
+func (h *Handler) AdminCreateAdvisory(ctx context.Context, input *adminCreateAdvisoryInput) (*adminCreateAdvisoryOutput, error) {
+	user, err := h.requireAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	view, err := h.advisories.Create(ctx, createInputFromRequest(input.Body, user.ID))
+	if err != nil {
+		if errors.Is(err, advisoryread.ErrConflict) {
+			return nil, huma.Error409Conflict(err.Error())
+		}
+		if errors.Is(err, advisoryread.ErrInvalidInput) {
+			return nil, huma.Error400BadRequest(err.Error())
+		}
+		slog.ErrorContext(ctx, "failed to create advisory", "error", err)
+		return nil, huma.Error500InternalServerError("failed to create advisory")
+	}
+
+	// A draft matches nobody; only a published advisory needs the rematch and
+	// alert pass the advisory sync ends with.
+	if view.Advisory.IsVisible {
+		h.enqueueAdvisorySync(ctx, view.Advisory.AdvisoryID, "advisory published on create")
+	}
+
+	item, err := advisoryread.ToAdminAdvisory(view)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", view.Advisory.AdvisoryID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to create advisory")
+	}
+	return &adminCreateAdvisoryOutput{Body: item}, nil
+}
+
+func createInputFromRequest(body api.CreateAdvisoryRequest, userID string) advisoryread.CreateInput {
+	return advisoryread.CreateInput{
+		Title:                 body.Title,
+		Packages:              packageInputsFromRequest(body.Packages),
+		Severity:              body.Severity,
+		Summary:               body.Summary,
+		Description:           body.Description,
+		CvssScore:             body.CvssScore,
+		CvssVector:            body.CvssVector,
+		Cwes:                  body.Cwes,
+		Link:                  body.Link,
+		ExternalReferences:    body.ExternalReferences,
+		Cve:                   body.Cve,
+		GhsaID:                body.GhsaId,
+		ReportedAt:            body.ReportedAt,
+		IsVisible:             body.IsVisible,
+		NotesPublic:           body.NotesPublic,
+		NotesInternal:         body.NotesInternal,
+		RemediationSummary:    body.RemediationSummary,
+		RemediationUrl:        body.RemediationUrl,
+		RecommendedUpgrade:    body.RecommendedUpgrade,
+		ShopwareImpactSummary: body.ShopwareImpactSummary,
+		AffectedComponents:    body.AffectedComponents,
+		Tags:                  body.Tags,
+		CreatedBy:             userID,
+	}
+}
+
+type adminPreviewGhsaImportInput struct {
+	Body api.ImportGhsaPreviewRequest
+}
+
+type adminPreviewGhsaImportOutput struct {
+	Body api.GhsaAdvisoryPreview
+}
+
+func (h *Handler) AdminPreviewGhsaImport(ctx context.Context, input *adminPreviewGhsaImportInput) (*adminPreviewGhsaImportOutput, error) {
+	if _, err := h.requireAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	preview, err := h.advisories.PreviewGHSAImport(ctx, input.Body.Input)
+	if err != nil {
+		switch {
+		case errors.Is(err, advisoryread.ErrGHSAImportUnavailable):
+			return nil, huma.Error503ServiceUnavailable("ghsa import is not available")
+		case errors.Is(err, advisoryread.ErrNotFound):
+			return nil, huma.Error404NotFound(err.Error())
+		case errors.Is(err, advisoryread.ErrGHSAFetchFailed):
+			slog.WarnContext(ctx, "failed to fetch github advisory for import preview", "error", err)
+			return nil, huma.Error502BadGateway("failed to fetch github advisory")
+		case errors.Is(err, advisoryread.ErrInvalidInput):
+			return nil, huma.Error400BadRequest(err.Error())
+		default:
+			slog.ErrorContext(ctx, "failed to preview ghsa import", "error", err)
+			return nil, huma.Error500InternalServerError("failed to preview ghsa import")
+		}
+	}
+
+	packages := make([]api.GhsaPreviewPackage, 0, len(preview.Packages))
+	for _, pkg := range preview.Packages {
+		var patched *string
+		if pkg.PatchedVersion != "" {
+			patched = &pkg.PatchedVersion
+		}
+		packages = append(packages, api.GhsaPreviewPackage{
+			PackageName:      pkg.PackageName,
+			AffectedVersions: pkg.AffectedVersions,
+			PatchedVersion:   patched,
+		})
+	}
+	var severity *api.SeverityLevel
+	if preview.Severity != nil {
+		level := api.SeverityLevel(*preview.Severity)
+		severity = &level
+	}
+	cwes := preview.Cwes
+	if cwes == nil {
+		cwes = []api.AdvisoryCWE{}
+	}
+	refs := preview.ExternalReferences
+	if refs == nil {
+		refs = []string{}
+	}
+	var existing *string
+	if preview.ExistingAdvisoryID != "" {
+		existing = &preview.ExistingAdvisoryID
+	}
+
+	return &adminPreviewGhsaImportOutput{Body: api.GhsaAdvisoryPreview{
+		GhsaId:             preview.GhsaID,
+		Cve:                preview.Cve,
+		Title:              preview.Title,
+		Description:        preview.Description,
+		Severity:           severity,
+		CvssScore:          preview.CvssScore,
+		CvssVector:         preview.CvssVector,
+		Cwes:               cwes,
+		Link:               preview.Link,
+		ExternalReferences: refs,
+		ReportedAt:         preview.ReportedAt,
+		Packages:           packages,
+		ExistingAdvisoryId: existing,
+	}}, nil
+}
+
+type adminImportGhsaAdvisoryInput struct {
+	Body api.CreateAdvisoryRequest
+}
+
+type adminImportGhsaAdvisoryOutput struct {
+	Body api.AdminAdvisory
+}
+
+func (h *Handler) AdminImportGhsaAdvisory(ctx context.Context, input *adminImportGhsaAdvisoryInput) (*adminImportGhsaAdvisoryOutput, error) {
+	user, err := h.requireAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	view, err := h.advisories.ImportGHSA(ctx, createInputFromRequest(input.Body, user.ID))
+	if err != nil {
+		if errors.Is(err, advisoryread.ErrConflict) {
+			return nil, huma.Error409Conflict(err.Error())
+		}
+		if errors.Is(err, advisoryread.ErrInvalidInput) {
+			return nil, huma.Error400BadRequest(err.Error())
+		}
+		slog.ErrorContext(ctx, "failed to import ghsa advisory", "error", err)
+		return nil, huma.Error500InternalServerError("failed to import advisory")
+	}
+
+	if view.Advisory.IsVisible {
+		h.enqueueAdvisorySync(ctx, view.Advisory.AdvisoryID, "ghsa advisory published on import")
+	}
+
+	item, err := advisoryread.ToAdminAdvisory(view)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", view.Advisory.AdvisoryID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to import advisory")
+	}
+	return &adminImportGhsaAdvisoryOutput{Body: item}, nil
+}
+
+type adminLinkAdvisoryOfficialInput struct {
+	AdvisoryID string `path:"advisoryId"`
+	Body       api.LinkAdvisoryOfficialRequest
+}
+
+type adminLinkAdvisoryOfficialOutput struct {
+	Body api.AdminAdvisory
+}
+
+func (h *Handler) AdminLinkAdvisoryOfficial(ctx context.Context, input *adminLinkAdvisoryOfficialInput) (*adminLinkAdvisoryOfficialOutput, error) {
+	if _, err := h.requireAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	view, err := h.advisories.LinkOfficial(ctx, input.AdvisoryID, advisoryread.LinkOfficialInput{
+		Cve:    input.Body.Cve,
+		GhsaID: input.Body.GhsaId,
+		Link:   input.Body.Link,
+	})
+	if err != nil {
+		if errors.Is(err, advisoryread.ErrNotFound) {
+			return nil, huma.Error404NotFound("advisory not found")
+		}
+		if errors.Is(err, advisoryread.ErrConflict) {
+			return nil, huma.Error409Conflict(err.Error())
+		}
+		if errors.Is(err, advisoryread.ErrInvalidInput) {
+			return nil, huma.Error400BadRequest(err.Error())
+		}
+		slog.ErrorContext(ctx, "failed to link advisory", "advisoryId", input.AdvisoryID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to link advisory")
+	}
+
+	// Linking can replace the package set with the official one, and it arms
+	// the NVD/GitHub detail enrichment; both happen in the advisory sync.
+	h.enqueueAdvisorySync(ctx, view.Advisory.AdvisoryID, "advisory linked to official")
+
+	item, err := advisoryread.ToAdminAdvisory(view)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to map admin advisory", "advisoryId", input.AdvisoryID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to link advisory")
+	}
+	return &adminLinkAdvisoryOfficialOutput{Body: item}, nil
+}
+
+// enqueueAdvisorySync best-effort triggers the sync whose rematch pass
+// re-evaluates shop inventories and alerts newly affected environments. A
+// failure only delays that to the hourly scheduled sync, so it is logged
+// rather than failing the admin write that already committed.
+func (h *Handler) enqueueAdvisorySync(ctx context.Context, advisoryID, reason string) {
+	if h.advisorySync == nil {
+		return
+	}
+	if err := h.advisorySync.EnqueueComposerAdvisorySync(ctx); err != nil {
+		slog.WarnContext(ctx, "failed to enqueue advisory sync after advisory change",
+			"advisoryId", advisoryID, "reason", reason, "error", err)
+	}
+}
+
+func packageInputsFromRequest(packages []api.AdvisoryPackageInput) []advisoryread.PackageInput {
+	out := make([]advisoryread.PackageInput, 0, len(packages))
+	for _, pkg := range packages {
+		out = append(out, advisoryread.PackageInput{
+			PackageName:      pkg.PackageName,
+			AffectedVersions: pkg.AffectedVersions,
+		})
+	}
+	return out
+}
+
+// coreFieldsFromRequest collects the content fields of an admin update, or
+// returns nil when the request only carries enrichment — the distinction the
+// service uses to apply the Shopmon-only editing guard.
+func coreFieldsFromRequest(body api.UpdateAdvisoryEnrichmentRequest) *advisoryread.CoreFieldsUpdate {
+	if body.Title == nil && body.Packages == nil && body.Severity == nil &&
+		body.Summary == nil && body.Description == nil && !body.CvssScore.Sent &&
+		body.CvssVector == nil && body.Cwes == nil && body.Link == nil &&
+		body.ExternalReferences == nil && body.ReportedAt == nil {
+		return nil
+	}
+
+	core := &advisoryread.CoreFieldsUpdate{
+		Title:              body.Title,
+		Severity:           body.Severity,
+		Summary:            body.Summary,
+		Description:        body.Description,
+		CvssVector:         body.CvssVector,
+		Cwes:               body.Cwes,
+		Link:               body.Link,
+		ExternalReferences: body.ExternalReferences,
+		ReportedAt:         body.ReportedAt,
+	}
+	if body.CvssScore.Sent {
+		core.CvssScore = &body.CvssScore.Value
+	}
+	if body.Packages != nil {
+		packages := packageInputsFromRequest(*body.Packages)
+		core.Packages = &packages
+	}
+	return core
+}
+
+// Like the severity filters, an unknown origin is ignored rather than
+// forwarded: the query would match nothing and turn a typo into an empty page.
+func originParamString(s string) *string {
+	e := api.AdvisoryOrigin(s)
+	if !e.Valid() {
+		return nil
+	}
+	v := string(e)
+	return &v
 }
 
 // optionalQueryBool is an optional boolean query parameter. Huma panics on

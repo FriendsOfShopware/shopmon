@@ -255,7 +255,8 @@ CREATE TABLE "store_extension" (
   "store_link" text,
   "release_date" text,
   "latest_version" text,
-  "last_refreshed_at" timestamp NOT NULL DEFAULT NOW()
+  "last_refreshed_at" timestamp NOT NULL DEFAULT NOW(),
+  "available_versions" text[]
 );
 
 -- store_extension_translation holds the per-language store metadata for a store
@@ -501,13 +502,27 @@ CREATE TABLE "composer_advisory" (
 
   -- Per-branch first patched core version from GitHub, e.g.
   -- {"6.7":"6.7.10.1"}. Machine-derived; never written by admin enrichment.
-  "first_patched_versions" jsonb NOT NULL DEFAULT '{}'::jsonb
+  "first_patched_versions" jsonb NOT NULL DEFAULT '{}'::jsonb,
+
+  -- 'shopmon' rows are authored by Shopmon admins before an official CVE/GHSA
+  -- exists and keep their SHOPMON-YYYY-NNNN advisory_id even after linking;
+  -- 'github' rows were imported by an admin from a GitHub security advisory
+  -- and keep the GHSA id as advisory_id; synced rows are 'upstream'.
+  -- created_by records the authoring/importing admin for both manual origins.
+  "origin" text NOT NULL DEFAULT 'upstream',
+  "created_by" text REFERENCES "user"("id") ON DELETE SET NULL,
+
+  CONSTRAINT composer_advisory_origin_check CHECK (origin IN ('upstream', 'shopmon', 'github'))
 );
+
+-- Numbering for Shopmon advisory ids; see migration 000027.
+CREATE SEQUENCE shopmon_advisory_seq;
 
 CREATE TABLE "composer_advisory_package" (
   "advisory_id" text NOT NULL REFERENCES "composer_advisory"("advisory_id") ON DELETE CASCADE,
   "package_name" text NOT NULL,
-  "packagist_advisory_id" text NOT NULL,
+  -- NULL for Shopmon-authored package rows, which have no Packagist PKSA id.
+  "packagist_advisory_id" text,
   "affected_versions" text NOT NULL,
   "synced_at" timestamp NOT NULL DEFAULT NOW(),
   PRIMARY KEY ("advisory_id", "package_name")
@@ -527,6 +542,7 @@ CREATE INDEX idx_composer_advisory_tags
   ON composer_advisory USING GIN (tags);
 CREATE INDEX idx_composer_advisory_reported
   ON composer_advisory (reported_at DESC NULLS LAST);
+CREATE INDEX idx_composer_advisory_origin ON composer_advisory (origin);
 
 CREATE TABLE "composer_advisory_sync_state" (
   "id" int PRIMARY KEY NOT NULL DEFAULT 1 CHECK (id = 1),

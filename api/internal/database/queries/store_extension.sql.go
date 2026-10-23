@@ -137,6 +137,36 @@ func (q *Queries) GetFreshStoreExtensionSyncNames(ctx context.Context, dollar_1 
 	return items, nil
 }
 
+const getStoreExtensionAvailableVersions = `-- name: GetStoreExtensionAvailableVersions :many
+SELECT name, available_versions FROM store_extension WHERE name = ANY($1::text[])
+`
+
+type GetStoreExtensionAvailableVersionsRow struct {
+	Name              string   `json:"name"`
+	AvailableVersions []string `json:"available_versions"`
+}
+
+// Current Store release snapshot, separate from retained historical changelogs.
+func (q *Queries) GetStoreExtensionAvailableVersions(ctx context.Context, dollar_1 []string) ([]GetStoreExtensionAvailableVersionsRow, error) {
+	rows, err := q.db.Query(ctx, getStoreExtensionAvailableVersions, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetStoreExtensionAvailableVersionsRow{}
+	for rows.Next() {
+		var i GetStoreExtensionAvailableVersionsRow
+		if err := rows.Scan(&i.Name, &i.AvailableVersions); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getStoreExtensionChangelogs = `-- name: GetStoreExtensionChangelogs :many
 SELECT sev.version, sev.released_at,
        en.changelog AS changelog_en, de.changelog AS changelog_de
@@ -285,6 +315,20 @@ WHERE extension_name = ANY($1::text[])
 // scheduled sync retries them instead of waiting out the claim window.
 func (q *Queries) ReleaseStoreExtensionProbes(ctx context.Context, dollar_1 []string) error {
 	_, err := q.db.Exec(ctx, releaseStoreExtensionProbes, dollar_1)
+	return err
+}
+
+const updateStoreExtensionAvailableVersions = `-- name: UpdateStoreExtensionAvailableVersions :exec
+UPDATE store_extension SET available_versions = $2 WHERE name = $1
+`
+
+type UpdateStoreExtensionAvailableVersionsParams struct {
+	Name              string   `json:"name"`
+	AvailableVersions []string `json:"available_versions"`
+}
+
+func (q *Queries) UpdateStoreExtensionAvailableVersions(ctx context.Context, arg UpdateStoreExtensionAvailableVersionsParams) error {
+	_, err := q.db.Exec(ctx, updateStoreExtensionAvailableVersions, arg.Name, arg.AvailableVersions)
 	return err
 }
 

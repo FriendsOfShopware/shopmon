@@ -111,6 +111,24 @@ func TestNewIndexPackageNames(t *testing.T) {
 	}
 }
 
+func TestValidateAffectedVersions(t *testing.T) {
+	valid := []string{">=6.7.0.0,<6.7.10.1", "<6.6.10.18|>=6.7.0.0,<6.7.10.1", "<3.0.0"}
+	for _, constraint := range valid {
+		if err := ValidateAffectedVersions(constraint); err != nil {
+			t.Errorf("ValidateAffectedVersions(%q) = %v, want nil", constraint, err)
+		}
+	}
+
+	// Everything affects() would silently never match (or, for "*", would
+	// flag every shop if it ever did) must be refused at authoring time.
+	invalid := []string{"", "  ", "*", "not-a-constraint"}
+	for _, constraint := range invalid {
+		if err := ValidateAffectedVersions(constraint); err == nil {
+			t.Errorf("ValidateAffectedVersions(%q) = nil, want error", constraint)
+		}
+	}
+}
+
 func TestNilIndexIsSafe(t *testing.T) {
 	var idx *Index
 	if got := idx.Match(map[string]string{"a/b": "1.0"}); got != nil {

@@ -31,7 +31,13 @@
     </template>
 
     <div class="mb-4 flex flex-wrap items-center gap-2">
-      <Button size="sm" :disabled="syncing" @click="syncNow">
+      <Button as-child size="sm">
+        <RouterLink :to="{ name: 'admin.advisories.create' }">
+          <icon-fa6-solid:plus class="mr-1.5 size-3.5" />
+          {{ $t("admin.newAdvisory") }}
+        </RouterLink>
+      </Button>
+      <Button size="sm" variant="outline" :disabled="syncing" @click="syncNow">
         <icon-line-md:loading-twotone-loop v-if="syncing" class="mr-1.5 size-3.5" />
         <icon-fa6-solid:rotate v-else class="mr-1.5 size-3.5" />
         {{ $t("admin.syncAdvisories") }}
@@ -72,6 +78,11 @@
             <span class="font-medium transition-colors group-hover:text-primary">{{
               adv.title
             }}</span>
+            <ShopmonAdvisoryBadge :advisory="adv" class="text-[10px]" />
+            <Badge v-if="adv.origin === 'github'" variant="outline" class="gap-1 text-[10px]">
+              <icon-fa6-brands:github class="size-2.5" />
+              {{ $t("admin.originGithub") }}
+            </Badge>
             <Badge v-if="!adv.isVisible" variant="outline" class="text-[10px]">{{
               $t("admin.hidden")
             }}</Badge>
@@ -135,6 +146,7 @@ import AdminFilterSidebar, { type FilterGroup } from "@/components/admin/AdminFi
 import AdminListLayout from "@/components/admin/AdminListLayout.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import SeverityBadge from "@/components/advisories/SeverityBadge.vue";
+import ShopmonAdvisoryBadge from "@/components/advisories/ShopmonAdvisoryBadge.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -190,6 +202,7 @@ const {
   filters: {
     severity: "",
     visible: "",
+    origin: "",
     package: "all",
   },
 });
@@ -221,6 +234,17 @@ const filterGroups = computed<FilterGroup[]>(() => [
       { label: t("admin.hiddenOnly"), value: "hidden" },
     ],
   },
+  {
+    key: "origin",
+    label: t("admin.filterOrigin"),
+    defaultValue: "",
+    options: [
+      { label: t("admin.allOrigins"), value: "" },
+      { label: t("admin.originShopmon"), value: "shopmon" },
+      { label: t("admin.originGithub"), value: "github" },
+      { label: t("admin.originUpstream"), value: "upstream" },
+    ],
+  },
 ]);
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage)));
@@ -231,7 +255,8 @@ const activeFilterCount = computed(
     (searchQuery.value.trim() !== "" ? 1 : 0) +
     (packageFilter.value !== "all" ? 1 : 0) +
     (filters.value.severity !== "" ? 1 : 0) +
-    (filters.value.visible !== "" ? 1 : 0),
+    (filters.value.visible !== "" ? 1 : 0) +
+    (filters.value.origin !== "" ? 1 : 0),
 );
 
 function onFilterChange() {
@@ -282,6 +307,13 @@ async function reload() {
     }
     if (filters.value.visible === "visible") query.visible = true;
     if (filters.value.visible === "hidden") query.visible = false;
+    if (
+      filters.value.origin === "shopmon" ||
+      filters.value.origin === "github" ||
+      filters.value.origin === "upstream"
+    ) {
+      query.origin = filters.value.origin;
+    }
 
     const { data, error: apiError } = await adminListAdvisories({ query });
     if (currentRequest !== requestId) return;

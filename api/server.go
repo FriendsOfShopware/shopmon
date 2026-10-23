@@ -14,6 +14,7 @@ import (
 	auditpostgres "github.com/friendsofshopware/shopmon/api/internal/audit/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/catalog"
+	catalogadvisory "github.com/friendsofshopware/shopmon/api/internal/catalog/advisory"
 	catalogpostgres "github.com/friendsofshopware/shopmon/api/internal/catalog/postgres"
 	catalogshopware "github.com/friendsofshopware/shopmon/api/internal/catalog/shopware"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
@@ -161,7 +162,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	catalogService := catalog.NewService(catalogRepository, catalogGateway)
 	accountReadModel := accountread.NewService(q)
 	adminReadModel := adminread.NewService(q)
-	advisoryReadModel := advisoryread.NewService(q)
+	advisoryReadModel := advisoryread.NewService(pool, q, catalogadvisory.NewGHSAFetcher(cfg.GithubToken))
 	suppressionService := suppression.NewService(suppressionpostgres.NewRepository(pool, q), organizationAuthorizer)
 	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
 	jobDispatcher := jobs.NewDispatcher(bus)

@@ -390,3 +390,26 @@ func TestAdvisoryMatchIgnoresWildcardConstraint(t *testing.T) {
 	assert.Equal(t, "shopware/core", pkg)
 	assert.Equal(t, "6.7.8.2", installed)
 }
+
+// A Shopmon-authored advisory must render with the marked message keys so
+// users can tell a Shopmon early warning apart from an official CVE. The
+// check id stays the stable Shopmon id while no CVE is linked.
+func TestCheckSecurityMarksShopmonAdvisories(t *testing.T) {
+	t.Parallel()
+
+	input := Input{
+		Config: ShopConfig{Version: "6.7.8.2"},
+		SecurityAdvisories: []SecurityAdvisory{{
+			ID: "SHOPMON-2026-0001", Title: "Early warning", Severity: "high", Origin: "shopmon",
+			Packages: []SecurityAdvisoryPackage{{PackageName: "shopware/core", AffectedVersions: "<6.7.10.1"}},
+		}},
+	}
+
+	output := NewOutput(nil)
+	checkSecurity(context.Background(), input, output)
+	result := output.Result()
+
+	require.Len(t, result.Checks, 1)
+	assert.Equal(t, "security.SHOPMON-2026-0001", result.Checks[0].ID)
+	assert.Equal(t, "check.security.advisoryShopmon", result.Checks[0].MessageKey)
+}
