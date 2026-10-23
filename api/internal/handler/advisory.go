@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/friendsofshopware/shopmon/api/internal/access"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 )
@@ -26,24 +27,27 @@ type listAdvisoriesOutput struct {
 }
 
 func (h *Handler) ListAdvisories(ctx context.Context, input *listAdvisoriesInput) (*listAdvisoriesOutput, error) {
-	user, err := h.requireUser(ctx)
-	if err != nil {
-		return nil, err
+	var orgIDs []string
+	user := access.UserFromContext(ctx)
+	if user != nil {
+		var err error
+		orgIDs, err = h.advisories.OrganizationIDsForUser(ctx, user.ID)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to load user organizations", "userId", user.ID, "error", err)
+			return nil, huma.Error500InternalServerError("failed to list advisories")
+		}
 	}
 
-	orgIDs, err := h.advisories.OrganizationIDsForUser(ctx, user.ID)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to load user organizations", "userId", user.ID, "error", err)
-		return nil, huma.Error500InternalServerError("failed to list advisories")
-	}
-
-	// Default to the affected scope: the catalog is large and mostly irrelevant
-	// to any single tenant, so "what hits my shops" is the useful landing view.
-	// An unknown scope value falls back to the same default rather than
-	// silently widening to the whole catalog.
-	scope := api.ListAdvisoriesParamsScopeAffected
-	if parsed := api.ListAdvisoriesParamsScope(input.Scope); parsed.Valid() {
-		scope = parsed
+	// Default to the affected scope for authenticated callers: the catalog is
+	// large and mostly irrelevant to any single tenant, so "what hits my
+	// shops" is the useful landing view. Anonymous callers have no shops, so
+	// they always see the full catalog.
+	scope := api.ListAdvisoriesParamsScopeAll
+	if user != nil {
+		scope = api.ListAdvisoriesParamsScopeAffected
+		if parsed := api.ListAdvisoriesParamsScope(input.Scope); parsed.Valid() {
+			scope = parsed
+		}
 	}
 	onlyAffected := scope == api.ListAdvisoriesParamsScopeAffected
 	onlySuppressed := scope == api.ListAdvisoriesParamsScopeSuppressed
@@ -142,11 +146,6 @@ type getAdvisoryOutput struct {
 }
 
 func (h *Handler) GetAdvisory(ctx context.Context, input *advisoryIDInput) (*getAdvisoryOutput, error) {
-	user, err := h.requireUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	view, err := h.advisories.Get(ctx, input.AdvisoryID, true)
 	if err != nil {
 		if errors.Is(err, advisoryread.ErrNotFound) {
@@ -157,7 +156,9 @@ func (h *Handler) GetAdvisory(ctx context.Context, input *advisoryIDInput) (*get
 	}
 
 	views := []advisoryread.AdvisoryView{view}
-	h.annotateAffectedCounts(ctx, user.ID, views)
+	if user := access.UserFromContext(ctx); user != nil {
+		h.annotateAffectedCounts(ctx, user.ID, views)
+	}
 
 	item, err := advisoryread.ToUserAdvisory(views[0])
 	if err != nil {
@@ -172,10 +173,6 @@ type listAdvisoryPackagesOutput struct {
 }
 
 func (h *Handler) ListAdvisoryPackages(ctx context.Context, _ *struct{}) (*listAdvisoryPackagesOutput, error) {
-	if _, err := h.requireUser(ctx); err != nil {
-		return nil, err
-	}
-
 	names, err := h.advisories.ListPackages(ctx, true)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to list advisory packages", "error", err)

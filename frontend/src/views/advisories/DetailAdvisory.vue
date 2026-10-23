@@ -13,8 +13,8 @@
         <Skeleton class="h-4 w-1/2" />
         <Skeleton class="h-4 w-1/3" />
       </div>
-      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Skeleton v-for="i in 4" :key="i" class="h-[68px] rounded-xl" />
+      <div class="grid grid-cols-2 gap-4" :class="session ? 'lg:grid-cols-4' : 'sm:grid-cols-3'">
+        <Skeleton v-for="i in session ? 4 : 3" :key="i" class="h-[68px] rounded-xl" />
       </div>
       <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Skeleton class="h-72 rounded-xl" />
@@ -75,7 +75,7 @@
       </Alert>
 
       <!-- Key facts at a glance -->
-      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div class="grid grid-cols-2 gap-4" :class="session ? 'lg:grid-cols-4' : 'sm:grid-cols-3'">
         <StatCard
           :icon="IconShield"
           :value="severityLabel"
@@ -92,6 +92,7 @@
              would be a false all-clear. Counts distinct environments, which is
              what the API returns, so the label says environments. -->
         <StatCard
+          v-if="session"
           :icon="IconStore"
           :value="affectedLoading ? '…' : affectedError ? '—' : affectedTotal"
           :label="$t('advisories.kpi.affectedEnvironments')"
@@ -122,7 +123,7 @@
             <AlertDescription>{{ $t("advisories.descriptionPending") }}</AlertDescription>
           </Alert>
 
-          <Card>
+          <Card v-if="session">
             <CardHeader>
               <CardTitle class="text-base">{{ $t("advisories.affected.title") }}</CardTitle>
               <CardDescription>
@@ -217,7 +218,7 @@
             </CardContent>
           </Card>
 
-          <Dialog v-model:open="suppressOpen">
+          <Dialog v-if="session" v-model:open="suppressOpen">
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{{ $t("advisories.suppressTitle") }}</DialogTitle>
@@ -562,6 +563,7 @@ import {
   getAdvisory,
   listAdvisoryAffectedEnvironments,
 } from "@/api/generated";
+import { useSession } from "@/composables/useSession";
 import {
   advisoryOfficialId,
   cvssStatColor,
@@ -583,6 +585,7 @@ type AffectedEnvironment = AdvisoryAffectedEnvironment;
 
 const route = useRoute();
 const { t } = useI18n();
+const { session } = useSession();
 const advisory = ref<Advisory | null>(null);
 const loading = ref(true);
 const error = ref("");
@@ -727,6 +730,10 @@ onMounted(async () => {
   }
   advisory.value = data;
 
-  await loadAffected(id);
+  if (session.value) {
+    await loadAffected(id);
+  } else {
+    affectedLoading.value = false;
+  }
 });
 </script>

@@ -13,7 +13,7 @@ func registerAdvisories(api huma.API, h *Handler) {
 		Path:        "/advisories",
 		Summary:     "List visible Composer security advisories for Shopware packages",
 		Tags:        []string{"Advisories"},
-		Errors:      []int{http.StatusUnauthorized},
+		Security:    []map[string][]string{},
 	}, h.ListAdvisories)
 
 	huma.Register(api, huma.Operation{
@@ -22,7 +22,7 @@ func registerAdvisories(api huma.API, h *Handler) {
 		Path:        "/advisories/packages",
 		Summary:     "List package names that have visible advisories",
 		Tags:        []string{"Advisories"},
-		Errors:      []int{http.StatusUnauthorized},
+		Security:    []map[string][]string{},
 	}, h.ListAdvisoryPackages)
 
 	huma.Register(api, huma.Operation{
@@ -31,7 +31,8 @@ func registerAdvisories(api huma.API, h *Handler) {
 		Path:        "/advisories/{advisoryId}",
 		Summary:     "Get a visible advisory by Packagist advisory ID",
 		Tags:        []string{"Advisories"},
-		Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+		Security:    []map[string][]string{},
+		Errors:      []int{http.StatusNotFound},
 	}, h.GetAdvisory)
 
 	huma.Register(api, huma.Operation{

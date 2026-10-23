@@ -10,6 +10,17 @@
 
         <div class="flex items-center gap-1 sm:gap-2">
           <Button
+            as-child
+            size="sm"
+            variant="ghost"
+            class="text-white/80 hover:bg-white/10 hover:text-white"
+          >
+            <RouterLink :to="{ name: 'account.advisories.list' }">
+              {{ $t("nav.advisories") }}
+            </RouterLink>
+          </Button>
+
+          <Button
             v-if="session"
             as-child
             size="sm"

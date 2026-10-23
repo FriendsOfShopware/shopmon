@@ -2427,17 +2427,9 @@ export type ListAdvisoriesData = {
 
 export type ListAdvisoriesErrors = {
     /**
-     * Unauthorized
+     * Error
      */
-    401: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
+    default: ErrorResponse;
 };
 
 export type ListAdvisoriesError = ListAdvisoriesErrors[keyof ListAdvisoriesErrors];
@@ -2460,13 +2452,9 @@ export type ListAdvisoryPackagesData = {
 
 export type ListAdvisoryPackagesErrors = {
     /**
-     * Unauthorized
+     * Error
      */
-    401: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
+    default: ErrorResponse;
 };
 
 export type ListAdvisoryPackagesError = ListAdvisoryPackagesErrors[keyof ListAdvisoryPackagesErrors];
@@ -2490,10 +2478,6 @@ export type GetAdvisoryData = {
 };
 
 export type GetAdvisoryErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
     /**
      * Not Found
      */
