@@ -50,7 +50,16 @@ describe("advisory impact preview", () => {
   });
 
   it("loads only on click and shows affected shops, organizations, and matching versions", async () => {
-    const wrapper = mount(AdvisoryImpactPreview, { props: { packages }, attachTo: document.body });
+    const wrapper = mount(AdvisoryImpactPreview, {
+      props: {
+        packages: [
+          ...packages,
+          { packageName: "", affectedVersions: "" },
+          { packageName: "  ", affectedVersions: " \t " },
+        ],
+      },
+      attachTo: document.body,
+    });
     expect(api.adminPreviewAdvisoryImpact).not.toHaveBeenCalled();
     await open(wrapper);
     expect(api.adminPreviewAdvisoryImpact).toHaveBeenCalledExactlyOnceWith({
@@ -95,8 +104,24 @@ describe("advisory impact preview", () => {
     api.adminPreviewAdvisoryImpact.mockResolvedValueOnce({
       error: { message: "Invalid version constraint" },
     });
-    const wrapper = mount(AdvisoryImpactPreview, { props: { packages }, attachTo: document.body });
+    const wrapper = mount(AdvisoryImpactPreview, {
+      props: {
+        packages: [
+          { packageName: " vendor/package ", affectedVersions: " " },
+          { packageName: " ", affectedVersions: " <2.0.0 " },
+        ],
+      },
+      attachTo: document.body,
+    });
     await open(wrapper);
+    expect(api.adminPreviewAdvisoryImpact).toHaveBeenCalledExactlyOnceWith({
+      body: {
+        packages: [
+          { packageName: "vendor/package", affectedVersions: "" },
+          { packageName: "", affectedVersions: "<2.0.0" },
+        ],
+      },
+    });
     const dialog = body().get('[role="dialog"]');
     expect(dialog.text()).toContain("Invalid version constraint");
     expect(dialog.find("dl").exists()).toBe(false);

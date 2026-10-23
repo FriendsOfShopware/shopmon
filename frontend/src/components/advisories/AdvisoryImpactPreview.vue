@@ -31,10 +31,12 @@ let requestId = 0;
 
 async function checkImpact() {
   const request = ++requestId;
-  checkedPackages.value = props.packages.map((pkg) => ({
-    packageName: pkg.packageName.trim(),
-    affectedVersions: pkg.affectedVersions.trim(),
-  }));
+  checkedPackages.value = props.packages
+    .map((pkg) => ({
+      packageName: pkg.packageName.trim(),
+      affectedVersions: pkg.affectedVersions.trim(),
+    }))
+    .filter((pkg) => pkg.packageName !== "" || pkg.affectedVersions !== "");
   open.value = true;
   loading.value = true;
   error.value = "";
