@@ -83,7 +83,7 @@
     "vite": "8.3.4",
     "vite-ssg": "^28.3.0",
     "vitest": "^5.0.0",
-    "vue-tsc": "^3.3.13"
+    "vue-tsc": "3.3.11"
   },
   "overrides": {
     "@unhead/dom": "2.1.15"
