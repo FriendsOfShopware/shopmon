@@ -410,7 +410,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		// Composer package inventory from the FroshTools SBOM. Empty when the
 		// shop cannot serve one, in which case checkSecurity falls back to
 		// matching the Shopware core version only.
-		InstalledPackages:      sbomPackageVersions(sbomRes),
+		InstalledPackages:      withRuntimePackageVersions(sbomPackageVersions(sbomRes), env.PhpVersion, env.DatabaseVersion),
 		SecurityPluginFixes:    securityPluginFixes,
 		SecurityPluginCoverage: securityPluginCoverage,
 	}
@@ -462,19 +462,33 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	// call with its own timeout and must not run while holding row locks.
 	favicon := getFavicon(ctx, env.Url)
 
+	phpVersion := checkerResult.PhpVersion
+	if phpVersion == nil {
+		phpVersion = env.PhpVersion
+	}
+	databaseVersion := checkerResult.DatabaseVersion
+	if databaseVersion == nil {
+		databaseVersion = env.DatabaseVersion
+	}
+
+	runtimeAdvisories := h.matchRuntimeAdvisories(ctx, env.ID, phpVersion, databaseVersion)
+
 	if err := h.persistScrapeResult(ctx, env, scrapeResult{
-		status:          newStatus,
-		shopwareVersion: shopConfig.Version,
-		extensions:      extensions,
-		scheduledTasks:  scheduledTasks,
-		queueEntries:    queueEntries,
-		cacheInfo:       cacheInfo,
-		missing:         missing,
-		checks:          finalChecks,
-		extensionsDiff:  extensionsDiff,
-		favicon:         favicon,
-		transition:      transition,
-		sbom:            sbomRes,
+		status:            newStatus,
+		shopwareVersion:   shopConfig.Version,
+		phpVersion:        phpVersion,
+		databaseVersion:   databaseVersion,
+		extensions:        extensions,
+		scheduledTasks:    scheduledTasks,
+		queueEntries:      queueEntries,
+		cacheInfo:         cacheInfo,
+		missing:           missing,
+		checks:            finalChecks,
+		extensionsDiff:    extensionsDiff,
+		favicon:           favicon,
+		transition:        transition,
+		sbom:              sbomRes,
+		runtimeAdvisories: runtimeAdvisories,
 	}); err != nil {
 		return err
 	}
@@ -574,18 +588,21 @@ func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) ([]checker.
 // to be written to the database. Extensions must already be classified and
 // resolved against the store catalog (isStore, LatestVersion).
 type scrapeResult struct {
-	status          string
-	shopwareVersion string
-	extensions      []extensionEntry
-	scheduledTasks  []shopwareScheduledTask
-	queueEntries    []shopwareQueueEntry
-	cacheInfo       shopwareCacheInfo
-	missing         checker.MissingData
-	checks          []checker.Check
-	extensionsDiff  []extensionDiff
-	favicon         *string
-	transition      *statusTransition
-	sbom            sbomResult
+	status            string
+	shopwareVersion   string
+	phpVersion        *string
+	databaseVersion   *string
+	extensions        []extensionEntry
+	scheduledTasks    []shopwareScheduledTask
+	queueEntries      []shopwareQueueEntry
+	cacheInfo         shopwareCacheInfo
+	missing           checker.MissingData
+	checks            []checker.Check
+	extensionsDiff    []extensionDiff
+	favicon           *string
+	transition        *statusTransition
+	sbom              sbomResult
+	runtimeAdvisories runtimeMatchResult
 }
 
 // persistScrapeResult writes a scrape result in a single transaction. All
@@ -740,6 +757,9 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 	if err := persistSbom(ctx, txQueries, env.ID, res.sbom); err != nil {
 		return fmt.Errorf("persist sbom: %w", err)
 	}
+	if err := persistRuntimeAdvisories(ctx, txQueries, env.ID, res.runtimeAdvisories); err != nil {
+		return fmt.Errorf("persist runtime advisories: %w", err)
+	}
 
 	// Upsert checks and prune the ones no longer reported, instead of the previous
 	// delete-all + re-insert which rewrote every check row each scrape.
@@ -844,6 +864,8 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 	if err := txQueries.UpdateEnvironmentAfterScrape(ctx, queries.UpdateEnvironmentAfterScrapeParams{
 		Status:           res.status,
 		ShopwareVersion:  res.shopwareVersion,
+		PhpVersion:       res.phpVersion,
+		DatabaseVersion:  res.databaseVersion,
 		LastScrapedError: nil,
 		Favicon:          res.favicon,
 		EnvironmentImage: nil,

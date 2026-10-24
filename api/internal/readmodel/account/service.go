@@ -400,6 +400,7 @@ func (s *Service) Environments(ctx context.Context, userID string, activeOrgID *
 		result = append(result, api.AccountEnvironment{
 			Id: int(row.ID), Name: row.Name, Url: row.Url, Favicon: row.Favicon,
 			Status: row.Status, ShopwareVersion: row.ShopwareVersion,
+			PhpVersion: row.PhpVersion, DatabaseVersion: row.DatabaseVersion,
 			LastScrapedAt: database.TimePtr(row.LastScrapedAt), LastScrapedError: row.LastScrapedError,
 			OrganizationId: row.OrganizationID, OrganizationName: row.OrganizationName,
 			ShopId: shopId, ShopName: row.ShopName,

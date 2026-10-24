@@ -247,3 +247,56 @@ func TestSuppressedCheckIDsCoversShopAndEnvironmentScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, h.suppressedCheckIDs(ctx, env.ID))
 }
+
+func TestRuntimeAdvisoriesRefreshIndependentlyOfSbom(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	seedAdvisory(t, pool, "CVE-2026-400", "symfony/http-kernel", ">=6.4.0,<6.4.3")
+	seedAdvisory(t, pool, "SHOPMON-2026-0001", "php", "<8.4.0")
+
+	// Initial scrape with both SBOM and runtime matches.
+	require.NoError(t, persistSbom(ctx, h.queries, env.ID, sbomResult{
+		supported: true,
+		fetched:   true,
+		packages:  []sbom.Package{{Name: "symfony/http-kernel", Version: "6.4.2"}},
+		matches: []sbom.Match{
+			{AdvisoryID: "CVE-2026-400", PackageName: "symfony/http-kernel", InstalledVersion: "6.4.2", AffectedVersions: ">=6.4.0,<6.4.3"},
+		},
+	}))
+	runtimeRes := h.matchRuntimeAdvisories(ctx, env.ID, new("8.3.14"), new("MySQL 8.0.36"))
+	require.True(t, runtimeRes.matched)
+	require.NoError(t, persistRuntimeAdvisories(ctx, h.queries, env.ID, runtimeRes))
+
+	matches, err := h.queries.GetEnvironmentAdvisoryMatches(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, matches, 2)
+
+	// An SBOM update while runtime matching is unavailable (matched=false) must
+	// not clear the existing runtime match.
+	require.NoError(t, persistSbom(ctx, h.queries, env.ID, sbomResult{
+		supported: true,
+		fetched:   true,
+		packages:  []sbom.Package{{Name: "symfony/http-kernel", Version: "6.4.2"}},
+		matches: []sbom.Match{
+			{AdvisoryID: "CVE-2026-400", PackageName: "symfony/http-kernel", InstalledVersion: "6.4.2", AffectedVersions: ">=6.4.0,<6.4.3"},
+		},
+	}))
+	require.NoError(t, persistRuntimeAdvisories(ctx, h.queries, env.ID, runtimeMatchResult{matched: false}))
+
+	matches, err = h.queries.GetEnvironmentAdvisoryMatches(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, matches, 2, "failed runtime match refresh must preserve existing runtime matches")
+
+	// When the SBOM endpoint is unsupported or fails, runtime matches still
+	// refresh (e.g. PHP upgraded to 8.4.2) while preserving Composer matches.
+	require.NoError(t, persistSbom(ctx, h.queries, env.ID, sbomResult{supported: false}))
+	upgradedRuntime := h.matchRuntimeAdvisories(ctx, env.ID, new("8.4.2"), new("MySQL 8.0.36"))
+	require.True(t, upgradedRuntime.matched)
+	require.NoError(t, persistRuntimeAdvisories(ctx, h.queries, env.ID, upgradedRuntime))
+
+	matches, err = h.queries.GetEnvironmentAdvisoryMatches(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, matches, 1)
+	assert.Equal(t, "CVE-2026-400", matches[0].AdvisoryID, "Composer match preserved while resolved PHP match is pruned")
+}

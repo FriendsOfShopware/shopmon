@@ -61,7 +61,7 @@
       </div>
 
       <!-- Stat cards -->
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           :icon="IconHeartPulse"
           :value="friendlyStatusLabel"
@@ -72,6 +72,20 @@
           :icon="IconTag"
           :value="environment.shopwareVersion"
           :label="t('admin.shopwareVersion')"
+          color="primary"
+        />
+        <StatCard
+          :icon="IconCode"
+          :value="shortRuntimeVersion(environment.phpVersion)"
+          :title="environment.phpVersion ?? undefined"
+          :label="t('admin.phpVersion')"
+          color="primary"
+        />
+        <StatCard
+          :icon="IconDatabase"
+          :value="shortRuntimeVersion(environment.databaseVersion)"
+          :title="environment.databaseVersion ?? undefined"
+          :label="t('admin.databaseVersion')"
           color="primary"
         />
         <StatCard
@@ -317,6 +331,8 @@ import EmptyState from "@/components/EmptyState.vue";
 
 import IconHeartPulse from "~icons/fa6-solid/heart-pulse";
 import IconTag from "~icons/fa6-solid/tag";
+import IconCode from "~icons/fa6-solid/code";
+import IconDatabase from "~icons/fa6-solid/database";
 import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import IconClock from "~icons/fa6-solid/clock";
 import IconShieldHalved from "~icons/fa6-solid/shield-halved";
@@ -370,6 +386,14 @@ function checkLevelClass(level: string): string {
 
 function isOutdated(ext: AdminEnvironmentExtension): boolean {
   return Boolean(ext.latestVersion && ext.latestVersion !== ext.version);
+}
+
+function shortRuntimeVersion(value?: string | null): string {
+  if (!value) return "—";
+  return value.replace(
+    /^((?:(?:MySQL|MariaDB)\s+)?(?:5\.5\.5-)?(?:mariadb-)?v?\d+\.\d+(?:\.\d+)*)-(?:\d|ubuntu|deb|mariadb|el\d|alpine).*$/i,
+    "$1",
+  );
 }
 
 async function loadEnvironment(id: number) {

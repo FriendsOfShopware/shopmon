@@ -268,6 +268,8 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		Favicon:            environment.Favicon,
 		Status:             environment.Status,
 		ShopwareVersion:    environment.ShopwareVersion,
+		PhpVersion:         environment.PhpVersion,
+		DatabaseVersion:       environment.DatabaseVersion,
 		LastScrapedAt:      database.TimePtr(environment.LastScrapedAt),
 		LastScrapedError:   environment.LastScrapedError,
 		OrganizationId:     environment.OrganizationID,

@@ -28,7 +28,7 @@ var (
 	cvePattern         = regexp.MustCompile(`^CVE-\d{4}-\d{4,}$`)
 	ghsaPattern        = regexp.MustCompile(`(?i)^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$`)
 	cwePattern         = regexp.MustCompile(`(?i)^CWE-\d+$`)
-	packageNamePattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9._-]*[a-z0-9])?/[a-z0-9]([a-z0-9._-]*[a-z0-9])?$`)
+	packageNamePattern = regexp.MustCompile(`^([a-z0-9]([a-z0-9._-]*[a-z0-9])?/[a-z0-9]([a-z0-9._-]*[a-z0-9])?|php|mysql|mariadb)$`)
 )
 
 // PackageInput is one affected Composer package of a Shopmon-authored advisory.

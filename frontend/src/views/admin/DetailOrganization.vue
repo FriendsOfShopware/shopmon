@@ -125,6 +125,24 @@
                 <Badge variant="secondary" class="shrink-0 font-mono text-[10px]">
                   {{ env.shopwareVersion }}
                 </Badge>
+                <Badge
+                  v-if="env.phpVersion"
+                  variant="outline"
+                  class="shrink-0 font-mono text-[10px]"
+                >
+                  PHP {{ env.phpVersion }}
+                </Badge>
+                <Badge
+                  v-if="env.databaseVersion"
+                  variant="outline"
+                  class="shrink-0 font-mono text-[10px]"
+                >
+                  {{
+                    /^(mysql|mariadb)\b/i.test(env.databaseVersion)
+                      ? env.databaseVersion
+                      : `MySQL ${env.databaseVersion}`
+                  }}
+                </Badge>
               </RouterLink>
             </div>
           </div>

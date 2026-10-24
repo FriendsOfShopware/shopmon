@@ -401,9 +401,11 @@ func (s *seeder) seedShopAndEnvironments(org orgFixture) (int32, []int32, error)
 	envDefs := []struct {
 		name            string
 		shopwareVersion string
+		phpVersion      string
+		databaseVersion string
 	}{
-		{name: "Production", shopwareVersion: "6.6.0.0"},
-		{name: "Staging", shopwareVersion: "6.5.8.0"},
+		{name: "Production", shopwareVersion: "6.6.0.0", phpVersion: "8.3.14", databaseVersion: "MySQL 8.0.36"},
+		{name: "Staging", shopwareVersion: "6.5.8.0", phpVersion: "8.2.25", databaseVersion: "MariaDB 10.11.6"},
 	}
 
 	var environmentIDs []int32
@@ -423,7 +425,7 @@ func (s *seeder) seedShopAndEnvironments(org orgFixture) (int32, []int32, error)
 		}
 		// Enable sitespeed so the seeded sitespeed samples are actually shown in
 		// the UI; CreateEnvironment leaves sitespeed_enabled at its false default.
-		if _, err := s.pool.Exec(s.ctx, `UPDATE environment SET sitespeed_enabled = true WHERE id = $1`, envID); err != nil {
+		if _, err := s.pool.Exec(s.ctx, `UPDATE environment SET sitespeed_enabled = true, php_version = $2, database_version = $3 WHERE id = $1`, envID, ed.phpVersion, ed.databaseVersion); err != nil {
 			slog.Error("failed to enable sitespeed", "environmentId", envID, "error", err)
 		}
 

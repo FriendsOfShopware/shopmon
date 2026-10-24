@@ -80,7 +80,7 @@ func (q *Queries) AdminGetEnvironmentChecks(ctx context.Context, environmentID i
 
 const adminGetEnvironmentDetail = `-- name: AdminGetEnvironmentDetail :one
 
-SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.created_at,
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.php_version, e.database_version, e.created_at,
        e.last_scraped_at, e.last_scraped_error, e.connection_issue_count,
        e.organization_id, o.name AS organization_name,
        e.shop_id, s.name AS shop_name
@@ -96,6 +96,8 @@ type AdminGetEnvironmentDetailRow struct {
 	Url                  string           `json:"url"`
 	Status               string           `json:"status"`
 	ShopwareVersion      string           `json:"shopware_version"`
+	PhpVersion           *string          `json:"php_version"`
+	DatabaseVersion      *string          `json:"database_version"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
 	LastScrapedError     *string          `json:"last_scraped_error"`
@@ -116,6 +118,8 @@ func (q *Queries) AdminGetEnvironmentDetail(ctx context.Context, id int32) (Admi
 		&i.Url,
 		&i.Status,
 		&i.ShopwareVersion,
+		&i.PhpVersion,
+		&i.DatabaseVersion,
 		&i.CreatedAt,
 		&i.LastScrapedAt,
 		&i.LastScrapedError,
@@ -358,7 +362,7 @@ func (q *Queries) AdminGetOrganizationDetail(ctx context.Context, id string) (Ad
 }
 
 const adminGetOrganizationEnvironments = `-- name: AdminGetOrganizationEnvironments :many
-SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at,
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.php_version, e.database_version, e.last_scraped_at,
        e.shop_id, s.name AS shop_name
 FROM environment e
 JOIN shop s ON s.id = e.shop_id
@@ -372,6 +376,8 @@ type AdminGetOrganizationEnvironmentsRow struct {
 	Url             string           `json:"url"`
 	Status          string           `json:"status"`
 	ShopwareVersion string           `json:"shopware_version"`
+	PhpVersion      *string          `json:"php_version"`
+	DatabaseVersion *string          `json:"database_version"`
 	LastScrapedAt   pgtype.Timestamp `json:"last_scraped_at"`
 	ShopID          int32            `json:"shop_id"`
 	ShopName        string           `json:"shop_name"`
@@ -392,6 +398,8 @@ func (q *Queries) AdminGetOrganizationEnvironments(ctx context.Context, organiza
 			&i.Url,
 			&i.Status,
 			&i.ShopwareVersion,
+			&i.PhpVersion,
+			&i.DatabaseVersion,
 			&i.LastScrapedAt,
 			&i.ShopID,
 			&i.ShopName,
@@ -720,7 +728,7 @@ func (q *Queries) AdminGetStats(ctx context.Context) (AdminGetStatsRow, error) {
 }
 
 const adminListEnvironments = `-- name: AdminListEnvironments :many
-SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at, e.created_at,
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.php_version, e.database_version, e.last_scraped_at, e.created_at,
        e.organization_id, o.name AS organization_name,
        e.shop_id, s.name AS shop_name
 FROM environment e
@@ -736,6 +744,14 @@ ORDER BY
   CASE WHEN $4::text = 'status' AND $5::text = 'desc' THEN e.status END DESC,
   CASE WHEN $4::text = 'shopwareVersion' AND $5::text = 'asc' THEN e.shopware_version END ASC,
   CASE WHEN $4::text = 'shopwareVersion' AND $5::text = 'desc' THEN e.shopware_version END DESC,
+  CASE WHEN $4::text = 'phpVersion' AND $5::text = 'asc' THEN string_to_array((regexp_match(e.php_version, '(\d+(?:\.\d+)+)'))[1], '.')::int[] END ASC NULLS LAST,
+  CASE WHEN $4::text = 'phpVersion' AND $5::text = 'asc' THEN e.php_version END ASC NULLS LAST,
+  CASE WHEN $4::text = 'phpVersion' AND $5::text = 'desc' THEN string_to_array((regexp_match(e.php_version, '(\d+(?:\.\d+)+)'))[1], '.')::int[] END DESC NULLS LAST,
+  CASE WHEN $4::text = 'phpVersion' AND $5::text = 'desc' THEN e.php_version END DESC NULLS LAST,
+  CASE WHEN $4::text = 'databaseVersion' AND $5::text = 'asc' THEN string_to_array((regexp_match(regexp_replace(e.database_version, '^5\.5\.5-', ''), '(\d+(?:\.\d+)+)'))[1], '.')::int[] END ASC NULLS LAST,
+  CASE WHEN $4::text = 'databaseVersion' AND $5::text = 'asc' THEN e.database_version END ASC NULLS LAST,
+  CASE WHEN $4::text = 'databaseVersion' AND $5::text = 'desc' THEN string_to_array((regexp_match(regexp_replace(e.database_version, '^5\.5\.5-', ''), '(\d+(?:\.\d+)+)'))[1], '.')::int[] END DESC NULLS LAST,
+  CASE WHEN $4::text = 'databaseVersion' AND $5::text = 'desc' THEN e.database_version END DESC NULLS LAST,
   CASE WHEN $4::text = 'organizationName' AND $5::text = 'asc' THEN o.name END ASC,
   CASE WHEN $4::text = 'organizationName' AND $5::text = 'desc' THEN o.name END DESC,
   CASE WHEN $4::text = 'createdAt' AND $5::text = 'asc' THEN e.created_at END ASC,
@@ -757,6 +773,8 @@ type AdminListEnvironmentsRow struct {
 	Url              string           `json:"url"`
 	Status           string           `json:"status"`
 	ShopwareVersion  string           `json:"shopware_version"`
+	PhpVersion       *string          `json:"php_version"`
+	DatabaseVersion  *string          `json:"database_version"`
 	LastScrapedAt    pgtype.Timestamp `json:"last_scraped_at"`
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 	OrganizationID   string           `json:"organization_id"`
@@ -786,6 +804,8 @@ func (q *Queries) AdminListEnvironments(ctx context.Context, arg AdminListEnviro
 			&i.Url,
 			&i.Status,
 			&i.ShopwareVersion,
+			&i.PhpVersion,
+			&i.DatabaseVersion,
 			&i.LastScrapedAt,
 			&i.CreatedAt,
 			&i.OrganizationID,

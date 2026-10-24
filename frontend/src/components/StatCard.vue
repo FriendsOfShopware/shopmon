@@ -6,6 +6,7 @@ defineProps<{
   icon: Component;
   value: string | number;
   label: string;
+  title?: string;
   color?: "primary" | "success" | "warning" | "destructive" | "muted";
 }>();
 
@@ -22,14 +23,16 @@ const colorClasses: Record<string, { bg: string; text: string }> = {
   <Card>
     <CardContent class="flex items-center gap-3 p-4">
       <div
-        class="flex size-9 items-center justify-center rounded-lg"
+        class="flex size-9 shrink-0 items-center justify-center rounded-lg"
         :class="colorClasses[color ?? 'primary'].bg"
       >
         <component :is="icon" class="size-4" :class="colorClasses[color ?? 'primary'].text" />
       </div>
-      <div>
-        <div class="text-2xl font-bold tabular-nums">{{ value }}</div>
-        <div class="text-xs text-muted-foreground">{{ label }}</div>
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-2xl font-bold tabular-nums" :title="title ?? String(value)">
+          {{ value }}
+        </div>
+        <div class="truncate text-xs text-muted-foreground">{{ label }}</div>
       </div>
     </CardContent>
   </Card>
