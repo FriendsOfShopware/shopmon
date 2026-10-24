@@ -153,10 +153,10 @@ type Input struct {
 type Result struct {
 	Status Status  `json:"status"`
 	Checks []Check `json:"checks"`
-	// PhpVersion and MysqlVersion hold the exact runtime versions reported by
+	// PhpVersion and DatabaseVersion hold the exact runtime versions reported by
 	// FroshTools health checks when available.
-	PhpVersion   *string `json:"phpVersion,omitempty"`
-	MysqlVersion *string `json:"mysqlVersion,omitempty"`
+	PhpVersion      *string `json:"phpVersion,omitempty"`
+	DatabaseVersion *string `json:"databaseVersion,omitempty"`
 	// Unavailable lists the check groups that could not be evaluated in this
 	// run. Their checks are missing from Checks because the data was
 	// unreachable, not because the underlying problems went away.
@@ -179,12 +179,12 @@ func (r Result) UnavailableNames() []string {
 }
 
 type Output struct {
-	mu           sync.Mutex
-	checks       []Check
-	ignores      map[string]bool
-	unavailable  map[UnavailableSource]bool
-	phpVersion   *string
-	mysqlVersion *string
+	mu              sync.Mutex
+	checks          []Check
+	ignores         map[string]bool
+	unavailable     map[UnavailableSource]bool
+	phpVersion      *string
+	databaseVersion *string
 }
 
 func NewOutput(ignores []string) *Output {
@@ -206,11 +206,11 @@ func (o *Output) SetPhpVersion(version string) {
 	o.phpVersion = &version
 }
 
-// SetMysqlVersion records the exact MySQL/MariaDB version reported by the environment.
-func (o *Output) SetMysqlVersion(version string) {
+// SetDatabaseVersion records the exact database (MySQL/MariaDB) version reported by the environment.
+func (o *Output) SetDatabaseVersion(version string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	o.mysqlVersion = &version
+	o.databaseVersion = &version
 }
 
 // MarkUnavailable records that the checks named with idPrefix could not be
@@ -276,11 +276,11 @@ func (o *Output) Result() Result {
 	})
 
 	return Result{
-		Status:       aggregateStatus(o.checks, o.ignores),
-		Checks:       o.checks,
-		PhpVersion:   o.phpVersion,
-		MysqlVersion: o.mysqlVersion,
-		Unavailable:  unavailable,
+		Status:          aggregateStatus(o.checks, o.ignores),
+		Checks:          o.checks,
+		PhpVersion:      o.phpVersion,
+		DatabaseVersion: o.databaseVersion,
+		Unavailable:     unavailable,
 	}
 }
 
@@ -358,10 +358,10 @@ func RunAll(ctx context.Context, input Input) Result {
 func withRuntimeVersions(input Input, output *Output) Input {
 	output.mu.Lock()
 	phpVersion := output.phpVersion
-	mysqlVersion := output.mysqlVersion
+	databaseVersion := output.databaseVersion
 	output.mu.Unlock()
 
-	if phpVersion == nil && mysqlVersion == nil {
+	if phpVersion == nil && databaseVersion == nil {
 		return input
 	}
 
@@ -372,8 +372,8 @@ func withRuntimeVersions(input Input, output *Output) Input {
 	if phpVersion != nil && *phpVersion != "" {
 		installed["php"] = *phpVersion
 	}
-	if mysqlVersion != nil && *mysqlVersion != "" {
-		if pkg, ver := version.ParseDatabaseVersion(*mysqlVersion); pkg != "" && ver != "" {
+	if databaseVersion != nil && *databaseVersion != "" {
+		if pkg, ver := version.ParseDatabaseVersion(*databaseVersion); pkg != "" && ver != "" {
 			installed[pkg] = ver
 		}
 	}

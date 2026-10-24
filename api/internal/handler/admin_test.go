@@ -255,7 +255,7 @@ func TestAdminGetEnvironmentDetail(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Acme Org", "acme-org", "admin-1")
 	shopID := env.SeedShop(t, "org-1", "Acme Shop")
 	envID := env.SeedEnvironment(t, "org-1", shopID, "Production", "https://prod.example.com")
-	_, err := env.Pool.Exec(t.Context(), `UPDATE environment SET php_version = '8.3.14', mysql_version = '8.0.36' WHERE id = $1`, envID)
+	_, err := env.Pool.Exec(t.Context(), `UPDATE environment SET php_version = '8.3.14', database_version = '8.0.36' WHERE id = $1`, envID)
 	require.NoError(t, err)
 
 	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/admin/environments/%d", env.Server.URL, envID), nil)
@@ -274,8 +274,8 @@ func TestAdminGetEnvironmentDetail(t *testing.T) {
 	assert.Equal(t, "Acme Shop", detail.ShopName)
 	require.NotNil(t, detail.PhpVersion)
 	assert.Equal(t, "8.3.14", *detail.PhpVersion)
-	require.NotNil(t, detail.MysqlVersion)
-	assert.Equal(t, "8.0.36", *detail.MysqlVersion)
+	require.NotNil(t, detail.DatabaseVersion)
+	assert.Equal(t, "8.0.36", *detail.DatabaseVersion)
 	// Secrets must never be exposed.
 	body, _ := json.Marshal(detail)
 	assert.NotContains(t, string(body), "client_secret")

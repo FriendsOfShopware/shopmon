@@ -35,25 +35,25 @@ SELECT environment_id, environment_name, shop_id, shop_name, organization_id, or
          e.shop_id, s.name AS shop_name,
          e.organization_id, o.name AS organization_name,
          'mysql'::text AS package_name,
-         regexp_replace(e.mysql_version, '^MySQL\s+', '', 'i') AS version
+         regexp_replace(e.database_version, '^MySQL\s+', '', 'i') AS version
   FROM environment e
   JOIN shop s ON s.id = e.shop_id
   JOIN organization o ON o.id = e.organization_id
   WHERE 'mysql' = ANY($1::text[])
-    AND e.mysql_version IS NOT NULL AND e.mysql_version <> ''
-    AND e.mysql_version !~* '^(mariadb|10\.|11\.)'
+    AND e.database_version IS NOT NULL AND e.database_version <> ''
+    AND e.database_version !~* '^(mariadb|10\.|11\.)'
   UNION ALL
   SELECT e.id AS environment_id, e.name AS environment_name,
          e.shop_id, s.name AS shop_name,
          e.organization_id, o.name AS organization_name,
          'mariadb'::text AS package_name,
-         regexp_replace(e.mysql_version, '^MariaDB\s+', '', 'i') AS version
+         regexp_replace(e.database_version, '^MariaDB\s+', '', 'i') AS version
   FROM environment e
   JOIN shop s ON s.id = e.shop_id
   JOIN organization o ON o.id = e.organization_id
   WHERE 'mariadb' = ANY($1::text[])
-    AND e.mysql_version IS NOT NULL AND e.mysql_version <> ''
-    AND e.mysql_version ~* '^(mariadb|10\.|11\.)'
+    AND e.database_version IS NOT NULL AND e.database_version <> ''
+    AND e.database_version ~* '^(mariadb|10\.|11\.)'
 ) inv
 ORDER BY organization_name, organization_id, shop_name, shop_id, environment_name, environment_id, package_name
 `

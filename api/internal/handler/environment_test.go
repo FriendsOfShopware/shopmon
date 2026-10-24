@@ -59,7 +59,7 @@ func TestGetEnvironment(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
-	_, err := env.Pool.Exec(t.Context(), `UPDATE environment SET php_version = '8.3.14', mysql_version = '8.0.36' WHERE id = $1`, environmentID)
+	_, err := env.Pool.Exec(t.Context(), `UPDATE environment SET php_version = '8.3.14', database_version = '8.0.36' WHERE id = $1`, environmentID)
 	require.NoError(t, err)
 	// The detail payload reports only the changelog count; the entries themselves
 	// are served paginated by GetEnvironmentChangelogs.
@@ -82,8 +82,8 @@ func TestGetEnvironment(t *testing.T) {
 	assert.Equal(t, "6.5.0.0", environment.ShopwareVersion)
 	require.NotNil(t, environment.PhpVersion)
 	assert.Equal(t, "8.3.14", *environment.PhpVersion)
-	require.NotNil(t, environment.MysqlVersion)
-	assert.Equal(t, "8.0.36", *environment.MysqlVersion)
+	require.NotNil(t, environment.DatabaseVersion)
+	assert.Equal(t, "8.0.36", *environment.DatabaseVersion)
 	assert.Equal(t, "green", environment.Status)
 	assert.Equal(t, "Test Org", environment.OrganizationName)
 	assert.NotNil(t, environment.Extensions)

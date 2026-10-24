@@ -58,11 +58,11 @@
             <Badge v-if="env.phpVersion" variant="outline" class="font-mono text-[10px]">
               PHP {{ env.phpVersion }}
             </Badge>
-            <Badge v-if="env.mysqlVersion" variant="outline" class="font-mono text-[10px]">
+            <Badge v-if="env.databaseVersion" variant="outline" class="font-mono text-[10px]">
               {{
-                /^(mysql|mariadb)\b/i.test(env.mysqlVersion)
-                  ? env.mysqlVersion
-                  : `MySQL ${env.mysqlVersion}`
+                /^(mysql|mariadb)\b/i.test(env.databaseVersion)
+                  ? env.databaseVersion
+                  : `MySQL ${env.databaseVersion}`
               }}
             </Badge>
           </div>
@@ -156,7 +156,7 @@ type SortBy =
   | "status"
   | "shopwareVersion"
   | "phpVersion"
-  | "mysqlVersion"
+  | "databaseVersion"
   | "lastScrapedAt"
   | "organizationName";
 
@@ -197,7 +197,7 @@ const filterGroups = computed<FilterGroup[]>(() => [
       { label: t("admin.status"), value: "status" },
       { label: t("admin.shopwareVersion"), value: "shopwareVersion" },
       { label: t("admin.phpVersion"), value: "phpVersion" },
-      { label: t("admin.mysqlVersion"), value: "mysqlVersion" },
+      { label: t("admin.databaseVersion"), value: "databaseVersion" },
       { label: t("admin.organizationName"), value: "organizationName" },
     ],
   },

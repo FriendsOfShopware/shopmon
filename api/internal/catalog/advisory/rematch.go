@@ -65,8 +65,8 @@ func (s *Service) rematchEnvironment(ctx context.Context, environmentID int32, i
 	if env.PhpVersion != nil && *env.PhpVersion != "" {
 		installed["php"] = *env.PhpVersion
 	}
-	if env.MysqlVersion != nil && *env.MysqlVersion != "" {
-		if pkg, ver := version.ParseDatabaseVersion(*env.MysqlVersion); pkg != "" && ver != "" {
+	if env.DatabaseVersion != nil && *env.DatabaseVersion != "" {
+		if pkg, ver := version.ParseDatabaseVersion(*env.DatabaseVersion); pkg != "" && ver != "" {
 			installed[pkg] = ver
 		}
 	}

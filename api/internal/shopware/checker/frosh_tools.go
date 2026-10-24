@@ -154,9 +154,9 @@ func extractRuntimeVersion(c froshToolsCheck, output *Output) {
 			return
 		}
 		if c.Snippet == "MariaDB Version" || pkg == "mariadb" {
-			output.SetMysqlVersion("MariaDB " + ver)
+			output.SetDatabaseVersion("MariaDB " + ver)
 			return
 		}
-		output.SetMysqlVersion("MySQL " + ver)
+		output.SetDatabaseVersion("MySQL " + ver)
 	}
 }

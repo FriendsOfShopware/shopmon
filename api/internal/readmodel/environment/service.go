@@ -269,7 +269,7 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		Status:             environment.Status,
 		ShopwareVersion:    environment.ShopwareVersion,
 		PhpVersion:         environment.PhpVersion,
-		MysqlVersion:       environment.MysqlVersion,
+		DatabaseVersion:       environment.DatabaseVersion,
 		LastScrapedAt:      database.TimePtr(environment.LastScrapedAt),
 		LastScrapedError:   environment.LastScrapedError,
 		OrganizationId:     environment.OrganizationID,

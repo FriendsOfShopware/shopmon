@@ -27,7 +27,7 @@ WHERE m.user_id = $1
 ORDER BY o.name;
 
 -- name: GetUserEnvironments :many
-SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.mysql_version,
+SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.database_version,
        e.last_scraped_at, e.last_scraped_error,
        e.organization_id, o.name AS organization_name, s.id AS shop_id, s.name AS shop_name
 FROM environment e
@@ -58,7 +58,7 @@ ORDER BY ec.date DESC
 LIMIT 10;
 
 -- name: GetUserEnvironmentsByOrg :many
-SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.mysql_version,
+SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.database_version,
        e.last_scraped_at, e.last_scraped_error,
        e.organization_id, o.name AS organization_name, s.id AS shop_id, s.name AS shop_name
 FROM environment e

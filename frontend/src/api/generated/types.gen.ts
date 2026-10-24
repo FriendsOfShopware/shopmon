@@ -18,11 +18,11 @@ export type AccountChangelog = {
 };
 
 export type AccountEnvironment = {
+    databaseVersion?: string;
     favicon: string | null;
     id: number;
     lastScrapedAt: string | null;
     lastScrapedError: string | null;
-    mysqlVersion?: string;
     name: string;
     organizationId: string;
     organizationName: string;
@@ -212,12 +212,12 @@ export type AdminEnvironmentDetail = {
     checks: Array<AdminEnvironmentCheck>;
     connectionIssueCount: number;
     createdAt: string;
+    databaseVersion?: string;
     extensions: Array<AdminEnvironmentExtension>;
     id: number;
     lastDeployment?: AdminEnvironmentDeployment;
     lastScrapedAt?: string;
     lastScrapedError?: string;
-    mysqlVersion?: string;
     name: string;
     organizationId: string;
     organizationName: string;
@@ -278,9 +278,9 @@ export type AdminOrganizationDetail = {
 };
 
 export type AdminOrganizationEnvironment = {
+    databaseVersion?: string;
     id: number;
     lastScrapedAt?: string;
-    mysqlVersion?: string;
     name: string;
     phpVersion?: string;
     shopId: number;
@@ -770,6 +770,7 @@ export type EnvironmentDetail = {
     changelogsCount: number;
     checks: Array<EnvironmentCheck>;
     createdAt: string;
+    databaseVersion?: string;
     deploymentsCount: number;
     environmentImage: string | null;
     environmentToken: string;
@@ -781,7 +782,6 @@ export type EnvironmentDetail = {
     lastDeploymentAt: string | null;
     lastScrapedAt: string | null;
     lastScrapedError: string | null;
-    mysqlVersion?: string;
     name: string;
     organizationId: string;
     organizationName: string;

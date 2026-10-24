@@ -130,7 +130,7 @@ func TestRematchMatchesEnvironmentRuntimeVersions(t *testing.T) {
 	envID := int32(env.SeedEnvironment(t, "org-1", shopID, "prod", "https://example.com"))
 
 	_, err := env.Pool.Exec(ctx, `
-		UPDATE environment SET php_version = '8.3.14', mysql_version = '8.0.36' WHERE id = $1
+		UPDATE environment SET php_version = '8.3.14', database_version = '8.0.36' WHERE id = $1
 	`, envID)
 	require.NoError(t, err)
 

@@ -1,5 +1,5 @@
 -- name: ListEnvironmentsByOrganization :many
-SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.mysql_version,
+SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.database_version,
        e.last_scraped_at, e.last_scraped_error, e.created_at, e.shop_id, e.organization_id,
        o.name AS organization_name,
        s.name AS shop_name, s.description AS shop_description
@@ -115,7 +115,7 @@ LIMIT 1;
 UPDATE environment SET sitespeed_enabled = $1, sitespeed_urls = $2 WHERE id = $3;
 
 -- name: GetAllEnvironments :many
-SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.mysql_version,
+SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
        e.task_grace_minutes,
@@ -124,7 +124,7 @@ FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id;
 
 -- name: GetEnvironmentForScrape :one
-SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.mysql_version,
+SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
        e.task_grace_minutes,
@@ -134,7 +134,7 @@ LEFT JOIN shop s ON s.id = e.shop_id
 WHERE e.id = $1;
 
 -- name: UpdateEnvironmentAfterScrape :exec
-UPDATE environment SET status = $1, shopware_version = $2, php_version = $3, mysql_version = $4,
+UPDATE environment SET status = $1, shopware_version = $2, php_version = $3, database_version = $4,
        last_scraped_at = NOW(), last_scraped_error = $5,
        favicon = $6, environment_image = $7, last_changelog = $8, connection_issue_count = 0
 WHERE id = $9;

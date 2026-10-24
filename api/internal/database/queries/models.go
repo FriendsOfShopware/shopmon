@@ -133,7 +133,7 @@ type Environment struct {
 	ClientSecret         string           `json:"client_secret"`
 	ShopwareVersion      string           `json:"shopware_version"`
 	PhpVersion           *string          `json:"php_version"`
-	MysqlVersion         *string          `json:"mysql_version"`
+	DatabaseVersion      *string          `json:"database_version"`
 	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
 	LastScrapedError     *string          `json:"last_scraped_error"`
 	Ignores              json.RawMessage  `json:"ignores"`

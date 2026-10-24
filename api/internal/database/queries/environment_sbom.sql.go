@@ -686,7 +686,7 @@ const listEnvironmentIDsWithSbom = `-- name: ListEnvironmentIDsWithSbom :many
 SELECT DISTINCT id AS environment_id
 FROM environment e
 WHERE (e.php_version IS NOT NULL AND e.php_version <> '')
-   OR (e.mysql_version IS NOT NULL AND e.mysql_version <> '')
+   OR (e.database_version IS NOT NULL AND e.database_version <> '')
    OR EXISTS (
      SELECT 1 FROM environment_sbom_component c WHERE c.environment_id = e.id
    )

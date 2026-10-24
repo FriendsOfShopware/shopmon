@@ -114,9 +114,9 @@ func TestAdminAdvisoryImpactFromInventory(t *testing.T) {
 	assert.Equal(t, 2, updated.EnvironmentCount)
 
 	// Runtime versions (php, mysql, mariadb) stored on the environment also participate in impact previews.
-	_, err = env.Pool.Exec(ctx, `UPDATE environment SET php_version = '8.3.14', mysql_version = 'MySQL 8.0.36' WHERE id = $1`, prod)
+	_, err = env.Pool.Exec(ctx, `UPDATE environment SET php_version = '8.3.14', database_version = 'MySQL 8.0.36' WHERE id = $1`, prod)
 	require.NoError(t, err)
-	_, err = env.Pool.Exec(ctx, `UPDATE environment SET php_version = '8.4.2', mysql_version = 'MariaDB 10.11.6' WHERE id = $1`, other)
+	_, err = env.Pool.Exec(ctx, `UPDATE environment SET php_version = '8.4.2', database_version = 'MariaDB 10.11.6' WHERE id = $1`, other)
 	require.NoError(t, err)
 
 	runtimeImpact := preview(adminToken, []api.AdvisoryPackageInput{

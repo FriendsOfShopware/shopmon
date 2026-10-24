@@ -2,7 +2,7 @@
 -- surface and alert on PHP and MySQL/MariaDB versions.
 ALTER TABLE "environment"
   ADD COLUMN "php_version" text,
-  ADD COLUMN "mysql_version" text;
+  ADD COLUMN "database_version" text;
 
 UPDATE "environment" e
 SET "php_version" = NULLIF(BTRIM(ec."params"->>'current'), '')
@@ -14,7 +14,7 @@ WHERE ec."environment_id" = e."id"
   AND LOWER(BTRIM(ec."params"->>'current')) <> 'unknown';
 
 UPDATE "environment" e
-SET "mysql_version" = CASE
+SET "database_version" = CASE
   WHEN ec."check_id" = 'frosh.MariaDB Version'
     OR ec."params"->>'snippet' = 'MariaDB Version'
     OR BTRIM(ec."params"->>'current') ~* '^(mariadb|10\.|11\.)'

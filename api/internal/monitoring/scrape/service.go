@@ -410,7 +410,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		// Composer package inventory from the FroshTools SBOM. Empty when the
 		// shop cannot serve one, in which case checkSecurity falls back to
 		// matching the Shopware core version only.
-		InstalledPackages:      withRuntimePackageVersions(sbomPackageVersions(sbomRes), env.PhpVersion, env.MysqlVersion),
+		InstalledPackages:      withRuntimePackageVersions(sbomPackageVersions(sbomRes), env.PhpVersion, env.DatabaseVersion),
 		SecurityPluginFixes:    securityPluginFixes,
 		SecurityPluginCoverage: securityPluginCoverage,
 	}
@@ -466,13 +466,13 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	if phpVersion == nil {
 		phpVersion = env.PhpVersion
 	}
-	mysqlVersion := checkerResult.MysqlVersion
-	if mysqlVersion == nil {
-		mysqlVersion = env.MysqlVersion
+	databaseVersion := checkerResult.DatabaseVersion
+	if databaseVersion == nil {
+		databaseVersion = env.DatabaseVersion
 	}
 
-	if sbomRes.fetched && sbomRes.err == "" && (phpVersion != nil || mysqlVersion != nil) {
-		installed := withRuntimePackageVersions(sbomPackageVersions(sbomRes), phpVersion, mysqlVersion)
+	if sbomRes.fetched && sbomRes.err == "" && (phpVersion != nil || databaseVersion != nil) {
+		installed := withRuntimePackageVersions(sbomPackageVersions(sbomRes), phpVersion, databaseVersion)
 		if matches, err := h.matchAdvisories(ctx, env.ID, installed); err == nil {
 			sbomRes.matches = matches
 		}
@@ -482,7 +482,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		status:          newStatus,
 		shopwareVersion: shopConfig.Version,
 		phpVersion:      phpVersion,
-		mysqlVersion:    mysqlVersion,
+		databaseVersion: databaseVersion,
 		extensions:      extensions,
 		scheduledTasks:  scheduledTasks,
 		queueEntries:    queueEntries,
@@ -595,7 +595,7 @@ type scrapeResult struct {
 	status          string
 	shopwareVersion string
 	phpVersion      *string
-	mysqlVersion    *string
+	databaseVersion *string
 	extensions      []extensionEntry
 	scheduledTasks  []shopwareScheduledTask
 	queueEntries    []shopwareQueueEntry
@@ -865,7 +865,7 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 		Status:           res.status,
 		ShopwareVersion:  res.shopwareVersion,
 		PhpVersion:       res.phpVersion,
-		MysqlVersion:     res.mysqlVersion,
+		DatabaseVersion:  res.databaseVersion,
 		LastScrapedError: nil,
 		Favicon:          res.favicon,
 		EnvironmentImage: nil,

@@ -82,8 +82,8 @@
         />
         <StatCard
           :icon="IconDatabase"
-          :value="environment.mysqlVersion ?? '—'"
-          :label="t('admin.mysqlVersion')"
+          :value="environment.databaseVersion ?? '—'"
+          :label="t('admin.databaseVersion')"
           color="primary"
         />
         <StatCard

@@ -320,8 +320,8 @@ func TestCheckFroshTools_ExtractsRuntimeVersionsAndMatchesAdvisories(t *testing.
 
 	require.NotNil(t, result.PhpVersion)
 	assert.Equal(t, "8.3.14", *result.PhpVersion)
-	require.NotNil(t, result.MysqlVersion)
-	assert.Equal(t, "MySQL 8.0.36", *result.MysqlVersion)
+	require.NotNil(t, result.DatabaseVersion)
+	assert.Equal(t, "MySQL 8.0.36", *result.DatabaseVersion)
 
 	phpAdv, ok := findCheck(result.Checks, "security.SHOPMON-2026-0001")
 	require.True(t, ok, "expected PHP advisory check to be emitted")
@@ -372,8 +372,8 @@ func TestCheckFroshTools_DistinguishesMariaDBFromMySQL(t *testing.T) {
 		},
 	})
 
-	require.NotNil(t, result.MysqlVersion)
-	assert.Equal(t, "MariaDB 10.11.6", *result.MysqlVersion)
+	require.NotNil(t, result.DatabaseVersion)
+	assert.Equal(t, "MariaDB 10.11.6", *result.DatabaseVersion)
 
 	_, mysqlMatched := findCheck(result.Checks, "security.SHOPMON-2026-0003")
 	assert.False(t, mysqlMatched, "MariaDB environment must not match a mysql advisory")
@@ -393,5 +393,5 @@ func TestExtractRuntimeVersion_IgnoresUnknownAndEmpty(t *testing.T) {
 
 	res := output.Result()
 	assert.Nil(t, res.PhpVersion)
-	assert.Nil(t, res.MysqlVersion)
+	assert.Nil(t, res.DatabaseVersion)
 }

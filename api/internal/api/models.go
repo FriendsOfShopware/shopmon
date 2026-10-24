@@ -396,7 +396,7 @@ type AccountEnvironment struct {
 	Id               int        `json:"id"`
 	LastScrapedAt    *time.Time `json:"lastScrapedAt"`
 	LastScrapedError *string    `json:"lastScrapedError"`
-	MysqlVersion     *string    `json:"mysqlVersion,omitempty"`
+	DatabaseVersion     *string    `json:"databaseVersion,omitempty"`
 	Name             string     `json:"name"`
 	OrganizationId   string     `json:"organizationId"`
 	OrganizationName string     `json:"organizationName"`
@@ -640,7 +640,7 @@ type AdminEnvironmentDetail struct {
 	LastDeployment       *AdminEnvironmentDeployment `json:"lastDeployment,omitempty"`
 	LastScrapedAt        *time.Time                  `json:"lastScrapedAt,omitempty"`
 	LastScrapedError     *string                     `json:"lastScrapedError,omitempty"`
-	MysqlVersion         *string                     `json:"mysqlVersion,omitempty"`
+	DatabaseVersion         *string                     `json:"databaseVersion,omitempty"`
 	Name                 string                      `json:"name"`
 	OrganizationId       string                      `json:"organizationId"`
 	OrganizationName     string                      `json:"organizationName"`
@@ -709,7 +709,7 @@ type AdminOrganizationDetail struct {
 type AdminOrganizationEnvironment struct {
 	Id              int        `json:"id"`
 	LastScrapedAt   *time.Time `json:"lastScrapedAt,omitempty"`
-	MysqlVersion    *string    `json:"mysqlVersion,omitempty"`
+	DatabaseVersion    *string    `json:"databaseVersion,omitempty"`
 	Name            string     `json:"name"`
 	PhpVersion      *string    `json:"phpVersion,omitempty"`
 	ShopId          int        `json:"shopId"`
@@ -1248,7 +1248,7 @@ type EnvironmentDetail struct {
 	LastDeploymentAt   *time.Time             `json:"lastDeploymentAt"`
 	LastScrapedAt      *time.Time             `json:"lastScrapedAt"`
 	LastScrapedError   *string                `json:"lastScrapedError"`
-	MysqlVersion       *string                `json:"mysqlVersion,omitempty"`
+	DatabaseVersion       *string                `json:"databaseVersion,omitempty"`
 	Name               string                 `json:"name"`
 	OrganizationId     string                 `json:"organizationId"`
 	OrganizationName   string                 `json:"organizationName"`

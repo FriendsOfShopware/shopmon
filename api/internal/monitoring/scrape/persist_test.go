@@ -101,7 +101,7 @@ func baseScrapeResult() scrapeResult {
 		status:          "yellow",
 		shopwareVersion: "6.5.0.0",
 		phpVersion:      new("8.3.14"),
-		mysqlVersion:    new("8.0.36"),
+		databaseVersion: new("8.0.36"),
 		extensions: []extensionEntry{
 			{
 				Name: "FroshTools", Label: "Frosh Tools", Active: true, Version: "1.0.0",
@@ -193,15 +193,15 @@ func TestPersistScrapeResultWritesAllData(t *testing.T) {
 	}
 
 	var status string
-	var favicon, phpVersion, mysqlVersion *string
-	require.NoError(t, pool.QueryRow(ctx, `SELECT status, favicon, php_version, mysql_version FROM environment WHERE id = $1`, env.ID).Scan(&status, &favicon, &phpVersion, &mysqlVersion))
+	var favicon, phpVersion, databaseVersion *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT status, favicon, php_version, database_version FROM environment WHERE id = $1`, env.ID).Scan(&status, &favicon, &phpVersion, &databaseVersion))
 	assert.Equal(t, "yellow", status, "environment status")
 	require.NotNil(t, favicon, "environment favicon")
 	assert.Equal(t, "https://shop.example.com/favicon.ico", *favicon)
 	require.NotNil(t, phpVersion, "environment php_version")
 	assert.Equal(t, "8.3.14", *phpVersion)
-	require.NotNil(t, mysqlVersion, "environment mysql_version")
-	assert.Equal(t, "8.0.36", *mysqlVersion)
+	require.NotNil(t, databaseVersion, "environment database_version")
+	assert.Equal(t, "8.0.36", *databaseVersion)
 
 	var linkLatest *string
 	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM environment_store_extension WHERE environment_id = $1 AND extension_name = 'FroshTools'`, env.ID).Scan(&linkLatest))
