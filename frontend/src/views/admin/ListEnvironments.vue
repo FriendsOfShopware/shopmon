@@ -59,7 +59,11 @@
               PHP {{ env.phpVersion }}
             </Badge>
             <Badge v-if="env.mysqlVersion" variant="outline" class="font-mono text-[10px]">
-              MySQL {{ env.mysqlVersion }}
+              {{
+                /^(mysql|mariadb)\b/i.test(env.mysqlVersion)
+                  ? env.mysqlVersion
+                  : `MySQL ${env.mysqlVersion}`
+              }}
             </Badge>
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">

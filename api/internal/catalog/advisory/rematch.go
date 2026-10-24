@@ -7,6 +7,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/sbom"
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
 // rematchEnvironments recomputes the advisory matches for every environment
@@ -57,7 +58,7 @@ func (s *Service) rematchEnvironment(ctx context.Context, environmentID int32, i
 		return 0, fmt.Errorf("get environment for rematch: %w", err)
 	}
 
-	installed := make(map[string]string, len(components)+3)
+	installed := make(map[string]string, len(components)+2)
 	for _, c := range components {
 		installed[c.PackageName] = c.Version
 	}
@@ -65,8 +66,9 @@ func (s *Service) rematchEnvironment(ctx context.Context, environmentID int32, i
 		installed["php"] = *env.PhpVersion
 	}
 	if env.MysqlVersion != nil && *env.MysqlVersion != "" {
-		installed["mysql"] = *env.MysqlVersion
-		installed["mariadb"] = *env.MysqlVersion
+		if pkg, ver := version.ParseDatabaseVersion(*env.MysqlVersion); pkg != "" && ver != "" {
+			installed[pkg] = ver
+		}
 	}
 	if len(installed) == 0 {
 		return 0, nil

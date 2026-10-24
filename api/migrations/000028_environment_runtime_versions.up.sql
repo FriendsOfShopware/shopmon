@@ -14,7 +14,13 @@ WHERE ec."environment_id" = e."id"
   AND LOWER(BTRIM(ec."params"->>'current')) <> 'unknown';
 
 UPDATE "environment" e
-SET "mysql_version" = NULLIF(BTRIM(ec."params"->>'current'), '')
+SET "mysql_version" = CASE
+  WHEN ec."check_id" = 'frosh.MariaDB Version'
+    OR ec."params"->>'snippet' = 'MariaDB Version'
+    OR BTRIM(ec."params"->>'current') ~* '^(mariadb|10\.|11\.)'
+  THEN 'MariaDB ' || regexp_replace(BTRIM(ec."params"->>'current'), '^MariaDB\s+', '', 'i')
+  ELSE 'MySQL ' || regexp_replace(BTRIM(ec."params"->>'current'), '^MySQL\s+', '', 'i')
+END
 FROM "environment_check" ec
 WHERE ec."environment_id" = e."id"
   AND ec."check_id" IN ('frosh.MySQL Version', 'frosh.MariaDB Version', 'frosh.mysql', 'frosh.mysqlGood', 'frosh.mysqlOutdated')

@@ -26,6 +26,42 @@ func normalizeVersion(v string) string {
 	return v
 }
 
+// ParseDatabaseVersion splits a stored or reported database version string
+// (such as "MySQL 8.0.36", "MariaDB 10.11.6", or a raw version string) into its
+// advisory package name ("mysql" or "mariadb") and version number ("8.0.36" or
+// "10.11.6").
+func ParseDatabaseVersion(raw string) (string, string) {
+	v := strings.TrimSpace(raw)
+	if v == "" || strings.EqualFold(v, "unknown") {
+		return "", ""
+	}
+	lower := strings.ToLower(v)
+	switch {
+	case strings.HasPrefix(lower, "mariadb "):
+		ver := normalizeVersion(strings.TrimSpace(v[len("mariadb "):]))
+		if ver == "" {
+			return "", ""
+		}
+		return "mariadb", ver
+	case strings.HasPrefix(lower, "mysql "):
+		ver := normalizeVersion(strings.TrimSpace(v[len("mysql "):]))
+		if ver == "" {
+			return "", ""
+		}
+		return "mysql", ver
+	case strings.Contains(lower, "mariadb"):
+		ver := normalizeVersion(v)
+		if ver == "" {
+			return "", ""
+		}
+		return "mariadb", ver
+	case strings.HasPrefix(v, "10.") || strings.HasPrefix(v, "11."):
+		return "mariadb", normalizeVersion(v)
+	default:
+		return "mysql", normalizeVersion(v)
+	}
+}
+
 // Compare compares two version strings via go-version. It returns 1 if a > b,
 // -1 if a < b, and 0 if they are equal. If either value cannot be parsed it
 // falls back to a plain string comparison so callers still get a deterministic

@@ -321,7 +321,7 @@ func TestCheckFroshTools_ExtractsRuntimeVersionsAndMatchesAdvisories(t *testing.
 	require.NotNil(t, result.PhpVersion)
 	assert.Equal(t, "8.3.14", *result.PhpVersion)
 	require.NotNil(t, result.MysqlVersion)
-	assert.Equal(t, "8.0.36", *result.MysqlVersion)
+	assert.Equal(t, "MySQL 8.0.36", *result.MysqlVersion)
 
 	phpAdv, ok := findCheck(result.Checks, "security.SHOPMON-2026-0001")
 	require.True(t, ok, "expected PHP advisory check to be emitted")
@@ -334,6 +334,54 @@ func TestCheckFroshTools_ExtractsRuntimeVersionsAndMatchesAdvisories(t *testing.
 	assert.Equal(t, StatusRed, mysqlAdv.Level)
 	assert.Equal(t, "mysql", mysqlAdv.MessageParams["package"])
 	assert.Equal(t, "8.0.36", mysqlAdv.MessageParams["installedVersion"])
+}
+
+func TestCheckFroshTools_DistinguishesMariaDBFromMySQL(t *testing.T) {
+	client := &mockHTTPClient{
+		responses: map[string][]byte{
+			"/_action/frosh-tools/health/status": []byte(`[
+				{"id":"mysql","snippet":"MariaDB Version","state":"STATE_OK","current":"10.11.6","recommended":"min 10.11"}
+			]`),
+			"/_action/frosh-tools/performance/status": []byte(`[]`),
+		},
+	}
+
+	result := RunAll(context.Background(), Input{
+		Config:     ShopConfig{Version: "6.6.10.0"},
+		Extensions: []Extension{{Name: "FroshTools", Active: true, Installed: true}},
+		Client:     client,
+		SecurityAdvisories: []SecurityAdvisory{
+			{
+				ID:       "SHOPMON-2026-0003",
+				Title:    "MySQL-only vulnerability",
+				Severity: "high",
+				Origin:   "shopmon",
+				Packages: []SecurityAdvisoryPackage{
+					{PackageName: "mysql", AffectedVersions: "<11.0.0"},
+				},
+			},
+			{
+				ID:       "SHOPMON-2026-0004",
+				Title:    "MariaDB vulnerability",
+				Severity: "high",
+				Origin:   "shopmon",
+				Packages: []SecurityAdvisoryPackage{
+					{PackageName: "mariadb", AffectedVersions: ">=10.11.0,<10.11.10"},
+				},
+			},
+		},
+	})
+
+	require.NotNil(t, result.MysqlVersion)
+	assert.Equal(t, "MariaDB 10.11.6", *result.MysqlVersion)
+
+	_, mysqlMatched := findCheck(result.Checks, "security.SHOPMON-2026-0003")
+	assert.False(t, mysqlMatched, "MariaDB environment must not match a mysql advisory")
+
+	mariadbAdv, ok := findCheck(result.Checks, "security.SHOPMON-2026-0004")
+	require.True(t, ok, "expected MariaDB advisory check to be emitted")
+	assert.Equal(t, "mariadb", mariadbAdv.MessageParams["package"])
+	assert.Equal(t, "10.11.6", mariadbAdv.MessageParams["installedVersion"])
 }
 
 func TestExtractRuntimeVersion_IgnoresUnknownAndEmpty(t *testing.T) {

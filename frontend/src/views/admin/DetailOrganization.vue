@@ -137,7 +137,11 @@
                   variant="outline"
                   class="shrink-0 font-mono text-[10px]"
                 >
-                  MySQL {{ env.mysqlVersion }}
+                  {{
+                    /^(mysql|mariadb)\b/i.test(env.mysqlVersion)
+                      ? env.mysqlVersion
+                      : `MySQL ${env.mysqlVersion}`
+                  }}
                 </Badge>
               </RouterLink>
             </div>

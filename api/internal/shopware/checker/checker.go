@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
 type Status string
@@ -363,7 +365,7 @@ func withRuntimeVersions(input Input, output *Output) Input {
 		return input
 	}
 
-	installed := make(map[string]string, len(input.InstalledPackages)+3)
+	installed := make(map[string]string, len(input.InstalledPackages)+2)
 	for k, v := range input.InstalledPackages {
 		installed[k] = v
 	}
@@ -371,8 +373,9 @@ func withRuntimeVersions(input Input, output *Output) Input {
 		installed["php"] = *phpVersion
 	}
 	if mysqlVersion != nil && *mysqlVersion != "" {
-		installed["mysql"] = *mysqlVersion
-		installed["mariadb"] = *mysqlVersion
+		if pkg, ver := version.ParseDatabaseVersion(*mysqlVersion); pkg != "" && ver != "" {
+			installed[pkg] = ver
+		}
 	}
 	input.InstalledPackages = installed
 	return input

@@ -12,6 +12,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/sbom"
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
 // froshToolsExtension is the technical name of the plugin that serves the SBOM
@@ -266,7 +267,7 @@ func withRuntimePackageVersions(packages map[string]string, phpVersion, mysqlVer
 	if !hasPhp && !hasMysql {
 		return packages
 	}
-	out := make(map[string]string, len(packages)+3)
+	out := make(map[string]string, len(packages)+2)
 	for k, v := range packages {
 		out[k] = v
 	}
@@ -274,8 +275,9 @@ func withRuntimePackageVersions(packages map[string]string, phpVersion, mysqlVer
 		out["php"] = *phpVersion
 	}
 	if hasMysql {
-		out["mysql"] = *mysqlVersion
-		out["mariadb"] = *mysqlVersion
+		if pkg, ver := version.ParseDatabaseVersion(*mysqlVersion); pkg != "" && ver != "" {
+			out[pkg] = ver
+		}
 	}
 	return out
 }

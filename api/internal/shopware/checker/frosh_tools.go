@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"strings"
+
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
 type froshToolsCheck struct {
@@ -147,6 +149,14 @@ func extractRuntimeVersion(c froshToolsCheck, output *Output) {
 	case c.ID == "php-version" || c.Snippet == "PHP Version" || c.Snippet == "phpGood" || c.Snippet == "phpOutdated":
 		output.SetPhpVersion(v)
 	case c.ID == "mysql" || c.Snippet == "MySQL Version" || c.Snippet == "MariaDB Version" || c.Snippet == "mysqlGood" || c.Snippet == "mysqlOutdated":
-		output.SetMysqlVersion(v)
+		pkg, ver := version.ParseDatabaseVersion(v)
+		if ver == "" {
+			return
+		}
+		if c.Snippet == "MariaDB Version" || pkg == "mariadb" {
+			output.SetMysqlVersion("MariaDB " + ver)
+			return
+		}
+		output.SetMysqlVersion("MySQL " + ver)
 	}
 }

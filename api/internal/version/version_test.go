@@ -48,3 +48,25 @@ func TestSatisfies(t *testing.T) {
 		}
 	}
 }
+
+func TestParseDatabaseVersion(t *testing.T) {
+	cases := []struct {
+		raw     string
+		wantPkg string
+		wantVer string
+	}{
+		{"MySQL 8.0.36", "mysql", "8.0.36"},
+		{"MariaDB 10.11.6", "mariadb", "10.11.6"},
+		{"8.0.36", "mysql", "8.0.36"},
+		{"10.11.6", "mariadb", "10.11.6"},
+		{"10.11.8-MariaDB-0ubuntu0.24.04.1", "mariadb", "10.11.8"},
+		{"", "", ""},
+		{"unknown", "", ""},
+	}
+	for _, c := range cases {
+		pkg, ver := ParseDatabaseVersion(c.raw)
+		if pkg != c.wantPkg || ver != c.wantVer {
+			t.Errorf("ParseDatabaseVersion(%q) = (%q, %q), want (%q, %q)", c.raw, pkg, ver, c.wantPkg, c.wantVer)
+		}
+	}
+}

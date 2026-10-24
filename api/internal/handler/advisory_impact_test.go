@@ -114,15 +114,15 @@ func TestAdminAdvisoryImpactFromInventory(t *testing.T) {
 	assert.Equal(t, 2, updated.EnvironmentCount)
 
 	// Runtime versions (php, mysql, mariadb) stored on the environment also participate in impact previews.
-	_, err = env.Pool.Exec(ctx, `UPDATE environment SET php_version = '8.3.14', mysql_version = '8.0.36' WHERE id = $1`, prod)
+	_, err = env.Pool.Exec(ctx, `UPDATE environment SET php_version = '8.3.14', mysql_version = 'MySQL 8.0.36' WHERE id = $1`, prod)
 	require.NoError(t, err)
-	_, err = env.Pool.Exec(ctx, `UPDATE environment SET php_version = '8.4.2', mysql_version = '10.11.6' WHERE id = $1`, other)
+	_, err = env.Pool.Exec(ctx, `UPDATE environment SET php_version = '8.4.2', mysql_version = 'MariaDB 10.11.6' WHERE id = $1`, other)
 	require.NoError(t, err)
 
 	runtimeImpact := preview(adminToken, []api.AdvisoryPackageInput{
 		{PackageName: "php", AffectedVersions: "<8.4.0"},
 		{PackageName: "mysql", AffectedVersions: ">=8.0.0,<8.0.40"},
-		{PackageName: "mariadb", AffectedVersions: ">=10.11.0,<10.11.10"},
+		{PackageName: "mariadb", AffectedVersions: "<10.11.10"},
 	}, http.StatusOK)
 	assert.Equal(t, 2, runtimeImpact.ShopCount)
 	assert.Equal(t, 2, runtimeImpact.EnvironmentCount)
@@ -132,7 +132,7 @@ func TestAdminAdvisoryImpactFromInventory(t *testing.T) {
 		{EnvironmentId: prod, EnvironmentName: "Production", PackageName: "php", InstalledVersion: "8.3.14", AffectedVersions: "<8.4.0"},
 	}, runtimeImpact.Shops[0].Matches)
 	assert.Equal(t, []api.AdminAdvisoryImpactMatch{
-		{EnvironmentId: other, EnvironmentName: "Production", PackageName: "mariadb", InstalledVersion: "10.11.6", AffectedVersions: ">=10.11.0,<10.11.10"},
+		{EnvironmentId: other, EnvironmentName: "Production", PackageName: "mariadb", InstalledVersion: "10.11.6", AffectedVersions: "<10.11.10"},
 	}, runtimeImpact.Shops[1].Matches)
 
 	// Previewing neither saves package ranges nor publishes match rows.

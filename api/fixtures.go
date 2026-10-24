@@ -404,8 +404,8 @@ func (s *seeder) seedShopAndEnvironments(org orgFixture) (int32, []int32, error)
 		phpVersion      string
 		mysqlVersion    string
 	}{
-		{name: "Production", shopwareVersion: "6.6.0.0", phpVersion: "8.3.14", mysqlVersion: "8.0.36"},
-		{name: "Staging", shopwareVersion: "6.5.8.0", phpVersion: "8.2.25", mysqlVersion: "8.0.36"},
+		{name: "Production", shopwareVersion: "6.6.0.0", phpVersion: "8.3.14", mysqlVersion: "MySQL 8.0.36"},
+		{name: "Staging", shopwareVersion: "6.5.8.0", phpVersion: "8.2.25", mysqlVersion: "MariaDB 10.11.6"},
 	}
 
 	var environmentIDs []int32
