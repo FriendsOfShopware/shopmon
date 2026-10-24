@@ -63,6 +63,16 @@ WHERE (environment_advisory_match.installed_version, environment_advisory_match.
 -- name: DeleteEnvironmentAdvisoryMatches :exec
 DELETE FROM environment_advisory_match WHERE environment_id = $1;
 
+-- name: DeleteEnvironmentComposerAdvisoryMatches :exec
+DELETE FROM environment_advisory_match
+WHERE environment_id = $1
+  AND package_name NOT IN ('php', 'mysql', 'mariadb');
+
+-- name: DeleteEnvironmentRuntimeAdvisoryMatches :exec
+DELETE FROM environment_advisory_match
+WHERE environment_id = $1
+  AND package_name IN ('php', 'mysql', 'mariadb');
+
 -- Advisories this environment's subscribers have already been alerted about.
 -- The rematch uses this — not the presence of a match row — to decide what is
 -- new, so an alert that failed to dispatch is retried on the next pass.

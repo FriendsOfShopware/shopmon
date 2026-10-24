@@ -340,7 +340,7 @@ func TestCheckFroshTools_DistinguishesMariaDBFromMySQL(t *testing.T) {
 	client := &mockHTTPClient{
 		responses: map[string][]byte{
 			"/_action/frosh-tools/health/status": []byte(`[
-				{"id":"mysql","snippet":"MariaDB Version","state":"STATE_OK","current":"10.11.6","recommended":"min 10.11"}
+				{"id":"mysql","snippet":"MariaDB Version","state":"STATE_OK","current":"10.11.8-MariaDB-0ubuntu0.24.04.1","recommended":"min 10.11"}
 			]`),
 			"/_action/frosh-tools/performance/status": []byte(`[]`),
 		},
@@ -373,7 +373,7 @@ func TestCheckFroshTools_DistinguishesMariaDBFromMySQL(t *testing.T) {
 	})
 
 	require.NotNil(t, result.DatabaseVersion)
-	assert.Equal(t, "MariaDB 10.11.6", *result.DatabaseVersion)
+	assert.Equal(t, "MariaDB 10.11.8-MariaDB-0ubuntu0.24.04.1", *result.DatabaseVersion)
 
 	_, mysqlMatched := findCheck(result.Checks, "security.SHOPMON-2026-0003")
 	assert.False(t, mysqlMatched, "MariaDB environment must not match a mysql advisory")
@@ -381,7 +381,7 @@ func TestCheckFroshTools_DistinguishesMariaDBFromMySQL(t *testing.T) {
 	mariadbAdv, ok := findCheck(result.Checks, "security.SHOPMON-2026-0004")
 	require.True(t, ok, "expected MariaDB advisory check to be emitted")
 	assert.Equal(t, "mariadb", mariadbAdv.MessageParams["package"])
-	assert.Equal(t, "10.11.6", mariadbAdv.MessageParams["installedVersion"])
+	assert.Equal(t, "10.11.8-MariaDB-0ubuntu0.24.04.1", mariadbAdv.MessageParams["installedVersion"])
 }
 
 func TestExtractRuntimeVersion_IgnoresUnknownAndEmpty(t *testing.T) {

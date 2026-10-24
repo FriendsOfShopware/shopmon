@@ -17,7 +17,7 @@ UPDATE "environment" e
 SET "database_version" = CASE
   WHEN ec."check_id" = 'frosh.MariaDB Version'
     OR ec."params"->>'snippet' = 'MariaDB Version'
-    OR BTRIM(ec."params"->>'current') ~* '^(mariadb|10\.|11\.)'
+    OR BTRIM(ec."params"->>'current') ~* '(mariadb|^(10|11)\.)'
   THEN 'MariaDB ' || regexp_replace(BTRIM(ec."params"->>'current'), '^MariaDB\s+', '', 'i')
   ELSE 'MySQL ' || regexp_replace(BTRIM(ec."params"->>'current'), '^MySQL\s+', '', 'i')
 END

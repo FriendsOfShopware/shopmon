@@ -59,7 +59,9 @@ func TestParseDatabaseVersion(t *testing.T) {
 		{"MariaDB 10.11.6", "mariadb", "10.11.6"},
 		{"8.0.36", "mysql", "8.0.36"},
 		{"10.11.6", "mariadb", "10.11.6"},
-		{"10.11.8-MariaDB-0ubuntu0.24.04.1", "mariadb", "10.11.8"},
+		{"10.11.8-MariaDB-0ubuntu0.24.04.1", "mariadb", "10.11.8-MariaDB-0ubuntu0.24.04.1"},
+		{"MariaDB 10.11.8-MariaDB-0ubuntu0.24.04.1", "mariadb", "10.11.8-MariaDB-0ubuntu0.24.04.1"},
+		{"MySQL 8.0.36-0ubuntu0.24.04.1", "mysql", "8.0.36-0ubuntu0.24.04.1"},
 		{"", "", ""},
 		{"unknown", "", ""},
 	}

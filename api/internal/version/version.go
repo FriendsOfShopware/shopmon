@@ -14,12 +14,19 @@ import (
 // distroSuffixRe matches Linux distribution package suffixes appended to
 // runtime versions (e.g. PHP's "8.3.6-0ubuntu0.24.04.1" or
 // "8.2.25-1+ubuntu22.04.1+deb.sury.org+1", or MariaDB's
-// "10.11.8-MariaDB-0ubuntu0.24.04.1"). Standard pre-release tags
-// (alpha, beta, rc, dev, patch) are preserved.
-var distroSuffixRe = regexp.MustCompile(`(?i)^v?(\d+\.\d+(?:\.\d+)*)-(?:\d|ubuntu|deb|mariadb|el\d|alpine).*$`)
+// "10.11.8-MariaDB-0ubuntu0.24.04.1" or "5.5.5-10.11.8-MariaDB-0ubuntu0.24.04.1").
+// Standard pre-release tags (alpha, beta, rc, dev, patch) are preserved.
+var distroSuffixRe = regexp.MustCompile(`(?i)^(?:5\.5\.5-)?(?:mariadb-)?v?(\d+\.\d+(?:\.\d+)*)-(?:\d|ubuntu|deb|mariadb|el\d|alpine).*$`)
 
 func normalizeVersion(v string) string {
 	v = strings.TrimSpace(v)
+	lower := strings.ToLower(v)
+	switch {
+	case strings.HasPrefix(lower, "mariadb "):
+		v = strings.TrimSpace(v[len("mariadb "):])
+	case strings.HasPrefix(lower, "mysql "):
+		v = strings.TrimSpace(v[len("mysql "):])
+	}
 	if m := distroSuffixRe.FindStringSubmatch(v); m != nil {
 		return m[1]
 	}
@@ -27,9 +34,11 @@ func normalizeVersion(v string) string {
 }
 
 // ParseDatabaseVersion splits a stored or reported database version string
-// (such as "MySQL 8.0.36", "MariaDB 10.11.6", or a raw version string) into its
-// advisory package name ("mysql" or "mariadb") and version number ("8.0.36" or
-// "10.11.6").
+// (such as "MySQL 8.0.36-0ubuntu0.24.04.1", "MariaDB 10.11.8-MariaDB-0ubuntu0.24.04.1",
+// or a raw version string) into its advisory package name ("mysql" or "mariadb")
+// and exact version string ("8.0.36-0ubuntu0.24.04.1" or
+// "10.11.8-MariaDB-0ubuntu0.24.04.1"). Distribution suffixes are preserved for
+// storage and display; Compare and Satisfies normalize them during evaluation.
 func ParseDatabaseVersion(raw string) (string, string) {
 	v := strings.TrimSpace(raw)
 	if v == "" || strings.EqualFold(v, "unknown") {
@@ -38,27 +47,21 @@ func ParseDatabaseVersion(raw string) (string, string) {
 	lower := strings.ToLower(v)
 	switch {
 	case strings.HasPrefix(lower, "mariadb "):
-		ver := normalizeVersion(strings.TrimSpace(v[len("mariadb "):]))
-		if ver == "" {
+		ver := strings.TrimSpace(v[len("mariadb "):])
+		if ver == "" || strings.EqualFold(ver, "unknown") {
 			return "", ""
 		}
 		return "mariadb", ver
 	case strings.HasPrefix(lower, "mysql "):
-		ver := normalizeVersion(strings.TrimSpace(v[len("mysql "):]))
-		if ver == "" {
+		ver := strings.TrimSpace(v[len("mysql "):])
+		if ver == "" || strings.EqualFold(ver, "unknown") {
 			return "", ""
 		}
 		return "mysql", ver
-	case strings.Contains(lower, "mariadb"):
-		ver := normalizeVersion(v)
-		if ver == "" {
-			return "", ""
-		}
-		return "mariadb", ver
-	case strings.HasPrefix(v, "10.") || strings.HasPrefix(v, "11."):
-		return "mariadb", normalizeVersion(v)
+	case strings.Contains(lower, "mariadb") || strings.HasPrefix(v, "10.") || strings.HasPrefix(v, "11."):
+		return "mariadb", v
 	default:
-		return "mysql", normalizeVersion(v)
+		return "mysql", v
 	}
 }
 

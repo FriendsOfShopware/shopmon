@@ -471,28 +471,24 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		databaseVersion = env.DatabaseVersion
 	}
 
-	if sbomRes.fetched && sbomRes.err == "" && (phpVersion != nil || databaseVersion != nil) {
-		installed := withRuntimePackageVersions(sbomPackageVersions(sbomRes), phpVersion, databaseVersion)
-		if matches, err := h.matchAdvisories(ctx, env.ID, installed); err == nil {
-			sbomRes.matches = matches
-		}
-	}
+	runtimeAdvisories := h.matchRuntimeAdvisories(ctx, env.ID, phpVersion, databaseVersion)
 
 	if err := h.persistScrapeResult(ctx, env, scrapeResult{
-		status:          newStatus,
-		shopwareVersion: shopConfig.Version,
-		phpVersion:      phpVersion,
-		databaseVersion: databaseVersion,
-		extensions:      extensions,
-		scheduledTasks:  scheduledTasks,
-		queueEntries:    queueEntries,
-		cacheInfo:       cacheInfo,
-		missing:         missing,
-		checks:          finalChecks,
-		extensionsDiff:  extensionsDiff,
-		favicon:         favicon,
-		transition:      transition,
-		sbom:            sbomRes,
+		status:            newStatus,
+		shopwareVersion:   shopConfig.Version,
+		phpVersion:        phpVersion,
+		databaseVersion:   databaseVersion,
+		extensions:        extensions,
+		scheduledTasks:    scheduledTasks,
+		queueEntries:      queueEntries,
+		cacheInfo:         cacheInfo,
+		missing:           missing,
+		checks:            finalChecks,
+		extensionsDiff:    extensionsDiff,
+		favicon:           favicon,
+		transition:        transition,
+		sbom:              sbomRes,
+		runtimeAdvisories: runtimeAdvisories,
 	}); err != nil {
 		return err
 	}
@@ -592,20 +588,21 @@ func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) ([]checker.
 // to be written to the database. Extensions must already be classified and
 // resolved against the store catalog (isStore, LatestVersion).
 type scrapeResult struct {
-	status          string
-	shopwareVersion string
-	phpVersion      *string
-	databaseVersion *string
-	extensions      []extensionEntry
-	scheduledTasks  []shopwareScheduledTask
-	queueEntries    []shopwareQueueEntry
-	cacheInfo       shopwareCacheInfo
-	missing         checker.MissingData
-	checks          []checker.Check
-	extensionsDiff  []extensionDiff
-	favicon         *string
-	transition      *statusTransition
-	sbom            sbomResult
+	status            string
+	shopwareVersion   string
+	phpVersion        *string
+	databaseVersion   *string
+	extensions        []extensionEntry
+	scheduledTasks    []shopwareScheduledTask
+	queueEntries      []shopwareQueueEntry
+	cacheInfo         shopwareCacheInfo
+	missing           checker.MissingData
+	checks            []checker.Check
+	extensionsDiff    []extensionDiff
+	favicon           *string
+	transition        *statusTransition
+	sbom              sbomResult
+	runtimeAdvisories runtimeMatchResult
 }
 
 // persistScrapeResult writes a scrape result in a single transaction. All
@@ -759,6 +756,9 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 
 	if err := persistSbom(ctx, txQueries, env.ID, res.sbom); err != nil {
 		return fmt.Errorf("persist sbom: %w", err)
+	}
+	if err := persistRuntimeAdvisories(ctx, txQueries, env.ID, res.runtimeAdvisories); err != nil {
+		return fmt.Errorf("persist runtime advisories: %w", err)
 	}
 
 	// Upsert checks and prune the ones no longer reported, instead of the previous

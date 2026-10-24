@@ -76,13 +76,15 @@
         />
         <StatCard
           :icon="IconCode"
-          :value="environment.phpVersion ?? '—'"
+          :value="shortRuntimeVersion(environment.phpVersion)"
+          :title="environment.phpVersion ?? undefined"
           :label="t('admin.phpVersion')"
           color="primary"
         />
         <StatCard
           :icon="IconDatabase"
-          :value="environment.databaseVersion ?? '—'"
+          :value="shortRuntimeVersion(environment.databaseVersion)"
+          :title="environment.databaseVersion ?? undefined"
           :label="t('admin.databaseVersion')"
           color="primary"
         />
@@ -384,6 +386,14 @@ function checkLevelClass(level: string): string {
 
 function isOutdated(ext: AdminEnvironmentExtension): boolean {
   return Boolean(ext.latestVersion && ext.latestVersion !== ext.version);
+}
+
+function shortRuntimeVersion(value?: string | null): string {
+  if (!value) return "—";
+  return value.replace(
+    /^((?:(?:MySQL|MariaDB)\s+)?(?:5\.5\.5-)?(?:mariadb-)?v?\d+\.\d+(?:\.\d+)*)-(?:\d|ubuntu|deb|mariadb|el\d|alpine).*$/i,
+    "$1",
+  );
 }
 
 async function loadEnvironment(id: number) {

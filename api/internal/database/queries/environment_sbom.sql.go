@@ -198,6 +198,28 @@ func (q *Queries) DeleteEnvironmentAdvisoryMatches(ctx context.Context, environm
 	return err
 }
 
+const deleteEnvironmentComposerAdvisoryMatches = `-- name: DeleteEnvironmentComposerAdvisoryMatches :exec
+DELETE FROM environment_advisory_match
+WHERE environment_id = $1
+  AND package_name NOT IN ('php', 'mysql', 'mariadb')
+`
+
+func (q *Queries) DeleteEnvironmentComposerAdvisoryMatches(ctx context.Context, environmentID int32) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentComposerAdvisoryMatches, environmentID)
+	return err
+}
+
+const deleteEnvironmentRuntimeAdvisoryMatches = `-- name: DeleteEnvironmentRuntimeAdvisoryMatches :exec
+DELETE FROM environment_advisory_match
+WHERE environment_id = $1
+  AND package_name IN ('php', 'mysql', 'mariadb')
+`
+
+func (q *Queries) DeleteEnvironmentRuntimeAdvisoryMatches(ctx context.Context, environmentID int32) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentRuntimeAdvisoryMatches, environmentID)
+	return err
+}
+
 const deleteEnvironmentSbomComponentsNotIn = `-- name: DeleteEnvironmentSbomComponentsNotIn :exec
 DELETE FROM environment_sbom_component
 WHERE environment_id = $1 AND package_name != ALL($2::text[])

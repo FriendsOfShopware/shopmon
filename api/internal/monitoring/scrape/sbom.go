@@ -221,8 +221,10 @@ func persistSbom(ctx context.Context, q *queries.Queries, environmentID int32, r
 
 	// Matches are fully recomputed from the current inventory, so replacing the
 	// set is simpler (and safer) than diffing: a package that was upgraded out
-	// of range must lose its match row.
-	if err := q.DeleteEnvironmentAdvisoryMatches(ctx, environmentID); err != nil {
+	// of range must lose its match row. Runtime matches (php, mysql, mariadb)
+	// are managed separately by persistRuntimeAdvisories so an SBOM write never
+	// wipes them.
+	if err := q.DeleteEnvironmentComposerAdvisoryMatches(ctx, environmentID); err != nil {
 		return err
 	}
 	for _, m := range res.matches {
@@ -246,6 +248,62 @@ func persistSbom(ctx context.Context, q *queries.Queries, environmentID int32, r
 		GeneratedAt:    res.generatedAt,
 		LastError:      nil,
 	})
+}
+
+type runtimeMatchResult struct {
+	matched bool
+	matches []sbom.Match
+}
+
+// matchRuntimeAdvisories evaluates an environment's PHP and database versions
+// against the advisory catalog. It runs independently of the Composer SBOM so
+// shops without the SBOM endpoint (or with a transient SBOM error) still
+// refresh their runtime advisory matches on every scrape. On a catalog read
+// error, matched is false and persistRuntimeAdvisories leaves existing runtime
+// match rows untouched.
+func (h *Service) matchRuntimeAdvisories(ctx context.Context, environmentID int32, phpVersion, databaseVersion *string) runtimeMatchResult {
+	installed := withRuntimePackageVersions(nil, phpVersion, databaseVersion)
+	if len(installed) == 0 {
+		return runtimeMatchResult{}
+	}
+
+	ctx, span := tracer.Start(ctx, "environment.scrape.runtime_advisories")
+	defer span.End()
+
+	matches, err := h.matchAdvisories(ctx, environmentID, installed)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to match runtime versions against advisory catalog, keeping previous runtime matches",
+			"environmentId", environmentID, "error", err)
+		span.RecordError(err)
+		return runtimeMatchResult{}
+	}
+
+	span.SetAttributes(attribute.Int("runtime.advisory_matches", len(matches)))
+	return runtimeMatchResult{
+		matched: true,
+		matches: matches,
+	}
+}
+
+func persistRuntimeAdvisories(ctx context.Context, q *queries.Queries, environmentID int32, res runtimeMatchResult) error {
+	if !res.matched {
+		return nil
+	}
+	if err := q.DeleteEnvironmentRuntimeAdvisoryMatches(ctx, environmentID); err != nil {
+		return err
+	}
+	for _, m := range res.matches {
+		if err := q.UpsertEnvironmentAdvisoryMatch(ctx, queries.UpsertEnvironmentAdvisoryMatchParams{
+			EnvironmentID:    environmentID,
+			AdvisoryID:       m.AdvisoryID,
+			PackageName:      m.PackageName,
+			InstalledVersion: m.InstalledVersion,
+			AffectedVersions: m.AffectedVersions,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // sbomPackageVersions flattens a scrape's SBOM into the package name -> version

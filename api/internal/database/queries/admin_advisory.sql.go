@@ -41,7 +41,7 @@ SELECT environment_id, environment_name, shop_id, shop_name, organization_id, or
   JOIN organization o ON o.id = e.organization_id
   WHERE 'mysql' = ANY($1::text[])
     AND e.database_version IS NOT NULL AND e.database_version <> ''
-    AND e.database_version !~* '^(mariadb|10\.|11\.)'
+    AND e.database_version !~* '(mariadb|^(10|11)\.)'
   UNION ALL
   SELECT e.id AS environment_id, e.name AS environment_name,
          e.shop_id, s.name AS shop_name,
@@ -53,7 +53,7 @@ SELECT environment_id, environment_name, shop_id, shop_name, organization_id, or
   JOIN organization o ON o.id = e.organization_id
   WHERE 'mariadb' = ANY($1::text[])
     AND e.database_version IS NOT NULL AND e.database_version <> ''
-    AND e.database_version ~* '^(mariadb|10\.|11\.)'
+    AND e.database_version ~* '(mariadb|^(10|11)\.)'
 ) inv
 ORDER BY organization_name, organization_id, shop_name, shop_id, environment_name, environment_id, package_name
 `
