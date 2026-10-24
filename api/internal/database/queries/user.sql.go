@@ -215,7 +215,8 @@ func (q *Queries) GetUserChangelogsByOrg(ctx context.Context, arg GetUserChangel
 }
 
 const getUserEnvironments = `-- name: GetUserEnvironments :many
-SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.last_scraped_at, e.last_scraped_error,
+SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.mysql_version,
+       e.last_scraped_at, e.last_scraped_error,
        e.organization_id, o.name AS organization_name, s.id AS shop_id, s.name AS shop_name
 FROM environment e
 JOIN member m ON m.organization_id = e.organization_id
@@ -232,6 +233,8 @@ type GetUserEnvironmentsRow struct {
 	Favicon          *string          `json:"favicon"`
 	Status           string           `json:"status"`
 	ShopwareVersion  string           `json:"shopware_version"`
+	PhpVersion       *string          `json:"php_version"`
+	MysqlVersion     *string          `json:"mysql_version"`
 	LastScrapedAt    pgtype.Timestamp `json:"last_scraped_at"`
 	LastScrapedError *string          `json:"last_scraped_error"`
 	OrganizationID   string           `json:"organization_id"`
@@ -256,6 +259,8 @@ func (q *Queries) GetUserEnvironments(ctx context.Context, userID string) ([]Get
 			&i.Favicon,
 			&i.Status,
 			&i.ShopwareVersion,
+			&i.PhpVersion,
+			&i.MysqlVersion,
 			&i.LastScrapedAt,
 			&i.LastScrapedError,
 			&i.OrganizationID,
@@ -274,7 +279,8 @@ func (q *Queries) GetUserEnvironments(ctx context.Context, userID string) ([]Get
 }
 
 const getUserEnvironmentsByOrg = `-- name: GetUserEnvironmentsByOrg :many
-SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.last_scraped_at, e.last_scraped_error,
+SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.mysql_version,
+       e.last_scraped_at, e.last_scraped_error,
        e.organization_id, o.name AS organization_name, s.id AS shop_id, s.name AS shop_name
 FROM environment e
 JOIN member m ON m.organization_id = e.organization_id
@@ -296,6 +302,8 @@ type GetUserEnvironmentsByOrgRow struct {
 	Favicon          *string          `json:"favicon"`
 	Status           string           `json:"status"`
 	ShopwareVersion  string           `json:"shopware_version"`
+	PhpVersion       *string          `json:"php_version"`
+	MysqlVersion     *string          `json:"mysql_version"`
 	LastScrapedAt    pgtype.Timestamp `json:"last_scraped_at"`
 	LastScrapedError *string          `json:"last_scraped_error"`
 	OrganizationID   string           `json:"organization_id"`
@@ -320,6 +328,8 @@ func (q *Queries) GetUserEnvironmentsByOrg(ctx context.Context, arg GetUserEnvir
 			&i.Favicon,
 			&i.Status,
 			&i.ShopwareVersion,
+			&i.PhpVersion,
+			&i.MysqlVersion,
 			&i.LastScrapedAt,
 			&i.LastScrapedError,
 			&i.OrganizationID,

@@ -32,6 +32,10 @@ func TestSatisfies(t *testing.T) {
 		{"6.6.10.0", "<6.6.10.18|>=6.7.0.0,<6.7.10.1", true},
 		{"6.6.10.18", "<6.6.10.18|>=6.7.0.0,<6.7.10.1", false},
 		{"6.5.0.0", ">=6.7.0.0,<6.7.10.1", false},
+		{"8.3.0-0ubuntu0.24.04.1", ">=8.3.0,<8.3.36", true},
+		{"8.2.25-1+ubuntu22.04.1+deb.sury.org+1", ">=8.2.0,<8.2.35", true},
+		{"8.2.35-1+ubuntu22.04.1+deb.sury.org+1", ">=8.2.0,<8.2.35", false},
+		{"10.11.8-MariaDB-0ubuntu0.24.04.1", ">=10.11.0,<10.11.10", true},
 	}
 	for _, c := range cases {
 		got, err := Satisfies(c.version, c.constraint)

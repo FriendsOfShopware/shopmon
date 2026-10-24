@@ -61,7 +61,7 @@
       </div>
 
       <!-- Stat cards -->
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           :icon="IconHeartPulse"
           :value="friendlyStatusLabel"
@@ -72,6 +72,18 @@
           :icon="IconTag"
           :value="environment.shopwareVersion"
           :label="t('admin.shopwareVersion')"
+          color="primary"
+        />
+        <StatCard
+          :icon="IconCode"
+          :value="environment.phpVersion ?? '—'"
+          :label="t('admin.phpVersion')"
+          color="primary"
+        />
+        <StatCard
+          :icon="IconDatabase"
+          :value="environment.mysqlVersion ?? '—'"
+          :label="t('admin.mysqlVersion')"
           color="primary"
         />
         <StatCard
@@ -317,6 +329,8 @@ import EmptyState from "@/components/EmptyState.vue";
 
 import IconHeartPulse from "~icons/fa6-solid/heart-pulse";
 import IconTag from "~icons/fa6-solid/tag";
+import IconCode from "~icons/fa6-solid/code";
+import IconDatabase from "~icons/fa6-solid/database";
 import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import IconClock from "~icons/fa6-solid/clock";
 import IconShieldHalved from "~icons/fa6-solid/shield-halved";

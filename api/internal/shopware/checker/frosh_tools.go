@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"strings"
 )
 
 type froshToolsCheck struct {
@@ -96,6 +97,8 @@ func mapFroshChecks(checks []froshToolsCheck, output *Output) {
 			continue
 		}
 
+		extractRuntimeVersion(c, output)
+
 		key := c.Snippet
 		if key == "" {
 			key = c.ID
@@ -128,5 +131,22 @@ func mapFroshChecks(checks []froshToolsCheck, output *Output) {
 		case "STATE_ERROR":
 			output.Error(id, messageKey, params, SourceFroshTools, c.URL)
 		}
+	}
+}
+
+func extractRuntimeVersion(c froshToolsCheck, output *Output) {
+	if c.Current == nil {
+		return
+	}
+	v := strings.TrimSpace(*c.Current)
+	if v == "" || strings.EqualFold(v, "unknown") {
+		return
+	}
+
+	switch {
+	case c.ID == "php-version" || c.Snippet == "PHP Version" || c.Snippet == "phpGood" || c.Snippet == "phpOutdated":
+		output.SetPhpVersion(v)
+	case c.ID == "mysql" || c.Snippet == "MySQL Version" || c.Snippet == "MariaDB Version" || c.Snippet == "mysqlGood" || c.Snippet == "mysqlOutdated":
+		output.SetMysqlVersion(v)
 	}
 }

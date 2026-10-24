@@ -52,13 +52,24 @@ func (s *Service) rematchEnvironment(ctx context.Context, environmentID int32, i
 	if err != nil {
 		return 0, fmt.Errorf("get sbom components: %w", err)
 	}
-	if len(components) == 0 {
-		return 0, nil
+	env, err := s.queries.GetEnvironmentForScrape(ctx, environmentID)
+	if err != nil {
+		return 0, fmt.Errorf("get environment for rematch: %w", err)
 	}
 
-	installed := make(map[string]string, len(components))
+	installed := make(map[string]string, len(components)+3)
 	for _, c := range components {
 		installed[c.PackageName] = c.Version
+	}
+	if env.PhpVersion != nil && *env.PhpVersion != "" {
+		installed["php"] = *env.PhpVersion
+	}
+	if env.MysqlVersion != nil && *env.MysqlVersion != "" {
+		installed["mysql"] = *env.MysqlVersion
+		installed["mariadb"] = *env.MysqlVersion
+	}
+	if len(installed) == 0 {
+		return 0, nil
 	}
 
 	matches := index.Match(installed)

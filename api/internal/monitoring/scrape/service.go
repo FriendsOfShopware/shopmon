@@ -410,7 +410,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		// Composer package inventory from the FroshTools SBOM. Empty when the
 		// shop cannot serve one, in which case checkSecurity falls back to
 		// matching the Shopware core version only.
-		InstalledPackages:      sbomPackageVersions(sbomRes),
+		InstalledPackages:      withRuntimePackageVersions(sbomPackageVersions(sbomRes), env.PhpVersion, env.MysqlVersion),
 		SecurityPluginFixes:    securityPluginFixes,
 		SecurityPluginCoverage: securityPluginCoverage,
 	}
@@ -462,9 +462,27 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	// call with its own timeout and must not run while holding row locks.
 	favicon := getFavicon(ctx, env.Url)
 
+	phpVersion := checkerResult.PhpVersion
+	if phpVersion == nil {
+		phpVersion = env.PhpVersion
+	}
+	mysqlVersion := checkerResult.MysqlVersion
+	if mysqlVersion == nil {
+		mysqlVersion = env.MysqlVersion
+	}
+
+	if sbomRes.fetched && sbomRes.err == "" && (phpVersion != nil || mysqlVersion != nil) {
+		installed := withRuntimePackageVersions(sbomPackageVersions(sbomRes), phpVersion, mysqlVersion)
+		if matches, err := h.matchAdvisories(ctx, env.ID, installed); err == nil {
+			sbomRes.matches = matches
+		}
+	}
+
 	if err := h.persistScrapeResult(ctx, env, scrapeResult{
 		status:          newStatus,
 		shopwareVersion: shopConfig.Version,
+		phpVersion:      phpVersion,
+		mysqlVersion:    mysqlVersion,
 		extensions:      extensions,
 		scheduledTasks:  scheduledTasks,
 		queueEntries:    queueEntries,
@@ -576,6 +594,8 @@ func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) ([]checker.
 type scrapeResult struct {
 	status          string
 	shopwareVersion string
+	phpVersion      *string
+	mysqlVersion    *string
 	extensions      []extensionEntry
 	scheduledTasks  []shopwareScheduledTask
 	queueEntries    []shopwareQueueEntry
@@ -844,6 +864,8 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 	if err := txQueries.UpdateEnvironmentAfterScrape(ctx, queries.UpdateEnvironmentAfterScrapeParams{
 		Status:           res.status,
 		ShopwareVersion:  res.shopwareVersion,
+		PhpVersion:       res.phpVersion,
+		MysqlVersion:     res.mysqlVersion,
 		LastScrapedError: nil,
 		Favicon:          res.favicon,
 		EnvironmentImage: nil,

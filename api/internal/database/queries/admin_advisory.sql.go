@@ -10,16 +10,48 @@ import (
 )
 
 const listAdminAdvisoryInventory = `-- name: ListAdminAdvisoryInventory :many
-SELECT c.environment_id, e.name AS environment_name,
-       e.shop_id, s.name AS shop_name,
-       e.organization_id, o.name AS organization_name,
-       c.package_name, c.version
-FROM environment_sbom_component c
-JOIN environment e ON e.id = c.environment_id
-JOIN shop s ON s.id = e.shop_id
-JOIN organization o ON o.id = e.organization_id
-WHERE c.package_name = ANY($1::text[])
-ORDER BY o.name, o.id, s.name, s.id, e.name, e.id, c.package_name
+SELECT environment_id, environment_name, shop_id, shop_name, organization_id, organization_name, package_name, version FROM (
+  SELECT c.environment_id, e.name AS environment_name,
+         e.shop_id, s.name AS shop_name,
+         e.organization_id, o.name AS organization_name,
+         c.package_name, c.version
+  FROM environment_sbom_component c
+  JOIN environment e ON e.id = c.environment_id
+  JOIN shop s ON s.id = e.shop_id
+  JOIN organization o ON o.id = e.organization_id
+  WHERE c.package_name = ANY($1::text[])
+  UNION ALL
+  SELECT e.id AS environment_id, e.name AS environment_name,
+         e.shop_id, s.name AS shop_name,
+         e.organization_id, o.name AS organization_name,
+         'php'::text AS package_name, e.php_version AS version
+  FROM environment e
+  JOIN shop s ON s.id = e.shop_id
+  JOIN organization o ON o.id = e.organization_id
+  WHERE 'php' = ANY($1::text[])
+    AND e.php_version IS NOT NULL AND e.php_version <> ''
+  UNION ALL
+  SELECT e.id AS environment_id, e.name AS environment_name,
+         e.shop_id, s.name AS shop_name,
+         e.organization_id, o.name AS organization_name,
+         'mysql'::text AS package_name, e.mysql_version AS version
+  FROM environment e
+  JOIN shop s ON s.id = e.shop_id
+  JOIN organization o ON o.id = e.organization_id
+  WHERE 'mysql' = ANY($1::text[])
+    AND e.mysql_version IS NOT NULL AND e.mysql_version <> ''
+  UNION ALL
+  SELECT e.id AS environment_id, e.name AS environment_name,
+         e.shop_id, s.name AS shop_name,
+         e.organization_id, o.name AS organization_name,
+         'mariadb'::text AS package_name, e.mysql_version AS version
+  FROM environment e
+  JOIN shop s ON s.id = e.shop_id
+  JOIN organization o ON o.id = e.organization_id
+  WHERE 'mariadb' = ANY($1::text[])
+    AND e.mysql_version IS NOT NULL AND e.mysql_version <> ''
+) inv
+ORDER BY organization_name, organization_id, shop_name, shop_id, environment_name, environment_id, package_name
 `
 
 type ListAdminAdvisoryInventoryRow struct {
@@ -34,6 +66,8 @@ type ListAdminAdvisoryInventoryRow struct {
 }
 
 // On-demand preview against the latest inventory, independent of saved advisories.
+// Includes Composer SBOM components as well as runtime versions (php, mysql)
+// stored on the environment.
 func (q *Queries) ListAdminAdvisoryInventory(ctx context.Context, packageNames []string) ([]ListAdminAdvisoryInventoryRow, error) {
 	rows, err := q.db.Query(ctx, listAdminAdvisoryInventory, packageNames)
 	if err != nil {

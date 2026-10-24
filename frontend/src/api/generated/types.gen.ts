@@ -22,9 +22,11 @@ export type AccountEnvironment = {
     id: number;
     lastScrapedAt: string | null;
     lastScrapedError: string | null;
+    mysqlVersion?: string;
     name: string;
     organizationId: string;
     organizationName: string;
+    phpVersion?: string;
     shopId: number | null;
     shopName: string | null;
     shopwareVersion: string;
@@ -215,9 +217,11 @@ export type AdminEnvironmentDetail = {
     lastDeployment?: AdminEnvironmentDeployment;
     lastScrapedAt?: string;
     lastScrapedError?: string;
+    mysqlVersion?: string;
     name: string;
     organizationId: string;
     organizationName: string;
+    phpVersion?: string;
     scheduledTasks: Array<AdminEnvironmentTask>;
     shopId: number;
     shopName: string;
@@ -276,7 +280,9 @@ export type AdminOrganizationDetail = {
 export type AdminOrganizationEnvironment = {
     id: number;
     lastScrapedAt?: string;
+    mysqlVersion?: string;
     name: string;
+    phpVersion?: string;
     shopId: number;
     shopName: string;
     shopwareVersion: string;
@@ -775,9 +781,11 @@ export type EnvironmentDetail = {
     lastDeploymentAt: string | null;
     lastScrapedAt: string | null;
     lastScrapedError: string | null;
+    mysqlVersion?: string;
     name: string;
     organizationId: string;
     organizationName: string;
+    phpVersion?: string;
     queues: Array<Queue>;
     scheduledTasks: Array<ScheduledTask>;
     shopDescription: string | null;

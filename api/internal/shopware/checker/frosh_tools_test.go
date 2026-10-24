@@ -280,3 +280,70 @@ func TestCheckFroshTools_InvalidHealthJSON(t *testing.T) {
 	assert.Equal(t, []UnavailableSource{{Source: SourceFroshTools, IDPrefix: prefixFroshTools}}, result.Unavailable,
 		"unparseable health data leaves the source unevaluated, not resolved")
 }
+
+func TestCheckFroshTools_ExtractsRuntimeVersionsAndMatchesAdvisories(t *testing.T) {
+	client := &mockHTTPClient{
+		responses: map[string][]byte{
+			"/_action/frosh-tools/health/status": []byte(`[
+				{"id":"php-version","snippet":"PHP Version","state":"STATE_OK","current":"8.3.14","recommended":"min 8.2.0"},
+				{"id":"mysql","snippet":"MySQL Version","state":"STATE_OK","current":"8.0.36","recommended":"min 8.0"}
+			]`),
+			"/_action/frosh-tools/performance/status": []byte(`[]`),
+		},
+	}
+
+	result := RunAll(context.Background(), Input{
+		Config:     ShopConfig{Version: "6.6.10.0"},
+		Extensions: []Extension{{Name: "FroshTools", Active: true, Installed: true}},
+		Client:     client,
+		SecurityAdvisories: []SecurityAdvisory{
+			{
+				ID:       "SHOPMON-2026-0001",
+				Title:    "PHP PDO parser vulnerability",
+				Severity: "high",
+				Origin:   "shopmon",
+				Packages: []SecurityAdvisoryPackage{
+					{PackageName: "php", AffectedVersions: "<8.4.0"},
+				},
+			},
+			{
+				ID:       "SHOPMON-2026-0002",
+				Title:    "MySQL server vulnerability",
+				Severity: "medium",
+				Origin:   "shopmon",
+				Packages: []SecurityAdvisoryPackage{
+					{PackageName: "mysql", AffectedVersions: ">=8.0.0,<8.0.40"},
+				},
+			},
+		},
+	})
+
+	require.NotNil(t, result.PhpVersion)
+	assert.Equal(t, "8.3.14", *result.PhpVersion)
+	require.NotNil(t, result.MysqlVersion)
+	assert.Equal(t, "8.0.36", *result.MysqlVersion)
+
+	phpAdv, ok := findCheck(result.Checks, "security.SHOPMON-2026-0001")
+	require.True(t, ok, "expected PHP advisory check to be emitted")
+	assert.Equal(t, StatusRed, phpAdv.Level)
+	assert.Equal(t, "php", phpAdv.MessageParams["package"])
+	assert.Equal(t, "8.3.14", phpAdv.MessageParams["installedVersion"])
+
+	mysqlAdv, ok := findCheck(result.Checks, "security.SHOPMON-2026-0002")
+	require.True(t, ok, "expected MySQL advisory check to be emitted")
+	assert.Equal(t, StatusRed, mysqlAdv.Level)
+	assert.Equal(t, "mysql", mysqlAdv.MessageParams["package"])
+	assert.Equal(t, "8.0.36", mysqlAdv.MessageParams["installedVersion"])
+}
+
+func TestExtractRuntimeVersion_IgnoresUnknownAndEmpty(t *testing.T) {
+	output := NewOutput(nil)
+	mapFroshChecks([]froshToolsCheck{
+		{ID: "php-version", Snippet: "PHP Version", State: "STATE_ERROR", Current: new("")},
+		{ID: "mysql", Snippet: "MySQL Version", State: "STATE_ERROR", Current: new("unknown")},
+	}, output)
+
+	res := output.Result()
+	assert.Nil(t, res.PhpVersion)
+	assert.Nil(t, res.MysqlVersion)
+}

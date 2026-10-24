@@ -27,6 +27,8 @@ func toAccountEnvironment(row queries.ListEnvironmentsByOrganizationRow) api.Acc
 		Favicon:          row.Favicon,
 		Status:           row.Status,
 		ShopwareVersion:  row.ShopwareVersion,
+		PhpVersion:       row.PhpVersion,
+		MysqlVersion:     row.MysqlVersion,
 		LastScrapedAt:    database.TimePtr(row.LastScrapedAt),
 		LastScrapedError: row.LastScrapedError,
 		OrganizationId:   row.OrganizationID,

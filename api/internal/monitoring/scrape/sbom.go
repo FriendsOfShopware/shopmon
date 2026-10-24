@@ -260,6 +260,26 @@ func sbomPackageVersions(res sbomResult) map[string]string {
 	return out
 }
 
+func withRuntimePackageVersions(packages map[string]string, phpVersion, mysqlVersion *string) map[string]string {
+	hasPhp := phpVersion != nil && *phpVersion != ""
+	hasMysql := mysqlVersion != nil && *mysqlVersion != ""
+	if !hasPhp && !hasMysql {
+		return packages
+	}
+	out := make(map[string]string, len(packages)+3)
+	for k, v := range packages {
+		out[k] = v
+	}
+	if hasPhp {
+		out["php"] = *phpVersion
+	}
+	if hasMysql {
+		out["mysql"] = *mysqlVersion
+		out["mariadb"] = *mysqlVersion
+	}
+	return out
+}
+
 func emptyToNil(s string) *string {
 	if s == "" {
 		return nil

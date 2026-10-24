@@ -119,3 +119,47 @@ func TestRematchPrunesStaleNotificationMarkers(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, notified, "marker must not outlive the match it belongs to")
 }
+
+func TestRematchMatchesEnvironmentRuntimeVersions(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+
+	env.SeedUser(t, "user-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Org One", "org-one", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Shop One")
+	envID := int32(env.SeedEnvironment(t, "org-1", shopID, "prod", "https://example.com"))
+
+	_, err := env.Pool.Exec(ctx, `
+		UPDATE environment SET php_version = '8.3.14', mysql_version = '8.0.36' WHERE id = $1
+	`, envID)
+	require.NoError(t, err)
+
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO composer_advisory (advisory_id, title, severity, is_visible, origin)
+		VALUES ('SHOPMON-2026-0001', 'PHP PDO parser vulnerability', 'high', true, 'shopmon'),
+		       ('SHOPMON-2026-0002', 'MySQL server vulnerability', 'medium', true, 'shopmon')
+	`)
+	require.NoError(t, err)
+
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO composer_advisory_package (advisory_id, package_name, affected_versions)
+		VALUES ('SHOPMON-2026-0001', 'php', '<8.4.0'),
+		       ('SHOPMON-2026-0002', 'mysql', '>=8.0.0,<8.0.40')
+	`)
+	require.NoError(t, err)
+
+	svc := &Service{pool: env.Pool, queries: env.Queries}
+	matched, err := svc.rematchEnvironments(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 2, matched)
+
+	matches, err := env.Queries.GetEnvironmentAdvisoryMatches(ctx, envID)
+	require.NoError(t, err)
+	require.Len(t, matches, 2)
+	assert.Equal(t, "SHOPMON-2026-0001", matches[0].AdvisoryID)
+	assert.Equal(t, "php", matches[0].PackageName)
+	assert.Equal(t, "8.3.14", matches[0].InstalledVersion)
+	assert.Equal(t, "SHOPMON-2026-0002", matches[1].AdvisoryID)
+	assert.Equal(t, "mysql", matches[1].PackageName)
+	assert.Equal(t, "8.0.36", matches[1].InstalledVersion)
+}

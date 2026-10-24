@@ -125,6 +125,20 @@
                 <Badge variant="secondary" class="shrink-0 font-mono text-[10px]">
                   {{ env.shopwareVersion }}
                 </Badge>
+                <Badge
+                  v-if="env.phpVersion"
+                  variant="outline"
+                  class="shrink-0 font-mono text-[10px]"
+                >
+                  PHP {{ env.phpVersion }}
+                </Badge>
+                <Badge
+                  v-if="env.mysqlVersion"
+                  variant="outline"
+                  class="shrink-0 font-mono text-[10px]"
+                >
+                  MySQL {{ env.mysqlVersion }}
+                </Badge>
               </RouterLink>
             </div>
           </div>

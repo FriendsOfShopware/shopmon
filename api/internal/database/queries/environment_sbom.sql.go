@@ -683,11 +683,18 @@ func (q *Queries) ListDistinctSbomPackageNames(ctx context.Context) ([]string, e
 }
 
 const listEnvironmentIDsWithSbom = `-- name: ListEnvironmentIDsWithSbom :many
-SELECT DISTINCT environment_id FROM environment_sbom_component ORDER BY environment_id
+SELECT DISTINCT id AS environment_id
+FROM environment e
+WHERE (e.php_version IS NOT NULL AND e.php_version <> '')
+   OR (e.mysql_version IS NOT NULL AND e.mysql_version <> '')
+   OR EXISTS (
+     SELECT 1 FROM environment_sbom_component c WHERE c.environment_id = e.id
+   )
+ORDER BY environment_id
 `
 
-// Every environment that has SBOM components, for the post-advisory-sync
-// rematch pass.
+// Every environment that has SBOM components or runtime versions, for the
+// post-advisory-sync rematch pass.
 func (q *Queries) ListEnvironmentIDsWithSbom(ctx context.Context) ([]int32, error) {
 	rows, err := q.db.Query(ctx, listEnvironmentIDsWithSbom)
 	if err != nil {

@@ -408,6 +408,8 @@ const infoItems = computed(() => {
   if (!environment.value) return [];
   return [
     { label: t("shopDetail.shopwareVersion"), value: environment.value.shopwareVersion },
+    { label: t("shopDetail.phpVersion"), value: environment.value.phpVersion ?? "-" },
+    { label: t("shopDetail.mysqlVersion"), value: environment.value.mysqlVersion ?? "-" },
     {
       label: t("shopDetail.lastCheckedAt"),
       value: formatDateTime(environment.value.lastScrapedAt),

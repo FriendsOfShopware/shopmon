@@ -154,6 +154,8 @@ CREATE TABLE "environment" (
   "client_id" text NOT NULL,
   "client_secret" text NOT NULL,
   "shopware_version" text NOT NULL,
+  "php_version" text,
+  "mysql_version" text,
   "last_scraped_at" timestamp,
   "last_scraped_error" text,
   "ignores" jsonb NOT NULL DEFAULT '[]'::jsonb,

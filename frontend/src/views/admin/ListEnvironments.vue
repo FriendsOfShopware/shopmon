@@ -45,7 +45,7 @@
         />
 
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <RouterLink
               :to="{ name: 'admin.environments.detail', params: { id: env.id } }"
               class="truncate font-semibold hover:text-primary transition-colors"
@@ -55,6 +55,12 @@
             <Badge variant="secondary" class="font-mono text-[10px] font-semibold">{{
               env.shopwareVersion
             }}</Badge>
+            <Badge v-if="env.phpVersion" variant="outline" class="font-mono text-[10px]">
+              PHP {{ env.phpVersion }}
+            </Badge>
+            <Badge v-if="env.mysqlVersion" variant="outline" class="font-mono text-[10px]">
+              MySQL {{ env.mysqlVersion }}
+            </Badge>
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
             <RouterLink
@@ -145,6 +151,8 @@ type SortBy =
   | "url"
   | "status"
   | "shopwareVersion"
+  | "phpVersion"
+  | "mysqlVersion"
   | "lastScrapedAt"
   | "organizationName";
 
@@ -184,6 +192,8 @@ const filterGroups = computed<FilterGroup[]>(() => [
       { label: t("admin.url"), value: "url" },
       { label: t("admin.status"), value: "status" },
       { label: t("admin.shopwareVersion"), value: "shopwareVersion" },
+      { label: t("admin.phpVersion"), value: "phpVersion" },
+      { label: t("admin.mysqlVersion"), value: "mysqlVersion" },
       { label: t("admin.organizationName"), value: "organizationName" },
     ],
   },
