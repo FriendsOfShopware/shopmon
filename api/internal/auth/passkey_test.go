@@ -68,6 +68,15 @@ func TestPasskeyLoginOptions(t *testing.T) {
 }
 
 func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
+	testPasskeyRegistrationAndLogin(t, false)
+}
+
+func TestPasskeyOnlyUnverifiedAccountRecovery(t *testing.T) {
+	testPasskeyRegistrationAndLogin(t, true)
+}
+
+func testPasskeyRegistrationAndLogin(t *testing.T, recoverUnverified bool) {
+	t.Helper()
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Passkey User", "passkey@example.com", "user")
 
@@ -132,6 +141,20 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 		`SELECT COUNT(*) FROM passkey WHERE user_id = 'user-1'`).Scan(&passkeyCount)
 	require.NoError(t, err)
 	assert.Equal(t, 1, passkeyCount)
+
+	if recoverUnverified {
+		// Model a legacy unverified account whose only login method is a passkey.
+		_, err := env.Pool.Exec(t.Context(), `UPDATE "user" SET email_verified = false WHERE id = 'user-1'`)
+		require.NoError(t, err)
+		blocked := authRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", token, nil)
+		_ = blocked.Body.Close()
+		require.Equal(t, http.StatusUnauthorized, blocked.StatusCode)
+		confirmation := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/send-verification-email", "",
+			map[string]string{"email": "passkey@example.com"})
+		_ = confirmation.Body.Close()
+		require.Equal(t, http.StatusOK, confirmation.StatusCode)
+		verifyEmail(t, env, "passkey@example.com")
+	}
 
 	// === Step 4: Now test login with the passkey ===
 	authenticator.Options.UserHandle = []byte("user-1")

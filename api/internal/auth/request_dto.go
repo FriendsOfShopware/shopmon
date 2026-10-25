@@ -81,7 +81,8 @@ type passkeyRegisterOutput struct {
 }
 
 type authCodeResponse struct {
-	Code string `json:"code"`
+	Linked bool   `json:"linked,omitempty"`
+	Code   string `json:"code,omitempty"`
 }
 
 type exchangeCodeRequest struct {

@@ -3,6 +3,12 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent, ref } from "vue";
 import Settings from "./Settings.vue";
 
+const mockPush = vi.hoisted(() => vi.fn());
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRouter: () => ({ push: mockPush }),
+}));
+
 const MainContainerStub = defineComponent({ template: "<div><slot /></div>" });
 const FormGroupStub = defineComponent({ template: "<div><slot /></div>" });
 const DataTableStub = defineComponent({ template: "<div><slot /></div>" });
@@ -36,6 +42,7 @@ vi.mock("@/composables/useSession", () => ({
 
 vi.mock("@/api/generated", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/generated")>()),
+  changeEmail: vi.fn(),
   deletePasskey: vi.fn(),
   revokeSession: vi.fn(),
   unsubscribeFromEnvironment: vi.fn(),
@@ -60,7 +67,9 @@ vi.mock("@simplewebauthn/browser", () => ({
   startRegistration: vi.fn(),
 }));
 
+import { clearSession } from "@/composables/useSession";
 import {
+  changeEmail,
   deletePasskey,
   revokeSession,
   unsubscribeFromEnvironment,
@@ -125,6 +134,32 @@ describe("Settings", () => {
       },
     });
   }
+
+  it.each([true, false])(
+    "clears the session after a saved email change (mail sent: %s)",
+    async (sent) => {
+      vi.mocked(changeEmail).mockResolvedValue({
+        data: { status: "ok", emailVerificationSent: sent },
+        error: undefined,
+        response: new Response(),
+      });
+      localStorage.setItem("shopmon_token", "old-token");
+      const wrapper = mountComponent();
+      await flushPromises();
+      await wrapper.find("#email").setValue("new@example.com");
+      await wrapper.find("#emailCurrentPassword").setValue("password123!");
+      await (wrapper.vm as any).saveEmail();
+      expect(localStorage.getItem("shopmon_token")).toBeNull();
+      expect(clearSession).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith({ name: "account.login" });
+      if (!sent) {
+        expect(mockError).toHaveBeenCalledWith(
+          expect.stringContaining("updated and you have been signed out"),
+        );
+      }
+      wrapper.unmount();
+    },
+  );
 
   it("renders page title", async () => {
     const wrapper = mountComponent();

@@ -211,4 +211,7 @@ WITH consumed AS (
     RETURNING id
 )
 UPDATE "user" SET email_verified = true, updated_at = NOW()
-WHERE "user".id = sqlc.arg(id) AND email = sqlc.arg(email) AND EXISTS (SELECT 1 FROM consumed);
+WHERE "user".id = sqlc.arg(id) AND email = sqlc.arg(email) AND email_verified = false AND EXISTS (SELECT 1 FROM consumed);
+
+-- name: LockFederatedAccount :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(provider_id)::text || ':' || sqlc.arg(account_id)::text, 0));

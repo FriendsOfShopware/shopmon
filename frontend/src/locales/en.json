@@ -397,6 +397,8 @@
     "performanceBadge": "Performance"
   },
   "auth": {
+    "resendConfirmation": "Resend confirmation email",
+    "confirmationEmailSent": "If this address needs confirmation, a confirmation email has been sent.",
     "signIn": "Sign in to your account",
     "newToShopmon": "New to Shopmon?",
     "createAccount": "Create an account",
@@ -522,6 +524,7 @@
     "details": "Details"
   },
   "settings": {
+    "emailConfirmationFailed": "Your email address was updated and you have been signed out. The confirmation email could not be sent. Use “Resend confirmation email” on the sign-in page to try again.",
     "title": "Settings",
     "account": "Account",
     "manageAccount": "Manage Your Account",

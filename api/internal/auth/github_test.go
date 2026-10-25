@@ -11,6 +11,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -379,4 +380,79 @@ func TestGithubCallback_RejectsExistingUser(t *testing.T) {
 		`SELECT COUNT(*) FROM session WHERE user_id = $1`, existingUserID).Scan(&sessionCount))
 	assert.Zero(t, accountCount)
 	assert.Zero(t, sessionCount)
+}
+
+func TestGithubLink_BoundToInitiatingSession(t *testing.T) {
+	for _, scenario := range []string{"same email", "different email", "signed out", "different user", "different session", "revoked session", "already linked"} {
+		t.Run(scenario, func(t *testing.T) {
+			mock := newMockGithub(t)
+			defer mock.server.Close()
+			mock.user = map[string]any{"id": 12345, "email": "local@example.com", "name": "GitHub User"}
+			env := setupGithubEnv(t, mock)
+			token := env.SeedUser(t, "local-user", "Local User", "local@example.com", "user")
+			otherToken := env.SeedUser(t, "other-user", "Other User", "other@example.com", "user")
+			if scenario == "different email" {
+				mock.user["email"] = "github@example.com"
+			}
+			if scenario == "already linked" {
+				require.NoError(t, env.Queries.CreateAccount(t.Context(), queries.CreateAccountParams{
+					ID: "github-account", AccountID: "12345", ProviderID: "github", UserID: "other-user",
+				}))
+			}
+			resp := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/link-social", token,
+				map[string]string{"provider": "github", "callbackURL": "http://localhost:3000/app/settings"})
+			require.Equal(t, http.StatusOK, resp.StatusCode)
+			var result map[string]string
+			require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+			_ = resp.Body.Close()
+			authorize, err := url.Parse(result["url"])
+			require.NoError(t, err)
+			state := authorize.Query().Get("state")
+			require.NotEmpty(t, state)
+
+			callbackToken := token
+			want := http.StatusOK
+			switch scenario {
+			case "signed out":
+				callbackToken = ""
+				want = http.StatusUnauthorized
+			case "different user":
+				callbackToken = otherToken
+				want = http.StatusForbidden
+			case "different session":
+				_, err := env.Pool.Exec(t.Context(), `INSERT INTO session (id, token, user_id, expires_at, created_at, updated_at)
+					VALUES ('second-session', 'second-token', 'local-user', NOW() + INTERVAL '1 day', NOW(), NOW())`)
+				require.NoError(t, err)
+				callbackToken = "second-token"
+				want = http.StatusForbidden
+			case "revoked session":
+				require.NoError(t, env.Queries.DeleteSession(t.Context(), token))
+				want = http.StatusUnauthorized
+			case "already linked":
+				want = http.StatusConflict
+			}
+			callbackURL := env.Server.URL + "/api/auth/callback/github?code=valid-code&state=" + url.QueryEscape(state)
+			resp = authRequest(t, http.MethodGet, callbackURL, callbackToken, nil)
+			require.Equal(t, want, resp.StatusCode)
+			if want == http.StatusOK {
+				var linked map[string]any
+				require.NoError(t, json.NewDecoder(resp.Body).Decode(&linked))
+				assert.Equal(t, true, linked["linked"])
+				assert.Empty(t, linked["code"], "linking must not issue a sign-in code")
+			}
+			_ = resp.Body.Close()
+			accounts, err := env.Queries.ListUserAccounts(t.Context(), "local-user")
+			require.NoError(t, err)
+			if want == http.StatusOK {
+				require.Len(t, accounts, 1)
+				assert.Equal(t, "github", accounts[0].ProviderID)
+				// Linking state is consumed once.
+				replay := authRequest(t, http.MethodGet, callbackURL, callbackToken, nil)
+				_ = replay.Body.Close()
+				assert.Equal(t, http.StatusBadRequest, replay.StatusCode)
+			} else {
+				assert.Empty(t, accounts)
+			}
+		})
+	}
 }

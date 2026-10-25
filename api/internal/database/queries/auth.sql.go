@@ -357,7 +357,7 @@ WITH consumed AS (
     RETURNING id
 )
 UPDATE "user" SET email_verified = true, updated_at = NOW()
-WHERE "user".id = $1 AND email = $2 AND EXISTS (SELECT 1 FROM consumed)
+WHERE "user".id = $1 AND email = $2 AND email_verified = false AND EXISTS (SELECT 1 FROM consumed)
 `
 
 type ConfirmUserEmailParams struct {
@@ -1073,6 +1073,20 @@ func (q *Queries) ListUserSessions(ctx context.Context, userID string) ([]ListUs
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockFederatedAccount = `-- name: LockFederatedAccount :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text || ':' || $2::text, 0))
+`
+
+type LockFederatedAccountParams struct {
+	ProviderID string `json:"provider_id"`
+	AccountID  string `json:"account_id"`
+}
+
+func (q *Queries) LockFederatedAccount(ctx context.Context, arg LockFederatedAccountParams) error {
+	_, err := q.db.Exec(ctx, lockFederatedAccount, arg.ProviderID, arg.AccountID)
+	return err
 }
 
 const refreshSessionExpiry = `-- name: RefreshSessionExpiry :exec

@@ -135,7 +135,16 @@ type changeEmailInput struct {
 	Body changeEmailRequest
 }
 
-func (h *AuthHandler) ChangeEmail(ctx context.Context, input *changeEmailInput) (*statusOutput, error) {
+type changeEmailResponse struct {
+	Status                string `json:"status"`
+	EmailVerificationSent bool   `json:"emailVerificationSent"`
+}
+
+type changeEmailOutput struct {
+	Body changeEmailResponse
+}
+
+func (h *AuthHandler) ChangeEmail(ctx context.Context, input *changeEmailInput) (*changeEmailOutput, error) {
 	principal, err := h.requireAuth(ctx)
 	if err != nil {
 		return nil, err
@@ -150,10 +159,12 @@ func (h *AuthHandler) ChangeEmail(ctx context.Context, input *changeEmailInput) 
 	}); err != nil {
 		return nil, h.identityAccountError(ctx, "change email", err)
 	}
+	sent := true
 	if err := h.credentials.SendEmailVerification(ctx, input.Body.NewEmail); err != nil {
-		return nil, h.credentialError(ctx, "send changed email verification", err)
+		sent = false
+		slog.ErrorContext(ctx, "failed to send changed email verification", "userID", principal.User.ID, "error", err)
 	}
-	return statusOK(), nil
+	return &changeEmailOutput{Body: changeEmailResponse{Status: "ok", EmailVerificationSent: sent}}, nil
 }
 
 type updateUserInput struct {
@@ -206,10 +217,11 @@ func (h *AuthHandler) DeleteUser(ctx context.Context, _ *struct{}) (*statusOutpu
 }
 
 func (h *AuthHandler) LinkSocial(ctx context.Context, input *socialSignInInput) (*urlOutput, error) {
-	if _, err := h.requireAuth(ctx); err != nil {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
 		return nil, err
 	}
-	return h.SignInSocial(ctx, input)
+	return h.beginGithubOAuth(ctx, input, principal.User.ID, principal.Session.ID)
 }
 
 type listUserPasskeysOutput struct {

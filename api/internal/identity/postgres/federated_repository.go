@@ -30,6 +30,9 @@ func (r *FederatedRepository) Provision(ctx context.Context, profile identity.Fe
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	txq := r.queries.WithTx(tx)
+	if err := txq.LockFederatedAccount(ctx, queries.LockFederatedAccountParams{ProviderID: profile.Provider, AccountID: profile.AccountID}); err != nil {
+		return "", fmt.Errorf("lock federated account: %w", err)
+	}
 
 	userID, err := r.resolveUser(ctx, txq, profile)
 	if err != nil {
@@ -95,4 +98,38 @@ func (r *FederatedRepository) resolveUser(ctx context.Context, q *queries.Querie
 		return "", fmt.Errorf("insert federated account: %w", err)
 	}
 	return userID, nil
+}
+
+func (r *FederatedRepository) Link(ctx context.Context, userID string, profile identity.FederatedProfile) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin link transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	q := r.queries.WithTx(tx)
+	// Serialize sign-in and explicit linking for the same provider identity.
+	if err := q.LockFederatedAccount(ctx, queries.LockFederatedAccountParams{ProviderID: profile.Provider, AccountID: profile.AccountID}); err != nil {
+		return fmt.Errorf("lock federated account: %w", err)
+	}
+	account, err := q.GetAccountByProviderAndAccountID(ctx, queries.GetAccountByProviderAndAccountIDParams{
+		ProviderID: profile.Provider, AccountID: profile.AccountID,
+	})
+	switch {
+	case err == nil:
+		if account.UserID != userID {
+			return identity.ErrFederatedAccountInUse
+		}
+	case errors.Is(err, pgx.ErrNoRows):
+		if err := q.CreateAccount(ctx, queries.CreateAccountParams{
+			ID: uuid.NewString(), ProviderID: profile.Provider, AccountID: profile.AccountID, UserID: userID,
+		}); err != nil {
+			return fmt.Errorf("insert linked account: %w", err)
+		}
+	default:
+		return fmt.Errorf("query linked account: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit link transaction: %w", err)
+	}
+	return nil
 }

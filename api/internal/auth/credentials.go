@@ -145,3 +145,11 @@ func (h *AuthHandler) credentialError(ctx context.Context, operation string, err
 		return huma.Error500InternalServerError("credential operation failed")
 	}
 }
+
+// SendVerificationEmail never reveals whether an unverified account exists.
+func (h *AuthHandler) SendVerificationEmail(ctx context.Context, input *forgetPasswordInput) (*statusOutput, error) {
+	if err := h.credentials.RequestEmailVerification(ctx, input.Body.Email); err != nil {
+		slog.ErrorContext(ctx, "email confirmation recovery failed", "error", err)
+	}
+	return statusOK(), nil
+}

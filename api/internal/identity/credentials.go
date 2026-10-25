@@ -134,6 +134,20 @@ func (s *CredentialService) SignUp(ctx context.Context, command SignUpCommand) e
 	return nil
 }
 
+func (s *CredentialService) RequestEmailVerification(ctx context.Context, email string) error {
+	user, err := s.repository.FindUserByEmail(ctx, email)
+	if errors.Is(err, ErrUserNotFound) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("find confirmation recovery user: %w", err)
+	}
+	if user.EmailVerified || user.Ban.ActiveAt(s.now()) {
+		return nil
+	}
+	return s.SendEmailVerification(ctx, user.Email)
+}
+
 func (s *CredentialService) SendEmailVerification(ctx context.Context, email string) error {
 	user, err := s.repository.FindUserByEmail(ctx, email)
 	if err != nil {

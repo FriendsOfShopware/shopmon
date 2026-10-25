@@ -568,7 +568,8 @@ export type AuthAdminAuditLogEntry = {
 };
 
 export type AuthCodeResponse = {
-    code: string;
+    code?: string;
+    linked?: boolean;
 };
 
 export type AuthenticatedUserResponse = {
@@ -595,6 +596,11 @@ export type CancelInvitationRequest = {
 export type ChangeEmailRequest = {
     currentPassword: string;
     newEmail: string;
+};
+
+export type ChangeEmailResponse = {
+    emailVerificationSent: boolean;
+    status: string;
 };
 
 export type ChangePasswordRequest = {
@@ -2967,10 +2973,10 @@ export type ChangeEmailResponses = {
     /**
      * OK
      */
-    200: StatusResponse;
+    200: ChangeEmailResponse;
 };
 
-export type ChangeEmailResponse = ChangeEmailResponses[keyof ChangeEmailResponses];
+export type ChangeEmailResponse2 = ChangeEmailResponses[keyof ChangeEmailResponses];
 
 export type ChangePasswordData = {
     body: ChangePasswordRequest;
@@ -3744,6 +3750,31 @@ export type RevokeSessionResponses = {
 };
 
 export type RevokeSessionResponse = RevokeSessionResponses[keyof RevokeSessionResponses];
+
+export type SendVerificationEmailData = {
+    body: ForgetPasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/send-verification-email';
+};
+
+export type SendVerificationEmailErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type SendVerificationEmailError = SendVerificationEmailErrors[keyof SendVerificationEmailErrors];
+
+export type SendVerificationEmailResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type SendVerificationEmailResponse = SendVerificationEmailResponses[keyof SendVerificationEmailResponses];
 
 export type GetSessionData = {
     body?: never;

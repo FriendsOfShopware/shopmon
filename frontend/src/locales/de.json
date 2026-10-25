@@ -397,6 +397,8 @@
     "performanceBadge": "Performance"
   },
   "auth": {
+    "resendConfirmation": "Bestätigungs-E-Mail erneut senden",
+    "confirmationEmailSent": "Falls diese Adresse noch bestätigt werden muss, wurde eine Bestätigungs-E-Mail gesendet.",
     "signIn": "Bei Ihrem Konto anmelden",
     "newToShopmon": "Neu bei Shopmon?",
     "createAccount": "Konto erstellen",
@@ -522,6 +524,7 @@
     "details": "Details"
   },
   "settings": {
+    "emailConfirmationFailed": "Ihre E-Mail-Adresse wurde aktualisiert und Sie wurden abgemeldet. Die Bestätigungs-E-Mail konnte nicht gesendet werden. Versuchen Sie es auf der Anmeldeseite über „Bestätigungs-E-Mail erneut senden“ erneut.",
     "title": "Einstellungen",
     "account": "Konto",
     "manageAccount": "Konto verwalten",

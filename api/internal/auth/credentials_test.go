@@ -3,6 +3,7 @@ package auth_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -553,4 +554,85 @@ func TestGetSession_UnverifiedLegacySession(t *testing.T) {
 	defer func() { _ = after.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, after.StatusCode)
 
+}
+
+func TestChangeEmail_MailFailureStillCompletesChange(t *testing.T) {
+	env := testutil.Setup(t)
+	token := signUp(t, env, "before@example.com", "password123!", "User")
+	env.Mail.FailNext(errors.New("mail relay unavailable"))
+	resp := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/change-email", token,
+		map[string]string{"newEmail": "after@example.com", "currentPassword": "password123!"})
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	var result struct {
+		Status                string `json:"status"`
+		EmailVerificationSent bool   `json:"emailVerificationSent"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	_ = resp.Body.Close()
+	assert.Equal(t, "ok", result.Status)
+	assert.False(t, result.EmailVerificationSent)
+	user, err := env.Queries.GetUserByEmail(t.Context(), "after@example.com")
+	require.NoError(t, err)
+	assert.False(t, user.EmailVerified)
+	blocked := authRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", token, nil)
+	_ = blocked.Body.Close()
+	assert.Equal(t, http.StatusUnauthorized, blocked.StatusCode)
+
+	// Recovery can resend confirmation without the revoked session.
+	resend := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/send-verification-email", "",
+		map[string]string{"email": "after@example.com"})
+	_ = resend.Body.Close()
+	require.Equal(t, http.StatusOK, resend.StatusCode)
+	verifyEmail(t, env, "after@example.com")
+	assert.NotEmpty(t, signIn(t, env, "after@example.com", "password123!"))
+}
+
+func TestExtraConfirmationLink_DoesNotRevokeFreshSessions(t *testing.T) {
+	env := testutil.Setup(t)
+	registration := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/sign-up/email", "",
+		map[string]string{"email": "confirmed@example.com", "password": "password123!", "name": "User"})
+	_ = registration.Body.Close()
+	require.Equal(t, http.StatusOK, registration.StatusCode)
+	resend := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/send-verification-email", "",
+		map[string]string{"email": "confirmed@example.com"})
+	_ = resend.Body.Close()
+	require.Equal(t, http.StatusOK, resend.StatusCode)
+	rows, err := env.Pool.Query(t.Context(), `SELECT value FROM verification ORDER BY created_at`)
+	require.NoError(t, err)
+	var tokens []string
+	for rows.Next() {
+		var token string
+		require.NoError(t, rows.Scan(&token))
+		tokens = append(tokens, token)
+	}
+	require.NoError(t, rows.Err())
+	rows.Close()
+	require.Len(t, tokens, 2)
+	first, err := testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token="+tokens[0])
+	require.NoError(t, err)
+	_ = first.Body.Close()
+	require.Equal(t, http.StatusOK, first.StatusCode)
+	token := signIn(t, env, "confirmed@example.com", "password123!")
+	extra, err := testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token="+tokens[1])
+	require.NoError(t, err)
+	_ = extra.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, extra.StatusCode)
+	current := authRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", token, nil)
+	_ = current.Body.Close()
+	assert.Equal(t, http.StatusOK, current.StatusCode)
+}
+
+func TestSendVerificationEmail_DoesNotRevealAccountStatus(t *testing.T) {
+	env := testutil.Setup(t)
+	env.SeedUser(t, "confirmed", "User", "confirmed@example.com", "user")
+	for _, email := range []string{"missing@example.com", "confirmed@example.com"} {
+		resp := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/send-verification-email", "", map[string]string{"email": email})
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		var body map[string]string
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
+		_ = resp.Body.Close()
+		assert.Equal(t, map[string]string{"status": "ok"}, body)
+	}
+	_, sent := env.Mail.Last()
+	assert.False(t, sent)
 }

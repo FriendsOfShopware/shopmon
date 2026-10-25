@@ -43,6 +43,7 @@ func authOperation(id, method, path, summary string, public bool) huma.Operation
 }
 
 func registerCredentials(api huma.API, h *AuthHandler) {
+	huma.Register(api, authOperation("sendVerificationEmail", http.MethodPost, "/auth/send-verification-email", "Request email confirmation", true), h.SendVerificationEmail)
 	huma.Register(api, authOperation("signUpEmail", http.MethodPost, "/auth/sign-up/email", "Register with email and password", true), h.SignUpEmail)
 	huma.Register(api, authOperation("signInEmail", http.MethodPost, "/auth/sign-in/email", "Sign in with email and password", true), h.SignInEmail)
 	huma.Register(api, authOperation("signOut", http.MethodPost, "/auth/sign-out", "Sign out", false), h.SignOut)
