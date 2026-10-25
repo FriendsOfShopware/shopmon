@@ -9,7 +9,9 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
+	"github.com/friendsofshopware/shopmon/api/internal/monitoring/sitespeed"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 )
 
 type getOrganizationEnvironmentsInput struct {
@@ -120,7 +122,7 @@ func (h *Handler) CreateEnvironment(ctx context.Context, input *createEnvironmen
 		return nil, huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, monitoring.ErrConnectionFailed):
 		slog.ErrorContext(ctx, "failed to create environment", "error", err)
-		return nil, huma.Error400BadRequest("Cannot reach shop. Check your credentials and shop URL.")
+		return nil, huma.Error400BadRequest(shopware.ConnectionErrorMessage(err))
 	case err != nil:
 		slog.ErrorContext(ctx, "failed to create environment", "error", err)
 		return nil, huma.Error500InternalServerError("failed to create environment")
@@ -175,7 +177,7 @@ func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmen
 		return nil, huma.Error400BadRequest("taskGraceMinutes must not be negative")
 	case errors.Is(err, monitoring.ErrConnectionFailed):
 		slog.ErrorContext(ctx, "failed to build environment update", "error", err)
-		return nil, huma.Error400BadRequest("Cannot reach shop with new credentials. Check your credentials and shop URL.")
+		return nil, huma.Error400BadRequest(shopware.ConnectionErrorMessage(err))
 	case err != nil:
 		slog.ErrorContext(ctx, "failed to update environment", "environmentID", environmentID, "error", err)
 		return nil, huma.Error500InternalServerError("failed to update environment")
@@ -385,6 +387,8 @@ func (h *Handler) UpdateSitespeedSettings(ctx context.Context, input *updateSite
 		return nil, huma.Error404NotFound("environment not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
 		return nil, huma.Error403Forbidden("not a member of this organization")
+	case errors.Is(err, sitespeed.ErrInvalidURL):
+		return nil, huma.Error400BadRequest(sitespeed.ErrInvalidURL.Error())
 	case err != nil:
 		slog.ErrorContext(ctx, "failed to update sitespeed settings", "environmentID", environmentID, "error", err)
 		return nil, huma.Error500InternalServerError("failed to update sitespeed settings")

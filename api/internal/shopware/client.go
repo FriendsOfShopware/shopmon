@@ -47,6 +47,7 @@ type tokenResponse struct {
 
 type ApiError struct {
 	StatusCode int
+	OAuthCode  string
 	Body       string
 }
 
@@ -123,15 +124,26 @@ func (c *Client) fetchToken(ctx context.Context) (string, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("shopmon-shop-token", c.shopToken)
 
-	resp, err := c.httpClient.Do(req)
+	// Refuse redirects before a POST can become GET or credentials can be forwarded.
+	httpClient := *c.httpClient
+	httpClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("token request: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return "", &ApiError{StatusCode: resp.StatusCode, Body: string(respBody)}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, readErr := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+		if readErr != nil {
+			return "", fmt.Errorf("read token error response: %w", readErr)
+		}
+		var oauth struct {
+			Code string `json:"error"`
+		}
+		// Parse only the standard machine code; descriptions may contain secrets.
+		_ = json.Unmarshal(respBody, &oauth)
+		return "", &ApiError{StatusCode: resp.StatusCode, OAuthCode: oauth.Code}
 	}
 
 	var tokenResp tokenResponse
@@ -196,13 +208,16 @@ func (c *Client) request(ctx context.Context, method, path string, body any, ret
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	// Refuse redirects before a POST can become GET or credentials can be forwarded.
+	httpClient := *c.httpClient
+	httpClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("request: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode == 301 || resp.StatusCode == 302 {
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
 		return nil, &ApiError{StatusCode: resp.StatusCode, Body: "redirect detected"}
 	}
 

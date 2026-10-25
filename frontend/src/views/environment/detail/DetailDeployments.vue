@@ -256,6 +256,8 @@
 </template>
 
 <script setup lang="ts">
+import { useAlert } from "@/composables/useAlert";
+import { requireMutation } from "@/helpers/apiError";
 import { ref, computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
@@ -280,6 +282,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const { error } = useAlert();
 const route = useRoute();
 const { environment } = useEnvironmentDetail();
 
@@ -330,12 +333,17 @@ const deleteDeployment = async () => {
   if (!environment.value || !deploymentToDelete.value) return;
   isDeletingDeployment.value = true;
   try {
-    await apiDeleteDeployment({
-      path: { environmentId: environment.value.id, deploymentId: deploymentToDelete.value.id },
-    });
+    requireMutation(
+      await apiDeleteDeployment({
+        path: { environmentId: environment.value.id, deploymentId: deploymentToDelete.value.id },
+      }),
+      "Failed to delete deployment. Please try again.",
+    );
     await loadDeployments();
     showDeleteDeploymentDialog.value = false;
     deploymentToDelete.value = null;
+  } catch (err) {
+    error(err instanceof Error ? err.message : "Failed to delete deployment. Please try again.");
   } finally {
     isDeletingDeployment.value = false;
   }

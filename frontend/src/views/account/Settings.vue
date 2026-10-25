@@ -335,6 +335,7 @@
 </template>
 
 <script setup lang="ts">
+import { requireMutation } from "@/helpers/apiError";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -602,7 +603,10 @@ async function createPasskey() {
 
 async function removePasskey(id: string) {
   try {
-    await deletePasskey({ body: { id } });
+    requireMutation(
+      await deletePasskey({ body: { id } }),
+      "Failed to update account settings. Please try again.",
+    );
     await loadPasskeys();
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -610,7 +614,10 @@ async function removePasskey(id: string) {
 }
 async function removeSession(session: SessionEntry) {
   try {
-    await revokeSession({ body: { sessionId: session.id } });
+    requireMutation(
+      await revokeSession({ body: { sessionId: session.id } }),
+      "Failed to update account settings. Please try again.",
+    );
     await loadSessions();
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -644,9 +651,12 @@ async function unlinkSocial(providerId: string) {
 
 async function unsubscribeFromEnvironment(environmentId: number) {
   try {
-    await apiUnsubscribeFromEnvironment({
-      path: { environmentId },
-    });
+    requireMutation(
+      await apiUnsubscribeFromEnvironment({
+        path: { environmentId },
+      }),
+      "Failed to update account settings. Please try again.",
+    );
     await loadSubscribedEnvironments();
     alert.success(t("settings.unsubscribedEnvironment"));
   } catch (err) {

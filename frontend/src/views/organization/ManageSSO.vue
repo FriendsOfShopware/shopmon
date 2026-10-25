@@ -248,6 +248,7 @@
 </template>
 
 <script setup lang="ts">
+import { requireMutation } from "@/helpers/apiError";
 import { useAlert } from "@/composables/useAlert";
 import { usePermissions } from "@/composables/usePermissions";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
@@ -489,18 +490,21 @@ const onSubmitProvider = handleProviderSubmit(async (values) => {
   isSubmitting.value = true;
   try {
     if (isEditMode.value && editingProvider.value) {
-      await updateSsoProvider({
-        path: { orgId: organization.value!.id, providerId: editingProvider.value.providerId },
-        body: {
-          domain: values.domain,
-          issuer: values.issuer,
-          clientId: values.clientId,
-          clientSecret: values.clientSecret ?? undefined,
-          authorizationEndpoint: values.authorizationEndpoint,
-          tokenEndpoint: values.tokenEndpoint,
-          jwksEndpoint: values.jwksEndpoint,
-        },
-      });
+      requireMutation(
+        await updateSsoProvider({
+          path: { orgId: organization.value!.id, providerId: editingProvider.value.providerId },
+          body: {
+            domain: values.domain,
+            issuer: values.issuer,
+            clientId: values.clientId,
+            clientSecret: values.clientSecret ?? undefined,
+            authorizationEndpoint: values.authorizationEndpoint,
+            tokenEndpoint: values.tokenEndpoint,
+            jwksEndpoint: values.jwksEndpoint,
+          },
+        }),
+        "Failed to save or delete SSO provider. Check your permissions and try again.",
+      );
       alert.success(t("sso.providerUpdated"));
     } else {
       const { error: ssoError } = await registerSsoProvider({
@@ -542,17 +546,20 @@ async function deleteProvider() {
   if (!deletingProvider.value) return;
   isDeleting.value = true;
   try {
-    await deleteSsoProvider({
-      path: { orgId: organization.value!.id, providerId: deletingProvider.value.providerId },
-    });
+    requireMutation(
+      await deleteSsoProvider({
+        path: { orgId: organization.value!.id, providerId: deletingProvider.value.providerId },
+      }),
+      "Failed to save or delete SSO provider. Check your permissions and try again.",
+    );
     alert.success(t("sso.providerDeleted"));
     showDeleteModal.value = false;
+    deletingProvider.value = null;
     await loadProviders();
   } catch (error: unknown) {
     alert.error(error instanceof Error ? error.message : "Failed to delete SSO provider");
   } finally {
     isDeleting.value = false;
-    deletingProvider.value = null;
   }
 }
 

@@ -269,4 +269,17 @@ describe("DetailSitespeed", () => {
 
     expect(lastRenderDatasetCounts()).toEqual([4, 1, 1]);
   });
+  it("only links to the external report once a successful run exists", async () => {
+    environment.value!.sitespeeds = [];
+    const wrapper = mountComponent();
+    await settleCharts();
+    expect(wrapper.find('a[href="https://sitespeed.example/result/index.html"]').exists()).toBe(
+      false,
+    );
+    environment.value!.sitespeeds = [recentRun];
+    await settleCharts();
+    expect(wrapper.find('a[href="https://sitespeed.example/result/index.html"]').exists()).toBe(
+      true,
+    );
+  });
 });

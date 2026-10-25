@@ -35,6 +35,9 @@ vi.mock("@/composables/useSession", () => ({
 
 vi.mock("@/api/generated", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/generated")>()),
+  deletePasskey: vi.fn(),
+  revokeSession: vi.fn(),
+  unsubscribeFromEnvironment: vi.fn(),
   listUserPasskeys: vi.fn(),
   listSessions: vi.fn(),
   listAccounts: vi.fn(),
@@ -44,9 +47,10 @@ vi.mock("@/api/generated", async (importOriginal) => ({
   getNotificationEventTypes: vi.fn(),
 }));
 
+const mockError = vi.hoisted(() => vi.fn());
 vi.mock("@/composables/useAlert", () => ({
   useAlert: () => ({
-    error: vi.fn(),
+    error: mockError,
     success: vi.fn(),
   }),
 }));
@@ -56,6 +60,9 @@ vi.mock("@simplewebauthn/browser", () => ({
 }));
 
 import {
+  deletePasskey,
+  revokeSession,
+  unsubscribeFromEnvironment,
   getAccountOrganizations,
   getAccountSubscribedEnvironments,
   getNotificationEventTypes,
@@ -161,4 +168,20 @@ describe("Settings", () => {
     expect(listAccounts).toHaveBeenCalled();
     expect(getAccountOrganizations).toHaveBeenCalled();
   });
+  it.each([
+    ["removePasskey", deletePasskey, listUserPasskeys, "passkey"],
+    ["removeSession", revokeSession, listSessions, { id: "session" }],
+    ["unsubscribeFromEnvironment", unsubscribeFromEnvironment, getAccountSubscribedEnvironments, 1],
+  ] as const)(
+    "%s reports resolved errors without reloading state",
+    async (action, mutation, loader, arg) => {
+      vi.mocked(mutation).mockResolvedValue({ error: { message: "Request rejected" } } as any);
+      const wrapper = mountComponent();
+      await flushPromises();
+      await (wrapper.vm as any)[action](arg);
+      expect(mockError).toHaveBeenCalledWith("Request rejected");
+      expect(loader).toHaveBeenCalledTimes(1);
+      wrapper.unmount();
+    },
+  );
 });

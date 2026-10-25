@@ -1,3 +1,5 @@
+import { requireMutation } from "@/helpers/apiError";
+import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
 import {
   deleteAllNotifications as apiDeleteAllNotifications,
@@ -14,6 +16,7 @@ const notifications = ref<Notification[]>([]);
 
 export function useNotifications() {
   const { session } = useSession();
+  const { error } = useAlert();
 
   if (session.value?.user && notifications.value.length === 0) {
     void loadNotifications();
@@ -31,35 +34,62 @@ export function useNotifications() {
   }
 
   async function markAllRead() {
-    let allRead = true;
-    for (const notification of notifications.value) {
-      if (notification.read === false) {
-        allRead = false;
-        break;
+    try {
+      let allRead = true;
+      for (const notification of notifications.value) {
+        if (notification.read === false) {
+          allRead = false;
+          break;
+        }
       }
-    }
 
-    if (allRead) {
-      return;
-    }
+      if (allRead) {
+        return;
+      }
 
-    await apiMarkNotificationsRead();
+      requireMutation(
+        await apiMarkNotificationsRead(),
+        "Failed to update notifications. Please try again.",
+      );
 
-    for (const notification of notifications.value) {
-      notification.read = true;
+      for (const notification of notifications.value) {
+        notification.read = true;
+      }
+    } catch (err) {
+      error(
+        err instanceof Error ? err.message : "Failed to update notifications. Please try again.",
+      );
     }
   }
 
   async function deleteAllNotifications() {
-    await apiDeleteAllNotifications();
-    notifications.value = [];
+    try {
+      requireMutation(
+        await apiDeleteAllNotifications(),
+        "Failed to update notifications. Please try again.",
+      );
+      notifications.value = [];
+    } catch (err) {
+      error(
+        err instanceof Error ? err.message : "Failed to update notifications. Please try again.",
+      );
+    }
   }
 
   async function deleteNotification(id: number) {
-    await apiDeleteNotification({
-      path: { id },
-    });
-    notifications.value = notifications.value.filter((e) => e.id !== id);
+    try {
+      requireMutation(
+        await apiDeleteNotification({
+          path: { id },
+        }),
+        "Failed to update notifications. Please try again.",
+      );
+      notifications.value = notifications.value.filter((e) => e.id !== id);
+    } catch (err) {
+      error(
+        err instanceof Error ? err.message : "Failed to update notifications. Please try again.",
+      );
+    }
   }
 
   return {

@@ -1005,3 +1005,30 @@ func TestRescheduleTask_NotMember(t *testing.T) {
 
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
+
+func TestUpdateSitespeedSettingsRejectsInvalidURLsWithoutPersisting(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "Environment", "https://env.example.com")
+	for _, value := range []string{"", "  ", "ftp://example.com", "file:///etc/passwd", "javascript:alert(1)", "https:///missing-host"} {
+		t.Run(value, func(t *testing.T) {
+			urls := []string{"https://env.example.com", value}
+			body, err := json.Marshal(api.SitespeedSettingsRequest{Enabled: true, Urls: &urls})
+			require.NoError(t, err)
+			req := testutil.NewRequest(t, "PUT", fmt.Sprintf("%s/api/environments/%d/sitespeed-settings", env.Server.URL, environmentID), bytes.NewReader(body))
+			req.Header.Set("Authorization", "Bearer "+token)
+			req.Header.Set("Content-Type", "application/json")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+			environment := getEnvironmentDetail(t, env.Server.URL, token, environmentID)
+			assert.False(t, environment.SitespeedEnabled)
+			if environment.SitespeedUrls != nil {
+				assert.Empty(t, *environment.SitespeedUrls)
+			}
+		})
+	}
+}

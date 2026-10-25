@@ -47,6 +47,7 @@
 </template>
 
 <script setup lang="ts">
+import { useAlert } from "@/composables/useAlert";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -77,7 +78,13 @@ async function loadOrganizations() {
 }
 
 async function switchToOrg(orgId: string) {
-  await setActiveOrganization(orgId);
+  try {
+    await setActiveOrganization(orgId);
+  } catch (err) {
+    useAlert().error(
+      err instanceof Error ? err.message : "Failed to switch organization. Please try again.",
+    );
+  }
 }
 
 onMounted(() => {
