@@ -13,14 +13,14 @@
 
       <div class="-mx-6 min-h-0 overflow-y-auto px-6">
         <template v-if="changelog?.oldShopwareVersion && changelog?.newShopwareVersion">
-          <span
-            v-html="
-              $t('changelogModal.shopwareUpdate', {
+          <span>
+            {{
+              $t("changelogModal.shopwareUpdate", {
                 oldVersion: changelog.oldShopwareVersion,
                 newVersion: changelog.newShopwareVersion,
               })
-            "
-          />
+            }}
+          </span>
         </template>
 
         <div v-if="changelog?.extensions?.length">
