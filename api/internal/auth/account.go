@@ -150,6 +150,9 @@ func (h *AuthHandler) ChangeEmail(ctx context.Context, input *changeEmailInput) 
 	}); err != nil {
 		return nil, h.identityAccountError(ctx, "change email", err)
 	}
+	if err := h.credentials.SendEmailVerification(ctx, input.Body.NewEmail); err != nil {
+		return nil, h.credentialError(ctx, "send changed email verification", err)
+	}
 	return statusOK(), nil
 }
 

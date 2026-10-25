@@ -595,7 +595,7 @@
     "updateNameFailed": "Name konnte nicht aktualisiert werden",
     "profileUpdated": "Profil erfolgreich aktualisiert",
     "changeEmailFailed": "E-Mail-Adresse konnte nicht geändert werden",
-    "emailUpdated": "E-Mail-Adresse erfolgreich aktualisiert",
+    "emailUpdated": "E-Mail-Adresse aktualisiert. Bitte bestätigen Sie Ihre neue E-Mail-Adresse über den Link in Ihrem Postfach, bevor Sie sich anmelden.",
     "errorDeleteAccount": "Beim Löschen Ihres Kontos ist ein Fehler aufgetreten.",
     "accountDeleted": "Ihr Konto wurde erfolgreich gelöscht.",
     "passkeyNameRequired": "Bitte geben Sie einen Namen für das Passkey-Gerät an.",

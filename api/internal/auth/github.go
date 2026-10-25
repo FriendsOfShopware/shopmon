@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -171,6 +172,9 @@ func (h *AuthHandler) GithubCallback(ctx context.Context, input *githubCallbackI
 		Email: ghUser.Email, EmailVerified: true, Name: ghUser.Name, ImageURL: ghUser.AvatarURL,
 	})
 	if err != nil {
+		if errors.Is(err, identity.ErrEmailInUse) {
+			return nil, huma.Error409Conflict("email already belongs to an existing account; sign in with its original login method")
+		}
 		slog.ErrorContext(ctx, "failed to provision GitHub identity", "error", err)
 		return nil, huma.Error500InternalServerError("failed to create user")
 	}

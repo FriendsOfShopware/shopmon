@@ -14,7 +14,7 @@ import (
 // signUpAndMakeAdmin signs up a user and promotes them to admin via direct DB update.
 func signUpAndMakeAdmin(t *testing.T, env *testutil.TestEnv, email, password, name string) string {
 	t.Helper()
-	token := signUp(t, env.Server.URL, email, password, name)
+	token := signUp(t, env, email, password, name)
 	_, err := env.Pool.Exec(t.Context(), `UPDATE "user" SET role = 'admin' WHERE email = $1`, email)
 	require.NoError(t, err)
 	return token
@@ -34,7 +34,7 @@ func TestAdminListUsers(t *testing.T) {
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
 
 	// Create a regular user too
-	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+	signUp(t, env, "regular@example.com", "password123", "Regular")
 
 	resp := authGet(t, env.Server.URL, "/api/auth/admin/users", adminCookie)
 	defer func() { _ = resp.Body.Close() }()
@@ -71,7 +71,7 @@ type adminUsersListResponse struct {
 func TestAdminListUsers_Search(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+	signUp(t, env, "regular@example.com", "password123", "Regular")
 
 	resp := authGet(t, env.Server.URL, "/api/auth/admin/users?search=regular", adminCookie)
 	defer func() { _ = resp.Body.Close() }()
@@ -88,7 +88,7 @@ func TestAdminListUsers_Search(t *testing.T) {
 func TestAdminListUsers_RoleFilter(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+	signUp(t, env, "regular@example.com", "password123", "Regular")
 
 	resp := authGet(t, env.Server.URL, "/api/auth/admin/users?role=admin", adminCookie)
 	defer func() { _ = resp.Body.Close() }()
@@ -105,7 +105,7 @@ func TestAdminListUsers_RoleFilter(t *testing.T) {
 func TestAdminListUsers_StatusFilter(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+	signUp(t, env, "regular@example.com", "password123", "Regular")
 
 	// Ban the regular user via the admin endpoint.
 	regularID := getUserIDByEmail(t, env, "regular@example.com")
@@ -127,7 +127,7 @@ func TestAdminListUsers_StatusFilter(t *testing.T) {
 func TestAdminGetUserDetail(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+	signUp(t, env, "regular@example.com", "password123", "Regular")
 	regularID := getUserIDByEmail(t, env, "regular@example.com")
 
 	resp := authGet(t, env.Server.URL, "/api/auth/admin/users/"+regularID, adminCookie)
@@ -160,7 +160,7 @@ func TestAdminGetUserDetail_NotFound(t *testing.T) {
 
 func TestAdminListUsers_NonAdmin(t *testing.T) {
 	env := testutil.Setup(t)
-	cookie := signUp(t, env.Server.URL, "user@example.com", "password123", "User")
+	cookie := signUp(t, env, "user@example.com", "password123", "User")
 
 	resp := authGet(t, env.Server.URL, "/api/auth/admin/users", cookie)
 	defer func() { _ = resp.Body.Close() }()
@@ -171,7 +171,7 @@ func TestAdminListUsers_NonAdmin(t *testing.T) {
 func TestAdminSetRole(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	signUp(t, env.Server.URL, "user@example.com", "password123", "User")
+	signUp(t, env, "user@example.com", "password123", "User")
 
 	userID := getUserIDByEmail(t, env, "user@example.com")
 
@@ -195,7 +195,7 @@ func TestAdminSetRole(t *testing.T) {
 func TestAdminSetRole_WritesAuditLog(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	signUp(t, env.Server.URL, "user@example.com", "password123", "User")
+	signUp(t, env, "user@example.com", "password123", "User")
 
 	adminID := getUserIDByEmail(t, env, "admin@example.com")
 	userID := getUserIDByEmail(t, env, "user@example.com")
@@ -233,7 +233,7 @@ func TestAdminSetRole_Self(t *testing.T) {
 func TestAdminBanUser(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	userCookie := signUp(t, env.Server.URL, "user@example.com", "password123", "User")
+	userCookie := signUp(t, env, "user@example.com", "password123", "User")
 
 	userID := getUserIDByEmail(t, env, "user@example.com")
 
@@ -264,7 +264,7 @@ func TestAdminBanUser(t *testing.T) {
 func TestAdminUnbanUser(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	signUp(t, env.Server.URL, "user@example.com", "password123", "User")
+	signUp(t, env, "user@example.com", "password123", "User")
 
 	userID := getUserIDByEmail(t, env, "user@example.com")
 
@@ -290,7 +290,7 @@ func TestAdminUnbanUser(t *testing.T) {
 func TestAdminImpersonate(t *testing.T) {
 	env := testutil.Setup(t)
 	adminToken := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
-	signUp(t, env.Server.URL, "user@example.com", "password123", "User")
+	signUp(t, env, "user@example.com", "password123", "User")
 
 	userID := getUserIDByEmail(t, env, "user@example.com")
 

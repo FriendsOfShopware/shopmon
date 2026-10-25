@@ -595,7 +595,7 @@
     "updateNameFailed": "Failed to update name",
     "profileUpdated": "Profile updated successfully",
     "changeEmailFailed": "Failed to change email",
-    "emailUpdated": "Email updated successfully",
+    "emailUpdated": "Email updated. Please check your mailbox and confirm your new email address before signing in.",
     "errorDeleteAccount": "An error occurred while deleting your account.",
     "accountDeleted": "Your account has been successfully deleted.",
     "passkeyNameRequired": "Please provide a name for the Passkey Device.",

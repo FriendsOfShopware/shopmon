@@ -15,7 +15,7 @@ SELECT s.id, s.expires_at, s.token, s.user_id, s.active_organization_id, s.imper
        u.id as user_id, u.name as user_name, u.email as user_email, u.role as user_role, u.notifications as user_notifications, u.image as user_image, u.banned as user_banned, u.ban_expires as user_ban_expires
 FROM session s
 JOIN "user" u ON u.id = s.user_id
-WHERE s.token = $1 AND s.expires_at > NOW();
+WHERE s.token = $1 AND s.expires_at > NOW() AND u.email_verified = true;
 
 -- name: GetUserOrganizations :many
 SELECT o.id, o.name, o.slug, o.logo, o.created_at,

@@ -71,11 +71,12 @@ func (r *FederatedRepository) resolveUser(ctx context.Context, q *queries.Querie
 		return "", fmt.Errorf("query federated account: %w", err)
 	}
 
-	user, err := q.GetUserByEmail(ctx, profile.Email)
+	_, err = q.GetUserByEmail(ctx, profile.Email)
 	var userID string
 	switch {
 	case err == nil:
-		userID = user.ID
+		// An email address is not authorization to link another login method.
+		return "", identity.ErrEmailInUse
 	case errors.Is(err, pgx.ErrNoRows):
 		userID = uuid.NewString()
 		if _, err := q.CreateUser(ctx, queries.CreateUserParams{ID: userID, Name: profile.Name, Email: profile.Email}); err != nil {

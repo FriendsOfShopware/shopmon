@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrRegistrationDisabled = errors.New("registration is disabled")
+	ErrEmailUnverified      = errors.New("check your mailbox and verify your email before signing in")
 	ErrInvalidCredentials   = errors.New("invalid email or password")
 	ErrAccountBanned        = errors.New("account is banned")
 	ErrInvalidVerification  = errors.New("invalid or expired verification")
@@ -59,7 +60,7 @@ type CredentialRepository interface {
 	CredentialPassword(ctx context.Context, userID string) (string, error)
 	CreateVerification(ctx context.Context, verification Verification) error
 	FindVerification(ctx context.Context, token string) (Verification, error)
-	VerifyEmail(ctx context.Context, userID, verificationID string) error
+	VerifyEmail(ctx context.Context, userID, email, verificationID string) error
 	ResetPassword(ctx context.Context, userID, verificationID, passwordHash string) error
 }
 
@@ -96,7 +97,6 @@ type SignUpCommand struct {
 	Email    string
 	Password string
 	Name     string
-	Session  SessionMetadata
 }
 
 type Authentication struct {
@@ -104,48 +104,57 @@ type Authentication struct {
 	User  CredentialUser
 }
 
-func (s *CredentialService) SignUp(ctx context.Context, command SignUpCommand) (Authentication, error) {
+func (s *CredentialService) SignUp(ctx context.Context, command SignUpCommand) error {
 	if !s.config.RegistrationEnabled {
-		return Authentication{}, ErrRegistrationDisabled
+		return ErrRegistrationDisabled
 	}
 	if len(command.Password) < 8 {
-		return Authentication{}, ErrPasswordTooShort
+		return ErrPasswordTooShort
 	}
 	exists, err := s.repository.EmailExists(ctx, command.Email)
 	if err != nil {
-		return Authentication{}, fmt.Errorf("check signup email: %w", err)
+		return fmt.Errorf("check signup email: %w", err)
 	}
 	if exists {
-		return Authentication{}, ErrEmailInUse
+		return ErrEmailInUse
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(command.Password), 12)
 	if err != nil {
-		return Authentication{}, fmt.Errorf("hash signup password: %w", err)
+		return fmt.Errorf("hash signup password: %w", err)
 	}
 	user := CredentialUser{ID: uuid.NewString(), Name: command.Name, Email: command.Email, Role: "user"}
 	if err := s.repository.CreateCredentialUser(ctx, user, uuid.NewString(), string(hash)); err != nil {
-		return Authentication{}, fmt.Errorf("create credential user: %w", err)
+		return fmt.Errorf("create credential user: %w", err)
 	}
 
-	verificationToken, tokenErr := randomToken()
-	if tokenErr != nil {
-		slog.ErrorContext(ctx, "failed to generate email verification token", "userID", user.ID, "error", tokenErr)
-	} else if err := s.repository.CreateVerification(ctx, Verification{
-		ID: uuid.NewString(), Identifier: user.Email, Token: verificationToken,
+	if err := s.SendEmailVerification(ctx, user.Email); err != nil {
+		slog.ErrorContext(ctx, "failed to send email verification", "userID", user.ID, "error", err)
+	}
+
+	return nil
+}
+
+func (s *CredentialService) SendEmailVerification(ctx context.Context, email string) error {
+	user, err := s.repository.FindUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("find email verification user: %w", err)
+	}
+	token, err := randomToken()
+	if err != nil {
+		return fmt.Errorf("generate email verification token: %w", err)
+	}
+	if err := s.repository.CreateVerification(ctx, Verification{
+		ID: uuid.NewString(), Identifier: "verify-email:" + user.ID + ":" + user.Email, Token: token,
 		ExpiresAt: s.now().Add(emailVerificationExpiry),
 	}); err != nil {
-		slog.ErrorContext(ctx, "failed to create email verification", "userID", user.ID, "error", err)
-	} else if s.mailer != nil {
-		if err := s.mailer.SendConfirmation(ctx, user.Email, user.Name, verificationToken); err != nil {
-			slog.ErrorContext(ctx, "failed to send confirmation email", "userID", user.ID, "error", err)
+		return fmt.Errorf("create email verification: %w", err)
+	}
+	if s.mailer != nil {
+		if err := s.mailer.SendConfirmation(ctx, user.Email, user.Name, token); err != nil {
+			return fmt.Errorf("send email confirmation: %w", err)
 		}
 	}
-
-	token, err := s.sessions.Issue(ctx, user.ID, command.Session)
-	if err != nil {
-		return Authentication{}, fmt.Errorf("issue signup session: %w", err)
-	}
-	return Authentication{Token: token, User: user}, nil
+	return nil
 }
 
 type SignInCommand struct {
@@ -181,6 +190,14 @@ func (s *CredentialService) SignIn(ctx context.Context, command SignInCommand) (
 		s.lockout.recordFailure(command.Email, s.now())
 		return Authentication{}, ErrInvalidCredentials
 	}
+	if !user.EmailVerified {
+		// Allow accounts with expired or legacy confirmation links to verify
+		// ownership without granting access before confirmation.
+		if err := s.SendEmailVerification(ctx, user.Email); err != nil {
+			slog.ErrorContext(ctx, "failed to resend email verification", "userID", user.ID, "error", err)
+		}
+		return Authentication{}, ErrEmailUnverified
+	}
 	s.lockout.reset(command.Email)
 	token, err := s.sessions.Issue(ctx, user.ID, command.Session)
 	if err != nil {
@@ -194,11 +211,18 @@ func (s *CredentialService) VerifyEmail(ctx context.Context, token string) error
 	if err != nil {
 		return err
 	}
-	user, err := s.repository.FindUserByEmail(ctx, verification.Identifier)
+	parts := strings.SplitN(verification.Identifier, ":", 3)
+	if len(parts) != 3 || parts[0] != "verify-email" {
+		return ErrInvalidVerification
+	}
+	user, err := s.repository.FindUserByEmail(ctx, parts[2])
 	if err != nil {
 		return fmt.Errorf("find verification user: %w", err)
 	}
-	if err := s.repository.VerifyEmail(ctx, user.ID, verification.ID); err != nil {
+	if user.ID != parts[1] {
+		return ErrInvalidVerification
+	}
+	if err := s.repository.VerifyEmail(ctx, user.ID, user.Email, verification.ID); err != nil {
 		return fmt.Errorf("verify user email: %w", err)
 	}
 	return nil

@@ -179,7 +179,7 @@ func initiateSSO(t *testing.T, serverURL, email string) (state, nonce string) {
 // createOrgWithSSO sets up an org owner, an organization, and an SSO provider.
 func createOrgWithSSO(t *testing.T, env *testutil.TestEnv, idpURL string) (orgID, ownerCookie string) {
 	t.Helper()
-	ownerCookie = signUp(t, env.Server.URL, "owner@testcorp.com", "password123!", "Owner")
+	ownerCookie = signUp(t, env, "owner@testcorp.com", "password123!", "Owner")
 	resp := authPost(t, env.Server.URL, "/api/auth/organizations", ownerCookie, map[string]string{
 		"name": "Test Corp",
 	})
@@ -345,7 +345,7 @@ func TestSSOCallback_InvalidCode(t *testing.T) {
 	assert.Equal(t, http.StatusBadGateway, resp.StatusCode)
 }
 
-func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
+func TestSSOCallback_RejectsExistingUser(t *testing.T) {
 	idp := mockOIDCProvider(t)
 	defer idp.server.Close()
 
@@ -353,42 +353,25 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	createOrgWithSSO(t, env, idp.server.URL)
 
 	// Pre-create the user with password auth (same email as SSO will return)
-	signUp(t, env.Server.URL, "ssouser@testcorp.com", "password123!", "Existing User")
+	signUp(t, env, "ssouser@testcorp.com", "password123!", "Existing User")
 
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, _ := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	defer func() { _ = resp.Body.Close() }()
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
-	var callbackResult map[string]string
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&callbackResult))
-	_ = resp.Body.Close()
-	code := callbackResult["code"]
-	require.NotEmpty(t, code)
-
-	exchangeBody, _ := json.Marshal(map[string]string{"code": code})
-	resp, _ = testutil.Post(t, env.Server.URL+"/api/auth/exchange-code", "application/json", bytes.NewReader(exchangeBody))
-	var exchangeResult map[string]string
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&exchangeResult))
-	_ = resp.Body.Close()
-	ssoToken := exchangeResult["token"]
-	require.NotEmpty(t, ssoToken)
-
-	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/auth/session", nil)
-	req.Header.Set("Authorization", "Bearer "+ssoToken)
-	resp, _ = http.DefaultClient.Do(req)
-
-	var sessionResult map[string]any
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&sessionResult))
-	_ = resp.Body.Close()
-	user := sessionResult["user"].(map[string]any)
-	assert.Equal(t, "ssouser@testcorp.com", user["email"])
-
-	var userCount int
+	var accountCount, memberCount int
 	require.NoError(t, env.Pool.QueryRow(t.Context(),
-		`SELECT COUNT(*) FROM "user" WHERE email = 'ssouser@testcorp.com'`).Scan(&userCount))
-	assert.Equal(t, 1, userCount)
+		`SELECT COUNT(*) FROM account WHERE provider_id = 'sso-testcorp-oidc'`).Scan(&accountCount))
+	require.NoError(t, env.Pool.QueryRow(t.Context(),
+		`SELECT COUNT(*) FROM member m JOIN "user" u ON u.id = m.user_id WHERE u.email = 'ssouser@testcorp.com'`).Scan(&memberCount))
+	assert.Zero(t, accountCount)
+	assert.Zero(t, memberCount)
 }
 
 // TestSSOCallback_ForgedToken ensures an ID token signed with a key that is not
@@ -620,7 +603,7 @@ func TestSSOCallback_RejectsInsecureStoredEndpoint(t *testing.T) {
 	defer idp.server.Close()
 
 	env := testutil.Setup(t)
-	ownerCookie := signUp(t, env.Server.URL, "owner@testcorp.com", "password123!", "Owner")
+	ownerCookie := signUp(t, env, "owner@testcorp.com", "password123!", "Owner")
 	resp := authPost(t, env.Server.URL, "/api/auth/organizations", ownerCookie, map[string]string{
 		"name": "Test Corp",
 	})

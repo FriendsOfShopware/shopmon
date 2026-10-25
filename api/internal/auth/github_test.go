@@ -268,6 +268,15 @@ func TestGithubCallback_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "12345", accountID)
 	assert.Equal(t, "github", providerID)
+	// The existing provider binding still permits subsequent logins.
+	state = initiateGithubSignIn(t, env.Server.URL)
+	repeat := githubCallback(t, env.Server.URL, "valid-code", state)
+	defer func() { _ = repeat.Body.Close() }()
+	assert.Equal(t, http.StatusOK, repeat.StatusCode)
+	var accountCount int
+	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM account`).Scan(&accountCount))
+	assert.Equal(t, 1, accountCount)
+
 }
 
 // TestGithubCallback_EmailFallback covers the case where GET /user returns no
@@ -323,10 +332,8 @@ func TestGithubCallback_NoAccessToken(t *testing.T) {
 	assert.Equal(t, 0, count)
 }
 
-// TestGithubCallback_LinksExistingUser ensures that when a user with the same
-// email already exists, the github account is linked to that user instead of
-// creating a duplicate.
-func TestGithubCallback_LinksExistingUser(t *testing.T) {
+// A verified provider email must not authorize linking a local account.
+func TestGithubCallback_RejectsExistingUser(t *testing.T) {
 	mock := newMockGithub(t)
 	defer mock.server.Close()
 	mock.user = map[string]any{
@@ -356,7 +363,7 @@ func TestGithubCallback_LinksExistingUser(t *testing.T) {
 	resp = githubCallback(t, env.Server.URL, "valid-code", state)
 	defer func() { _ = resp.Body.Close() }()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	// Still exactly one user with that email.
 	var userCount int
@@ -364,10 +371,12 @@ func TestGithubCallback_LinksExistingUser(t *testing.T) {
 		`SELECT COUNT(*) FROM "user" WHERE email = 'existing@github.com'`).Scan(&userCount))
 	assert.Equal(t, 1, userCount)
 
-	// The github account links to the pre-existing user.
-	var linkedUserID string
+	// No provider binding or session may be added to the planted account.
+	var accountCount, sessionCount int
 	require.NoError(t, env.Pool.QueryRow(t.Context(),
-		`SELECT user_id FROM account WHERE provider_id = 'github' AND account_id = '24680'`).
-		Scan(&linkedUserID))
-	assert.Equal(t, existingUserID, linkedUserID)
+		`SELECT COUNT(*) FROM account WHERE provider_id = 'github'`).Scan(&accountCount))
+	require.NoError(t, env.Pool.QueryRow(t.Context(),
+		`SELECT COUNT(*) FROM session WHERE user_id = $1`, existingUserID).Scan(&sessionCount))
+	assert.Zero(t, accountCount)
+	assert.Zero(t, sessionCount)
 }

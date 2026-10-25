@@ -26,6 +26,7 @@ const mockSessionData = {
 };
 
 vi.mock("@/composables/useSession", () => ({
+  clearSession: vi.fn(),
   useSession: () => ({
     session: ref(mockSessionData),
     loading: ref(false),

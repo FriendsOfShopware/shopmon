@@ -3923,7 +3923,7 @@ export type SignUpEmailResponses = {
     /**
      * OK
      */
-    200: TokenUserResponse;
+    200: StatusResponse;
 };
 
 export type SignUpEmailResponse = SignUpEmailResponses[keyof SignUpEmailResponses];

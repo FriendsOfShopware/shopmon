@@ -366,8 +366,10 @@ import IconPasskey from "~icons/material-symbols/passkey";
 import IconDesktop from "~icons/fa6-solid/desktop";
 import IconBell from "~icons/fa6-solid/bell";
 import IconBellSlash from "~icons/fa6-regular/bell-slash";
+import { useRouter } from "vue-router";
+import { setToken } from "@/helpers/api";
 import { useAlert } from "@/composables/useAlert";
-import { useSession } from "@/composables/useSession";
+import { clearSession, useSession } from "@/composables/useSession";
 import { useNotificationPreferences } from "@/composables/useNotificationPreferences";
 import {
   changeEmail,
@@ -393,6 +395,7 @@ import { startRegistration } from "@simplewebauthn/browser";
 const { t } = useI18n();
 const { session: sessionData } = useSession();
 const alert = useAlert();
+const router = useRouter();
 
 // The notification matrix UI lives in NotificationMatrix; here we only need to
 // load the shared preference state once on mount.
@@ -476,6 +479,9 @@ async function saveEmail() {
     return;
   }
   emailCurrentPassword.value = "";
+  setToken(null);
+  clearSession();
+  await router.push({ name: "account.login" });
   alert.success(t("settings.emailUpdated"));
 }
 
