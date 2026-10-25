@@ -18,6 +18,7 @@ export type AccountChangelog = {
 };
 
 export type AccountEnvironment = {
+    databaseVersion?: string;
     favicon: string | null;
     id: number;
     lastScrapedAt: string | null;
@@ -25,6 +26,7 @@ export type AccountEnvironment = {
     name: string;
     organizationId: string;
     organizationName: string;
+    phpVersion?: string;
     shopId: number | null;
     shopName: string | null;
     shopwareVersion: string;
@@ -210,6 +212,7 @@ export type AdminEnvironmentDetail = {
     checks: Array<AdminEnvironmentCheck>;
     connectionIssueCount: number;
     createdAt: string;
+    databaseVersion?: string;
     extensions: Array<AdminEnvironmentExtension>;
     id: number;
     lastDeployment?: AdminEnvironmentDeployment;
@@ -218,6 +221,7 @@ export type AdminEnvironmentDetail = {
     name: string;
     organizationId: string;
     organizationName: string;
+    phpVersion?: string;
     scheduledTasks: Array<AdminEnvironmentTask>;
     shopId: number;
     shopName: string;
@@ -274,9 +278,11 @@ export type AdminOrganizationDetail = {
 };
 
 export type AdminOrganizationEnvironment = {
+    databaseVersion?: string;
     id: number;
     lastScrapedAt?: string;
     name: string;
+    phpVersion?: string;
     shopId: number;
     shopName: string;
     shopwareVersion: string;
@@ -764,6 +770,7 @@ export type EnvironmentDetail = {
     changelogsCount: number;
     checks: Array<EnvironmentCheck>;
     createdAt: string;
+    databaseVersion?: string;
     deploymentsCount: number;
     environmentImage: string | null;
     environmentToken: string;
@@ -778,6 +785,7 @@ export type EnvironmentDetail = {
     name: string;
     organizationId: string;
     organizationName: string;
+    phpVersion?: string;
     queues: Array<Queue>;
     scheduledTasks: Array<ScheduledTask>;
     shopDescription: string | null;

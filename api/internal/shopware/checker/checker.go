@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
 type Status string
@@ -151,6 +153,10 @@ type Input struct {
 type Result struct {
 	Status Status  `json:"status"`
 	Checks []Check `json:"checks"`
+	// PhpVersion and DatabaseVersion hold the exact runtime versions reported by
+	// FroshTools health checks when available.
+	PhpVersion      *string `json:"phpVersion,omitempty"`
+	DatabaseVersion *string `json:"databaseVersion,omitempty"`
 	// Unavailable lists the check groups that could not be evaluated in this
 	// run. Their checks are missing from Checks because the data was
 	// unreachable, not because the underlying problems went away.
@@ -173,10 +179,12 @@ func (r Result) UnavailableNames() []string {
 }
 
 type Output struct {
-	mu          sync.Mutex
-	checks      []Check
-	ignores     map[string]bool
-	unavailable map[UnavailableSource]bool
+	mu              sync.Mutex
+	checks          []Check
+	ignores         map[string]bool
+	unavailable     map[UnavailableSource]bool
+	phpVersion      *string
+	databaseVersion *string
 }
 
 func NewOutput(ignores []string) *Output {
@@ -189,6 +197,20 @@ func NewOutput(ignores []string) *Output {
 		ignores:     ignoreMap,
 		unavailable: make(map[UnavailableSource]bool),
 	}
+}
+
+// SetPhpVersion records the exact PHP version reported by the environment.
+func (o *Output) SetPhpVersion(version string) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.phpVersion = &version
+}
+
+// SetDatabaseVersion records the exact database (MySQL/MariaDB) version reported by the environment.
+func (o *Output) SetDatabaseVersion(version string) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.databaseVersion = &version
 }
 
 // MarkUnavailable records that the checks named with idPrefix could not be
@@ -254,9 +276,11 @@ func (o *Output) Result() Result {
 	})
 
 	return Result{
-		Status:      aggregateStatus(o.checks, o.ignores),
-		Checks:      o.checks,
-		Unavailable: unavailable,
+		Status:          aggregateStatus(o.checks, o.ignores),
+		Checks:          o.checks,
+		PhpVersion:      o.phpVersion,
+		DatabaseVersion: o.databaseVersion,
+		Unavailable:     unavailable,
 	}
 }
 
@@ -300,7 +324,6 @@ func RunAll(ctx context.Context, input Input) Result {
 		checkEnv,
 		checkWorker,
 		checkTasks,
-		checkSecurity,
 		checkFroshTools,
 	}
 
@@ -318,5 +341,42 @@ func RunAll(ctx context.Context, input Input) Result {
 	}
 	wg.Wait()
 
+	// Run checkSecurity after checkFroshTools so runtime versions (PHP, MySQL)
+	// collected from the health endpoint are available for advisory matching.
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("checker panicked", "panic", r)
+			}
+		}()
+		checkSecurity(ctx, withRuntimeVersions(input, output), output)
+	}()
+
 	return output.Result()
+}
+
+func withRuntimeVersions(input Input, output *Output) Input {
+	output.mu.Lock()
+	phpVersion := output.phpVersion
+	databaseVersion := output.databaseVersion
+	output.mu.Unlock()
+
+	if phpVersion == nil && databaseVersion == nil {
+		return input
+	}
+
+	installed := make(map[string]string, len(input.InstalledPackages)+2)
+	for k, v := range input.InstalledPackages {
+		installed[k] = v
+	}
+	if phpVersion != nil && *phpVersion != "" {
+		installed["php"] = *phpVersion
+	}
+	if databaseVersion != nil && *databaseVersion != "" {
+		if pkg, ver := version.ParseDatabaseVersion(*databaseVersion); pkg != "" && ver != "" {
+			installed[pkg] = ver
+		}
+	}
+	input.InstalledPackages = installed
+	return input
 }

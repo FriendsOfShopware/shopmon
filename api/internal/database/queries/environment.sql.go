@@ -161,7 +161,7 @@ func (q *Queries) DeleteStoreExtensionImagesNotIn(ctx context.Context, arg Delet
 }
 
 const getAllEnvironments = `-- name: GetAllEnvironments :many
-SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
+SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
        e.task_grace_minutes,
@@ -177,6 +177,8 @@ type GetAllEnvironmentsRow struct {
 	ClientID             string           `json:"client_id"`
 	ClientSecret         string           `json:"client_secret"`
 	ShopwareVersion      string           `json:"shopware_version"`
+	PhpVersion           *string          `json:"php_version"`
+	DatabaseVersion      *string          `json:"database_version"`
 	OrganizationID       string           `json:"organization_id"`
 	Ignores              json.RawMessage  `json:"ignores"`
 	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
@@ -205,6 +207,8 @@ func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsR
 			&i.ClientID,
 			&i.ClientSecret,
 			&i.ShopwareVersion,
+			&i.PhpVersion,
+			&i.DatabaseVersion,
 			&i.OrganizationID,
 			&i.Ignores,
 			&i.LastScrapedAt,
@@ -227,7 +231,7 @@ func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsR
 }
 
 const getEnvironmentByID = `-- name: GetEnvironmentByID :one
-SELECT e.id, e.organization_id, e.shop_id, e.name, e.status, e.url, e.favicon, e.client_id, e.client_secret, e.shopware_version, e.last_scraped_at, e.last_scraped_error, e.ignores, e.environment_image, e.last_changelog, e.active_deployment_id, e.connection_issue_count, e.sitespeed_enabled, e.sitespeed_urls, e.environment_token, e.task_grace_minutes, e.created_at, o.name AS organization_name, s.name AS shop_name, s.description AS shop_description
+SELECT e.id, e.organization_id, e.shop_id, e.name, e.status, e.url, e.favicon, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version, e.last_scraped_at, e.last_scraped_error, e.ignores, e.environment_image, e.last_changelog, e.active_deployment_id, e.connection_issue_count, e.sitespeed_enabled, e.sitespeed_urls, e.environment_token, e.task_grace_minutes, e.created_at, o.name AS organization_name, s.name AS shop_name, s.description AS shop_description
 FROM environment e
 JOIN organization o ON o.id = e.organization_id
 LEFT JOIN shop s ON s.id = e.shop_id
@@ -245,6 +249,8 @@ type GetEnvironmentByIDRow struct {
 	ClientID             string           `json:"client_id"`
 	ClientSecret         string           `json:"client_secret"`
 	ShopwareVersion      string           `json:"shopware_version"`
+	PhpVersion           *string          `json:"php_version"`
+	DatabaseVersion      *string          `json:"database_version"`
 	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
 	LastScrapedError     *string          `json:"last_scraped_error"`
 	Ignores              json.RawMessage  `json:"ignores"`
@@ -276,6 +282,8 @@ func (q *Queries) GetEnvironmentByID(ctx context.Context, id int32) (GetEnvironm
 		&i.ClientID,
 		&i.ClientSecret,
 		&i.ShopwareVersion,
+		&i.PhpVersion,
+		&i.DatabaseVersion,
 		&i.LastScrapedAt,
 		&i.LastScrapedError,
 		&i.Ignores,
@@ -450,7 +458,7 @@ func (q *Queries) GetEnvironmentExtensions(ctx context.Context, environmentID in
 }
 
 const getEnvironmentForScrape = `-- name: GetEnvironmentForScrape :one
-SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
+SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
        e.task_grace_minutes,
@@ -467,6 +475,8 @@ type GetEnvironmentForScrapeRow struct {
 	ClientID             string           `json:"client_id"`
 	ClientSecret         string           `json:"client_secret"`
 	ShopwareVersion      string           `json:"shopware_version"`
+	PhpVersion           *string          `json:"php_version"`
+	DatabaseVersion      *string          `json:"database_version"`
 	OrganizationID       string           `json:"organization_id"`
 	Ignores              json.RawMessage  `json:"ignores"`
 	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
@@ -489,6 +499,8 @@ func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnv
 		&i.ClientID,
 		&i.ClientSecret,
 		&i.ShopwareVersion,
+		&i.PhpVersion,
+		&i.DatabaseVersion,
 		&i.OrganizationID,
 		&i.Ignores,
 		&i.LastScrapedAt,
@@ -1016,7 +1028,7 @@ func (q *Queries) InsertEnvironmentSitespeedAt(ctx context.Context, arg InsertEn
 }
 
 const listEnvironmentsByOrganization = `-- name: ListEnvironmentsByOrganization :many
-SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version,
+SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.php_version, e.database_version,
        e.last_scraped_at, e.last_scraped_error, e.created_at, e.shop_id, e.organization_id,
        o.name AS organization_name,
        s.name AS shop_name, s.description AS shop_description
@@ -1034,6 +1046,8 @@ type ListEnvironmentsByOrganizationRow struct {
 	Favicon          *string          `json:"favicon"`
 	Status           string           `json:"status"`
 	ShopwareVersion  string           `json:"shopware_version"`
+	PhpVersion       *string          `json:"php_version"`
+	DatabaseVersion  *string          `json:"database_version"`
 	LastScrapedAt    pgtype.Timestamp `json:"last_scraped_at"`
 	LastScrapedError *string          `json:"last_scraped_error"`
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
@@ -1060,6 +1074,8 @@ func (q *Queries) ListEnvironmentsByOrganization(ctx context.Context, organizati
 			&i.Favicon,
 			&i.Status,
 			&i.ShopwareVersion,
+			&i.PhpVersion,
+			&i.DatabaseVersion,
 			&i.LastScrapedAt,
 			&i.LastScrapedError,
 			&i.CreatedAt,
@@ -1142,14 +1158,17 @@ func (q *Queries) UpdateEnvironmentActiveDeployment(ctx context.Context, arg Upd
 }
 
 const updateEnvironmentAfterScrape = `-- name: UpdateEnvironmentAfterScrape :exec
-UPDATE environment SET status = $1, shopware_version = $2, last_scraped_at = NOW(), last_scraped_error = $3,
-       favicon = $4, environment_image = $5, last_changelog = $6, connection_issue_count = 0
-WHERE id = $7
+UPDATE environment SET status = $1, shopware_version = $2, php_version = $3, database_version = $4,
+       last_scraped_at = NOW(), last_scraped_error = $5,
+       favicon = $6, environment_image = $7, last_changelog = $8, connection_issue_count = 0
+WHERE id = $9
 `
 
 type UpdateEnvironmentAfterScrapeParams struct {
 	Status           string  `json:"status"`
 	ShopwareVersion  string  `json:"shopware_version"`
+	PhpVersion       *string `json:"php_version"`
+	DatabaseVersion  *string `json:"database_version"`
 	LastScrapedError *string `json:"last_scraped_error"`
 	Favicon          *string `json:"favicon"`
 	EnvironmentImage *string `json:"environment_image"`
@@ -1161,6 +1180,8 @@ func (q *Queries) UpdateEnvironmentAfterScrape(ctx context.Context, arg UpdateEn
 	_, err := q.db.Exec(ctx, updateEnvironmentAfterScrape,
 		arg.Status,
 		arg.ShopwareVersion,
+		arg.PhpVersion,
+		arg.DatabaseVersion,
 		arg.LastScrapedError,
 		arg.Favicon,
 		arg.EnvironmentImage,

@@ -27,7 +27,7 @@ SELECT COUNT(*)::int FROM organization o
 WHERE (sqlc.narg('search')::text IS NULL OR o.name ILIKE '%' || sqlc.narg('search') || '%' OR o.slug ILIKE '%' || sqlc.narg('search') || '%');
 
 -- name: AdminListEnvironments :many
-SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at, e.created_at,
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.php_version, e.database_version, e.last_scraped_at, e.created_at,
        e.organization_id, o.name AS organization_name,
        e.shop_id, s.name AS shop_name
 FROM environment e
@@ -43,6 +43,14 @@ ORDER BY
   CASE WHEN sqlc.arg('sort_by')::text = 'status' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.status END DESC,
   CASE WHEN sqlc.arg('sort_by')::text = 'shopwareVersion' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.shopware_version END ASC,
   CASE WHEN sqlc.arg('sort_by')::text = 'shopwareVersion' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.shopware_version END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'phpVersion' AND sqlc.arg('sort_dir')::text = 'asc' THEN string_to_array((regexp_match(e.php_version, '(\d+(?:\.\d+)+)'))[1], '.')::int[] END ASC NULLS LAST,
+  CASE WHEN sqlc.arg('sort_by')::text = 'phpVersion' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.php_version END ASC NULLS LAST,
+  CASE WHEN sqlc.arg('sort_by')::text = 'phpVersion' AND sqlc.arg('sort_dir')::text = 'desc' THEN string_to_array((regexp_match(e.php_version, '(\d+(?:\.\d+)+)'))[1], '.')::int[] END DESC NULLS LAST,
+  CASE WHEN sqlc.arg('sort_by')::text = 'phpVersion' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.php_version END DESC NULLS LAST,
+  CASE WHEN sqlc.arg('sort_by')::text = 'databaseVersion' AND sqlc.arg('sort_dir')::text = 'asc' THEN string_to_array((regexp_match(regexp_replace(e.database_version, '^5\.5\.5-', ''), '(\d+(?:\.\d+)+)'))[1], '.')::int[] END ASC NULLS LAST,
+  CASE WHEN sqlc.arg('sort_by')::text = 'databaseVersion' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.database_version END ASC NULLS LAST,
+  CASE WHEN sqlc.arg('sort_by')::text = 'databaseVersion' AND sqlc.arg('sort_dir')::text = 'desc' THEN string_to_array((regexp_match(regexp_replace(e.database_version, '^5\.5\.5-', ''), '(\d+(?:\.\d+)+)'))[1], '.')::int[] END DESC NULLS LAST,
+  CASE WHEN sqlc.arg('sort_by')::text = 'databaseVersion' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.database_version END DESC NULLS LAST,
   CASE WHEN sqlc.arg('sort_by')::text = 'organizationName' AND sqlc.arg('sort_dir')::text = 'asc' THEN o.name END ASC,
   CASE WHEN sqlc.arg('sort_by')::text = 'organizationName' AND sqlc.arg('sort_dir')::text = 'desc' THEN o.name END DESC,
   CASE WHEN sqlc.arg('sort_by')::text = 'createdAt' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.created_at END ASC,
@@ -91,7 +99,7 @@ WHERE m.organization_id = $1
 ORDER BY m.created_at;
 
 -- name: AdminGetOrganizationEnvironments :many
-SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at,
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.php_version, e.database_version, e.last_scraped_at,
        e.shop_id, s.name AS shop_name
 FROM environment e
 JOIN shop s ON s.id = e.shop_id
@@ -121,7 +129,7 @@ ORDER BY name;
 -- Phase 4: Environment detail ---------------------------------------------
 
 -- name: AdminGetEnvironmentDetail :one
-SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.created_at,
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.php_version, e.database_version, e.created_at,
        e.last_scraped_at, e.last_scraped_error, e.connection_issue_count,
        e.organization_id, o.name AS organization_name,
        e.shop_id, s.name AS shop_name

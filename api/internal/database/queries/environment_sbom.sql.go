@@ -198,6 +198,28 @@ func (q *Queries) DeleteEnvironmentAdvisoryMatches(ctx context.Context, environm
 	return err
 }
 
+const deleteEnvironmentComposerAdvisoryMatches = `-- name: DeleteEnvironmentComposerAdvisoryMatches :exec
+DELETE FROM environment_advisory_match
+WHERE environment_id = $1
+  AND package_name NOT IN ('php', 'mysql', 'mariadb')
+`
+
+func (q *Queries) DeleteEnvironmentComposerAdvisoryMatches(ctx context.Context, environmentID int32) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentComposerAdvisoryMatches, environmentID)
+	return err
+}
+
+const deleteEnvironmentRuntimeAdvisoryMatches = `-- name: DeleteEnvironmentRuntimeAdvisoryMatches :exec
+DELETE FROM environment_advisory_match
+WHERE environment_id = $1
+  AND package_name IN ('php', 'mysql', 'mariadb')
+`
+
+func (q *Queries) DeleteEnvironmentRuntimeAdvisoryMatches(ctx context.Context, environmentID int32) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentRuntimeAdvisoryMatches, environmentID)
+	return err
+}
+
 const deleteEnvironmentSbomComponentsNotIn = `-- name: DeleteEnvironmentSbomComponentsNotIn :exec
 DELETE FROM environment_sbom_component
 WHERE environment_id = $1 AND package_name != ALL($2::text[])
@@ -683,11 +705,18 @@ func (q *Queries) ListDistinctSbomPackageNames(ctx context.Context) ([]string, e
 }
 
 const listEnvironmentIDsWithSbom = `-- name: ListEnvironmentIDsWithSbom :many
-SELECT DISTINCT environment_id FROM environment_sbom_component ORDER BY environment_id
+SELECT DISTINCT id AS environment_id
+FROM environment e
+WHERE (e.php_version IS NOT NULL AND e.php_version <> '')
+   OR (e.database_version IS NOT NULL AND e.database_version <> '')
+   OR EXISTS (
+     SELECT 1 FROM environment_sbom_component c WHERE c.environment_id = e.id
+   )
+ORDER BY environment_id
 `
 
-// Every environment that has SBOM components, for the post-advisory-sync
-// rematch pass.
+// Every environment that has SBOM components or runtime versions, for the
+// post-advisory-sync rematch pass.
 func (q *Queries) ListEnvironmentIDsWithSbom(ctx context.Context) ([]int32, error) {
 	rows, err := q.db.Query(ctx, listEnvironmentIDsWithSbom)
 	if err != nil {

@@ -166,6 +166,48 @@ func TestAdminGetEnvironments_Search(t *testing.T) {
 	assert.Equal(t, "Staging", result.Environments[0].Name)
 }
 
+func TestAdminGetEnvironments_SortByPhpAndDatabaseVersion(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "admin-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+
+	env10 := env.SeedEnvironment(t, "org-1", shopID, "PHP 8.3.10", "https://php10.example.com")
+	env9 := env.SeedEnvironment(t, "org-1", shopID, "PHP 8.3.9", "https://php9.example.com")
+	envNull := env.SeedEnvironment(t, "org-1", shopID, "PHP Unknown", "https://phpnull.example.com")
+
+	_, err := env.Pool.Exec(t.Context(), `UPDATE environment SET php_version = '8.3.10', database_version = 'MySQL 8.0.10' WHERE id = $1`, env10)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(t.Context(), `UPDATE environment SET php_version = '8.3.9', database_version = 'MySQL 8.0.9' WHERE id = $1`, env9)
+	require.NoError(t, err)
+	_ = envNull
+
+	fetchNames := func(sortBy, sortDir string) []string {
+		t.Helper()
+		req := testutil.NewRequest(t, "GET",
+			fmt.Sprintf("%s/api/admin/environments?sortBy=%s&sortDirection=%s", env.Server.URL, sortBy, sortDir), nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var result api.AdminEnvironmentsResponse
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+		names := make([]string, 0, len(result.Environments))
+		for _, item := range result.Environments {
+			names = append(names, item.Name)
+		}
+		return names
+	}
+
+	assert.Equal(t, []string{"PHP 8.3.9", "PHP 8.3.10", "PHP Unknown"}, fetchNames("phpVersion", "asc"))
+	assert.Equal(t, []string{"PHP 8.3.10", "PHP 8.3.9", "PHP Unknown"}, fetchNames("phpVersion", "desc"))
+	assert.Equal(t, []string{"PHP 8.3.9", "PHP 8.3.10", "PHP Unknown"}, fetchNames("databaseVersion", "asc"))
+	assert.Equal(t, []string{"PHP 8.3.10", "PHP 8.3.9", "PHP Unknown"}, fetchNames("databaseVersion", "desc"))
+}
+
 func TestAdminGetGrowth(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
@@ -255,6 +297,8 @@ func TestAdminGetEnvironmentDetail(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Acme Org", "acme-org", "admin-1")
 	shopID := env.SeedShop(t, "org-1", "Acme Shop")
 	envID := env.SeedEnvironment(t, "org-1", shopID, "Production", "https://prod.example.com")
+	_, err := env.Pool.Exec(t.Context(), `UPDATE environment SET php_version = '8.3.14', database_version = '8.0.36' WHERE id = $1`, envID)
+	require.NoError(t, err)
 
 	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/admin/environments/%d", env.Server.URL, envID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -270,6 +314,10 @@ func TestAdminGetEnvironmentDetail(t *testing.T) {
 	assert.Equal(t, "Production", detail.Name)
 	assert.Equal(t, "Acme Org", detail.OrganizationName)
 	assert.Equal(t, "Acme Shop", detail.ShopName)
+	require.NotNil(t, detail.PhpVersion)
+	assert.Equal(t, "8.3.14", *detail.PhpVersion)
+	require.NotNil(t, detail.DatabaseVersion)
+	assert.Equal(t, "8.0.36", *detail.DatabaseVersion)
 	// Secrets must never be exposed.
 	body, _ := json.Marshal(detail)
 	assert.NotContains(t, string(body), "client_secret")

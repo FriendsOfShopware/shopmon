@@ -32,6 +32,10 @@ func TestSatisfies(t *testing.T) {
 		{"6.6.10.0", "<6.6.10.18|>=6.7.0.0,<6.7.10.1", true},
 		{"6.6.10.18", "<6.6.10.18|>=6.7.0.0,<6.7.10.1", false},
 		{"6.5.0.0", ">=6.7.0.0,<6.7.10.1", false},
+		{"8.3.0-0ubuntu0.24.04.1", ">=8.3.0,<8.3.36", true},
+		{"8.2.25-1+ubuntu22.04.1+deb.sury.org+1", ">=8.2.0,<8.2.35", true},
+		{"8.2.35-1+ubuntu22.04.1+deb.sury.org+1", ">=8.2.0,<8.2.35", false},
+		{"10.11.8-MariaDB-0ubuntu0.24.04.1", ">=10.11.0,<10.11.10", true},
 	}
 	for _, c := range cases {
 		got, err := Satisfies(c.version, c.constraint)
@@ -41,6 +45,30 @@ func TestSatisfies(t *testing.T) {
 		}
 		if got != c.want {
 			t.Errorf("Satisfies(%q, %q) = %v, want %v", c.version, c.constraint, got, c.want)
+		}
+	}
+}
+
+func TestParseDatabaseVersion(t *testing.T) {
+	cases := []struct {
+		raw     string
+		wantPkg string
+		wantVer string
+	}{
+		{"MySQL 8.0.36", "mysql", "8.0.36"},
+		{"MariaDB 10.11.6", "mariadb", "10.11.6"},
+		{"8.0.36", "mysql", "8.0.36"},
+		{"10.11.6", "mariadb", "10.11.6"},
+		{"10.11.8-MariaDB-0ubuntu0.24.04.1", "mariadb", "10.11.8-MariaDB-0ubuntu0.24.04.1"},
+		{"MariaDB 10.11.8-MariaDB-0ubuntu0.24.04.1", "mariadb", "10.11.8-MariaDB-0ubuntu0.24.04.1"},
+		{"MySQL 8.0.36-0ubuntu0.24.04.1", "mysql", "8.0.36-0ubuntu0.24.04.1"},
+		{"", "", ""},
+		{"unknown", "", ""},
+	}
+	for _, c := range cases {
+		pkg, ver := ParseDatabaseVersion(c.raw)
+		if pkg != c.wantPkg || ver != c.wantVer {
+			t.Errorf("ParseDatabaseVersion(%q) = (%q, %q), want (%q, %q)", c.raw, pkg, ver, c.wantPkg, c.wantVer)
 		}
 	}
 }

@@ -396,9 +396,11 @@ type AccountEnvironment struct {
 	Id               int        `json:"id"`
 	LastScrapedAt    *time.Time `json:"lastScrapedAt"`
 	LastScrapedError *string    `json:"lastScrapedError"`
+	DatabaseVersion     *string    `json:"databaseVersion,omitempty"`
 	Name             string     `json:"name"`
 	OrganizationId   string     `json:"organizationId"`
 	OrganizationName string     `json:"organizationName"`
+	PhpVersion       *string    `json:"phpVersion,omitempty"`
 	ShopId           *int       `json:"shopId"`
 	ShopName         *string    `json:"shopName"`
 	ShopwareVersion  string     `json:"shopwareVersion"`
@@ -638,9 +640,11 @@ type AdminEnvironmentDetail struct {
 	LastDeployment       *AdminEnvironmentDeployment `json:"lastDeployment,omitempty"`
 	LastScrapedAt        *time.Time                  `json:"lastScrapedAt,omitempty"`
 	LastScrapedError     *string                     `json:"lastScrapedError,omitempty"`
+	DatabaseVersion         *string                     `json:"databaseVersion,omitempty"`
 	Name                 string                      `json:"name"`
 	OrganizationId       string                      `json:"organizationId"`
 	OrganizationName     string                      `json:"organizationName"`
+	PhpVersion           *string                     `json:"phpVersion,omitempty"`
 	ScheduledTasks       []AdminEnvironmentTask      `json:"scheduledTasks"`
 	ShopId               int                         `json:"shopId"`
 	ShopName             string                      `json:"shopName"`
@@ -705,7 +709,9 @@ type AdminOrganizationDetail struct {
 type AdminOrganizationEnvironment struct {
 	Id              int        `json:"id"`
 	LastScrapedAt   *time.Time `json:"lastScrapedAt,omitempty"`
+	DatabaseVersion    *string    `json:"databaseVersion,omitempty"`
 	Name            string     `json:"name"`
+	PhpVersion      *string    `json:"phpVersion,omitempty"`
 	ShopId          int        `json:"shopId"`
 	ShopName        string     `json:"shopName"`
 	ShopwareVersion string     `json:"shopwareVersion"`
@@ -1242,9 +1248,11 @@ type EnvironmentDetail struct {
 	LastDeploymentAt   *time.Time             `json:"lastDeploymentAt"`
 	LastScrapedAt      *time.Time             `json:"lastScrapedAt"`
 	LastScrapedError   *string                `json:"lastScrapedError"`
+	DatabaseVersion       *string                `json:"databaseVersion,omitempty"`
 	Name               string                 `json:"name"`
 	OrganizationId     string                 `json:"organizationId"`
 	OrganizationName   string                 `json:"organizationName"`
+	PhpVersion         *string                `json:"phpVersion,omitempty"`
 	Queues             []Queue                `json:"queues"`
 	ScheduledTasks     []ScheduledTask        `json:"scheduledTasks"`
 	ShopDescription    *string                `json:"shopDescription"`

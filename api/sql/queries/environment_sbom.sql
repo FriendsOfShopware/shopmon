@@ -63,6 +63,16 @@ WHERE (environment_advisory_match.installed_version, environment_advisory_match.
 -- name: DeleteEnvironmentAdvisoryMatches :exec
 DELETE FROM environment_advisory_match WHERE environment_id = $1;
 
+-- name: DeleteEnvironmentComposerAdvisoryMatches :exec
+DELETE FROM environment_advisory_match
+WHERE environment_id = $1
+  AND package_name NOT IN ('php', 'mysql', 'mariadb');
+
+-- name: DeleteEnvironmentRuntimeAdvisoryMatches :exec
+DELETE FROM environment_advisory_match
+WHERE environment_id = $1
+  AND package_name IN ('php', 'mysql', 'mariadb');
+
 -- Advisories this environment's subscribers have already been alerted about.
 -- The rematch uses this — not the presence of a match row — to decide what is
 -- new, so an alert that failed to dispatch is retried on the next pass.
@@ -149,10 +159,17 @@ WHERE m.advisory_id = ANY($1::text[]) AND e.organization_id = ANY($2::text[])
   )
 GROUP BY m.advisory_id;
 
--- Every environment that has SBOM components, for the post-advisory-sync
--- rematch pass.
+-- Every environment that has SBOM components or runtime versions, for the
+-- post-advisory-sync rematch pass.
 -- name: ListEnvironmentIDsWithSbom :many
-SELECT DISTINCT environment_id FROM environment_sbom_component ORDER BY environment_id;
+SELECT DISTINCT id AS environment_id
+FROM environment e
+WHERE (e.php_version IS NOT NULL AND e.php_version <> '')
+   OR (e.database_version IS NOT NULL AND e.database_version <> '')
+   OR EXISTS (
+     SELECT 1 FROM environment_sbom_component c WHERE c.environment_id = e.id
+   )
+ORDER BY environment_id;
 
 -- User-facing advisory listing with an "affects my shops" scope, sorting, and
 -- a per-row affected-environment count.
