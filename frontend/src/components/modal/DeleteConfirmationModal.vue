@@ -16,8 +16,8 @@
       </div>
 
       <div v-else>
-        <p v-html="$t('deleteModal.confirmText', { name: entityName })" />
-        <p v-html="$t('deleteModal.consequence')" />
+        <p>{{ $t("deleteModal.confirmText", { name: entityName }) }}</p>
+        <p>{{ $t("deleteModal.consequence") }}</p>
         <p v-if="customConsequence" class="text-muted-foreground">
           {{ customConsequence }}
         </p>
