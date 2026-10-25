@@ -10,6 +10,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 )
 
 type noContentOutput struct{}
@@ -74,7 +75,7 @@ func (h *Handler) CreateShop(ctx context.Context, input *createShopInput) (*crea
 	}
 	if errors.Is(err, monitoring.ErrConnectionFailed) {
 		slog.ErrorContext(ctx, "failed to validate shop connection for new shop", "error", err)
-		return nil, huma.Error400BadRequest("Cannot reach shop. Check your credentials and shop URL.")
+		return nil, huma.Error400BadRequest(shopware.ConnectionErrorMessage(err))
 	}
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create shop with environment", "error", err)

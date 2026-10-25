@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"math"
 	"time"
+
+	"github.com/friendsofshopware/shopmon/api/internal/monitoring/sitespeed"
 )
 
 var (
@@ -494,6 +496,12 @@ func (s *Service) UpdateSitespeedSettings(ctx context.Context, userID string, en
 	if _, err := s.authorizedEnvironment(ctx, userID, environmentID); err != nil {
 		return err
 	}
+	normalized, err := sitespeed.NormalizeURLs(urls)
+	if err != nil {
+		return err
+	}
+	urls = normalized
+
 	if err := s.repository.UpdateSitespeedSettings(ctx, environmentID, enabled, urls); err != nil {
 		return fmt.Errorf("update sitespeed settings: %w", err)
 	}

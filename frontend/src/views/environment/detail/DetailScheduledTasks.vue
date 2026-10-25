@@ -111,6 +111,7 @@
 </template>
 
 <script setup lang="ts">
+import { requireMutation } from "@/helpers/apiError";
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
@@ -227,9 +228,12 @@ const filteredTasks = computed(() => {
 
 async function onReScheduleTask(taskId: string) {
   try {
-    await rescheduleTask({
-      path: { environmentId: environment.value?.id ?? 0, taskId },
-    });
+    requireMutation(
+      await rescheduleTask({
+        path: { environmentId: environment.value?.id ?? 0, taskId },
+      }),
+      "Failed to reschedule task. Check the shop connection and try again.",
+    );
     success(t("shopDetail.taskRescheduled"));
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));

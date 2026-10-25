@@ -1,3 +1,4 @@
+import { apiErrorMessage } from "@/helpers/apiError";
 import { ref } from "vue";
 import { i18n } from "@/i18n";
 import { useAlert } from "@/composables/useAlert";
@@ -70,7 +71,7 @@ export function useNotificationPreferences() {
   function reportFirstError(errs: unknown[]) {
     const err = errs.find(Boolean);
     if (err) {
-      showError((err as { message?: string }).message ?? "");
+      showError(apiErrorMessage(err, "Failed to save notification preferences. Please try again."));
     }
   }
 

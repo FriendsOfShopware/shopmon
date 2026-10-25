@@ -38,7 +38,12 @@
             </SelectItem>
           </SelectContent>
         </Select>
-        <Button v-if="environment.sitespeedDetailUrl" variant="outline" size="sm" as-child>
+        <Button
+          v-if="latest && environment.sitespeedDetailUrl"
+          variant="outline"
+          size="sm"
+          as-child
+        >
           <a :href="environment.sitespeedDetailUrl" target="_blank">
             <icon-fa6-solid:chart-line class="mr-1.5 size-3" />
             {{ $t("sitespeed.sitespeedDetails", { name: $t("nav.sitespeed") }) }}

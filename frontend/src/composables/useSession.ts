@@ -1,3 +1,4 @@
+import { requireMutation } from "@/helpers/apiError";
 import { ref, computed } from "vue";
 import { getToken } from "../helpers/api";
 import { getSession, setActiveOrganization as apiSetActiveOrganization } from "@/api/generated";
@@ -60,9 +61,12 @@ export async function fetchSession(): Promise<SessionData | null> {
 }
 
 export async function setActiveOrganization(organizationId: string): Promise<void> {
-  await apiSetActiveOrganization({
-    body: { organizationId },
-  });
+  requireMutation(
+    await apiSetActiveOrganization({
+      body: { organizationId },
+    }),
+    "Failed to switch organization. Check your membership and try again.",
+  );
   _fetched.value = false;
   _pending = null;
   await fetchSession();

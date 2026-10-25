@@ -11,18 +11,27 @@ import (
 	"strings"
 	"time"
 
+	goqueue "github.com/shyim/go-queue"
+
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 )
 
+// Repository is the persistence boundary used by sitespeed jobs.
+type Repository interface {
+	GetEnvironmentsWithSitespeedEnabled(context.Context) ([]queries.GetEnvironmentsWithSitespeedEnabledRow, error)
+	InsertEnvironmentSitespeed(context.Context, queries.InsertEnvironmentSitespeedParams) error
+	UpdateEnvironmentImage(context.Context, queries.UpdateEnvironmentImageParams) error
+}
+
 type Service struct {
-	queries *queries.Queries
+	queries Repository
 	cfg     *config.Config
 }
 
-func NewService(q *queries.Queries, cfg *config.Config) *Service {
+func NewService(q Repository, cfg *config.Config) *Service {
 	return &Service{queries: q, cfg: cfg}
 }
 
@@ -39,8 +48,9 @@ func (s *Service) Scrape(ctx context.Context, environmentID int32) (err error) {
 		}
 	}
 
-	metrics.RecordSitespeedOutcome(ctx, metrics.OutcomeError)
-	return fmt.Errorf("environment %d not found or sitespeed not enabled", environmentID)
+	slog.InfoContext(ctx, "sitespeed environment deleted or disabled, skipping", "environmentId", environmentID)
+	metrics.RecordSitespeedOutcome(ctx, metrics.OutcomeSkipped)
+	return nil
 }
 
 func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironmentsWithSitespeedEnabledRow) (err error) {
@@ -64,12 +74,20 @@ func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironm
 	var urls []string
 	if env.SitespeedUrls != nil {
 		if err := json.Unmarshal(env.SitespeedUrls, &urls); err != nil {
-			return fmt.Errorf("unmarshal sitespeed urls for environment %d: %w", env.ID, err)
+			return goqueue.Unrecoverable(fmt.Errorf("invalid sitespeed URL configuration for environment %d", env.ID))
 		}
 	}
 	if len(urls) == 0 {
 		urls = []string{env.Url}
 	}
+	urls, err = NormalizeURLs(urls)
+	if err != nil {
+		return goqueue.Unrecoverable(err)
+	}
+	if _, err := NormalizeURLs([]string{s.cfg.SitespeedEndpoint}); err != nil {
+		return goqueue.Unrecoverable(fmt.Errorf("invalid sitespeed service endpoint"))
+	}
+
 	for i, u := range urls {
 		urls[i] = strings.Replace(u, "http://localhost:3889", "http://demoshop:8000", 1)
 	}
@@ -92,23 +110,30 @@ func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironm
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
 	if err != nil {
-		return fmt.Errorf("create sitespeed request for environment %d: %w", env.ID, err)
+		return goqueue.Unrecoverable(fmt.Errorf("invalid sitespeed service request for environment %d", env.ID))
 	}
 	req.Header.Set("Authorization", "Bearer "+s.cfg.SitespeedAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := httputil.NewHTTPClient(httputil.WithTimeout(300 * time.Second)).Do(req)
+	client := httputil.NewHTTPClient(httputil.WithTimeout(300 * time.Second))
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("call sitespeed: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
+	// Do not include upstream bodies: they may contain URLs, headers or credentials.
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		statusErr := fmt.Errorf("sitespeed service returned HTTP %d", resp.StatusCode)
+		if resp.StatusCode >= 300 && resp.StatusCode < 500 && resp.StatusCode != http.StatusRequestTimeout && resp.StatusCode != http.StatusTooManyRequests {
+			return goqueue.Unrecoverable(statusErr)
+		}
+		return statusErr
+	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 	if err != nil {
 		return fmt.Errorf("read sitespeed response for environment %d: %w", env.ID, err)
-	}
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("sitespeed error (%d): %s", resp.StatusCode, string(body))
 	}
 
 	// Parse response and save metrics

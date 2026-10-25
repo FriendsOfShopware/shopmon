@@ -104,6 +104,7 @@
 </template>
 
 <script setup lang="ts">
+import { requireMutation } from "@/helpers/apiError";
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
@@ -121,7 +122,7 @@ import IconCircleInfo from "~icons/fa6-solid/circle-info";
 import IconCircleCheck from "~icons/fa6-solid/circle-check";
 
 const { t } = useI18n();
-const { info } = useAlert();
+const { info, error } = useAlert();
 const { environment } = useEnvironmentDetail();
 
 const activeFilter = ref<"all" | "red" | "yellow" | "green">("all");
@@ -174,16 +175,25 @@ async function ignoreCheck(id: string) {
 
   const updatedIgnores = [...(environment.value.ignores ?? []), id];
 
-  await updateEnvironment({
-    path: { environmentId: environment.value.id },
-    body: {
-      shopId: environment.value.shopId ?? 0,
-      ignores: updatedIgnores,
-    },
-  });
+  try {
+    requireMutation(
+      await updateEnvironment({
+        path: { environmentId: environment.value.id },
+        body: {
+          shopId: environment.value.shopId ?? 0,
+          ignores: updatedIgnores,
+        },
+      }),
+      "Failed to update ignored checks. Please try again.",
+    );
 
-  environment.value = { ...environment.value, ignores: updatedIgnores };
-  info(t("shopDetail.ignoreStateUpdated"));
+    environment.value = { ...environment.value, ignores: updatedIgnores };
+    info(t("shopDetail.ignoreStateUpdated"));
+  } catch (err) {
+    error(
+      err instanceof Error ? err.message : "Failed to update ignored checks. Please try again.",
+    );
+  }
 }
 
 async function removeIgnore(id: string) {
@@ -191,15 +201,24 @@ async function removeIgnore(id: string) {
 
   const updatedIgnores = (environment.value.ignores ?? []).filter((aid: string) => aid !== id);
 
-  await updateEnvironment({
-    path: { environmentId: environment.value.id },
-    body: {
-      shopId: environment.value.shopId ?? 0,
-      ignores: updatedIgnores,
-    },
-  });
+  try {
+    requireMutation(
+      await updateEnvironment({
+        path: { environmentId: environment.value.id },
+        body: {
+          shopId: environment.value.shopId ?? 0,
+          ignores: updatedIgnores,
+        },
+      }),
+      "Failed to update ignored checks. Please try again.",
+    );
 
-  environment.value = { ...environment.value, ignores: updatedIgnores };
-  info(t("shopDetail.ignoreStateUpdated"));
+    environment.value = { ...environment.value, ignores: updatedIgnores };
+    info(t("shopDetail.ignoreStateUpdated"));
+  } catch (err) {
+    error(
+      err instanceof Error ? err.message : "Failed to update ignored checks. Please try again.",
+    );
+  }
 }
 </script>

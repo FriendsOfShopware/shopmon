@@ -1,3 +1,4 @@
+import { requireMutation } from "@/helpers/apiError";
 import { ref, computed, watch } from "vue";
 import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
@@ -108,15 +109,18 @@ export function useEnvironmentDetail() {
   }
 
   async function onRefresh(sitespeed: boolean) {
-    showEnvironmentRefreshModal.value = false;
     if (environment.value?.organizationId && environment.value?.id) {
       try {
         isRefreshing.value = true;
-        await refreshEnvironment({
-          path: { environmentId: environment.value.id },
-          body: { sitespeed },
-        });
+        requireMutation(
+          await refreshEnvironment({
+            path: { environmentId: environment.value.id },
+            body: { sitespeed },
+          }),
+          "Failed to update environment. Check the shop connection and try again.",
+        );
         isRefreshing.value = false;
+        showEnvironmentRefreshModal.value = false;
         await loadEnvironment(true);
         success(t("environment.refreshQueued"));
       } catch (e) {
@@ -130,9 +134,12 @@ export function useEnvironmentDetail() {
     if (environment.value?.organizationId && environment.value?.id) {
       try {
         isCacheClearing.value = true;
-        await clearEnvironmentCache({
-          path: { environmentId: environment.value.id },
-        });
+        requireMutation(
+          await clearEnvironmentCache({
+            path: { environmentId: environment.value.id },
+          }),
+          "Failed to update environment. Check the shop connection and try again.",
+        );
         isCacheClearing.value = false;
         await loadEnvironment(true);
         success(t("environment.cacheCleared"));
@@ -150,15 +157,21 @@ export function useEnvironmentDetail() {
       isSubscribing.value = true;
 
       if (isSubscribed.value) {
-        await unsubscribeFromEnvironment({
-          path: { environmentId: environment.value.id },
-        });
+        requireMutation(
+          await unsubscribeFromEnvironment({
+            path: { environmentId: environment.value.id },
+          }),
+          "Failed to update environment. Check the shop connection and try again.",
+        );
         isSubscribed.value = false;
         success(t("environment.unsubscribed"));
       } else {
-        await subscribeToEnvironment({
-          path: { environmentId: environment.value.id },
-        });
+        requireMutation(
+          await subscribeToEnvironment({
+            path: { environmentId: environment.value.id },
+          }),
+          "Failed to update environment. Check the shop connection and try again.",
+        );
         isSubscribed.value = true;
         success(t("environment.subscribed"));
       }

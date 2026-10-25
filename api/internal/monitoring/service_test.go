@@ -319,3 +319,16 @@ func TestRefreshEnvironmentReturnsMandatoryDispatchError(t *testing.T) {
 	require.ErrorIs(t, err, dispatchErr)
 	assert.Empty(t, jobs.sitespeedIDs)
 }
+
+func TestSitespeedURLValidationPrecedesPersistence(t *testing.T) {
+	for _, value := range []string{"", " ", "ftp://example.com", "https://user:secret@example.com"} {
+		repository := &stubRepository{environment: Environment{ID: 1, OrganizationID: "org"}}
+		service := NewService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, &stubJobDispatcher{}, nil)
+		require.Error(t, service.UpdateSitespeedSettings(t.Context(), "user", 1, true, []string{value}))
+		assert.Zero(t, repository.sitespeedCalls)
+	}
+	repository := &stubRepository{environment: Environment{ID: 1, OrganizationID: "org"}}
+	service := NewService(repository, &stubAuthorizer{member: true}, &stubEnvironmentGateway{}, &stubJobDispatcher{}, nil)
+	require.NoError(t, service.UpdateSitespeedSettings(t.Context(), "user", 1, true, []string{" https://example.com "}))
+	assert.Equal(t, []string{"https://example.com"}, repository.sitespeedURLs)
+}

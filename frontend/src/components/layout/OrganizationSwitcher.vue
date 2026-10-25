@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import { useAlert } from "@/composables/useAlert";
 import { ref, computed, onMounted } from "vue";
 import { useSession, setActiveOrganization } from "@/composables/useSession";
 import {
@@ -64,12 +65,18 @@ const currentOrgName = computed(() => {
 });
 
 async function switchOrganization(orgId: AcceptableValue) {
-  if (typeof orgId !== "string") return;
-  if (orgId === activeOrganizationId.value) return;
-  await setActiveOrganization(orgId);
-  resetAccountEnvironments();
-  resetAccountShops();
-  fetchAccountEnvironments();
-  fetchAccountShops();
+  try {
+    if (typeof orgId !== "string") return;
+    if (orgId === activeOrganizationId.value) return;
+    await setActiveOrganization(orgId);
+    resetAccountEnvironments();
+    resetAccountShops();
+    fetchAccountEnvironments();
+    fetchAccountShops();
+  } catch (err) {
+    useAlert().error(
+      err instanceof Error ? err.message : "Failed to switch organization. Please try again.",
+    );
+  }
 }
 </script>

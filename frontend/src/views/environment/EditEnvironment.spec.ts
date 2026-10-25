@@ -301,4 +301,33 @@ describe("EditEnvironment", () => {
     expect(mockError).toHaveBeenCalledWith("failed to save sitespeed settings");
     expect(mockSuccess).not.toHaveBeenCalled();
   });
+  it("removes blank sitespeed rows before saving", async () => {
+    vi.mocked(updateSitespeedSettings).mockResolvedValue({ error: undefined } as any);
+    const wrapper = mountComponent();
+    await flushPromises();
+    const vm = wrapper.vm as any;
+    vm.sitespeedEnabled = true;
+    vm.sitespeedUrls = ["  ", " https://example.com/path ", ""];
+    await vm.onSitespeedSubmit();
+    expect(updateSitespeedSettings).toHaveBeenCalledWith({
+      path: { environmentId: 1 },
+      body: { enabled: true, urls: ["https://example.com/path"] },
+    });
+    wrapper.unmount();
+  });
+  it("keeps sitespeed settings open when all URL rows are blank", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    vi.mocked(updateSitespeedSettings).mockClear();
+    const vm = wrapper.vm as any;
+    vm.sitespeedEnabled = true;
+    vm.sitespeedUrls = ["  ", ""];
+    await vm.onSitespeedSubmit();
+    expect(updateSitespeedSettings).not.toHaveBeenCalled();
+    expect(mockError).toHaveBeenCalled();
+    expect(mockSuccess).not.toHaveBeenCalled();
+    expect(vm.sitespeedUrls).toEqual(["  ", ""]);
+    expect(vm.isSitespeedSubmitting).toBe(false);
+    wrapper.unmount();
+  });
 });

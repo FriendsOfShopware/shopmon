@@ -275,6 +275,7 @@
 </template>
 
 <script setup lang="ts">
+import { apiErrorMessage } from "@/helpers/apiError";
 import { useAlert } from "@/composables/useAlert";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
@@ -420,7 +421,9 @@ const onSubmit = handleSubmit(async (values) => {
       });
 
       if (apiError) {
-        error(apiError.message);
+        error(
+          apiErrorMessage(apiError, "Request failed. Please check the settings and try again."),
+        );
         return;
       }
 
@@ -445,7 +448,9 @@ async function deleteEnvironment() {
         path: { environmentId: environment.value.id },
       });
       if (apiError) {
-        error(apiError.message);
+        error(
+          apiErrorMessage(apiError, "Request failed. Please check the settings and try again."),
+        );
         return;
       }
       await Promise.all([fetchAccountShops(), fetchAccountEnvironments()]);
@@ -469,7 +474,8 @@ async function onSitespeedSubmit() {
     try {
       isSitespeedSubmitting.value = true;
 
-      if (sitespeedEnabled.value && sitespeedUrls.value.length === 0) {
+      const urls = sitespeedUrls.value.map((url) => url.trim()).filter(Boolean);
+      if (sitespeedEnabled.value && urls.length === 0) {
         error(t("environment.sitespeedUrlRequired"));
         return;
       }
@@ -478,12 +484,14 @@ async function onSitespeedSubmit() {
         path: { environmentId: environment.value.id },
         body: {
           enabled: sitespeedEnabled.value,
-          urls: sitespeedUrls.value,
+          urls,
         },
       });
 
       if (apiError) {
-        error(apiError.message);
+        error(
+          apiErrorMessage(apiError, "Request failed. Please check the settings and try again."),
+        );
         return;
       }
 
