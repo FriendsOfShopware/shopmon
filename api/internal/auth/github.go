@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -17,7 +18,9 @@ import (
 )
 
 type oauthState struct {
-	CallbackURL string `json:"callbackURL"`
+	CallbackURL   string `json:"callbackURL"`
+	LinkUserID    string `json:"linkUserID,omitempty"`
+	LinkSessionID string `json:"linkSessionID,omitempty"`
 }
 
 // GitHub OAuth/API base URLs. Declared as vars (not consts) so tests can point
@@ -28,6 +31,10 @@ var (
 )
 
 func (h *AuthHandler) SignInSocial(ctx context.Context, input *socialSignInInput) (*urlOutput, error) {
+	return h.beginGithubOAuth(ctx, input, "", "")
+}
+
+func (h *AuthHandler) beginGithubOAuth(ctx context.Context, input *socialSignInInput, userID, sessionID string) (*urlOutput, error) {
 	req := input.Body
 
 	if req.Provider != "github" {
@@ -48,7 +55,7 @@ func (h *AuthHandler) SignInSocial(ctx context.Context, input *socialSignInInput
 		return nil, huma.Error500InternalServerError("failed to generate OAuth state")
 	}
 	if err := h.challenges.Set(ctx, "oauth:"+state, oauthState{
-		CallbackURL: req.CallbackURL,
+		CallbackURL: req.CallbackURL, LinkUserID: userID, LinkSessionID: sessionID,
 	}, 10*time.Minute); err != nil {
 		return nil, huma.Error500InternalServerError("failed to store OAuth state")
 	}
@@ -68,6 +75,16 @@ func (h *AuthHandler) GithubCallback(ctx context.Context, input *githubCallbackI
 	var stateData oauthState
 	if err := h.challenges.Get(ctx, "oauth:"+input.State, &stateData); err != nil {
 		return nil, huma.Error400BadRequest("invalid or expired state")
+	}
+
+	if stateData.LinkUserID != "" {
+		principal, err := h.requireAuth(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if principal.User.ID != stateData.LinkUserID || principal.Session.ID != stateData.LinkSessionID {
+			return nil, huma.Error403Forbidden("linking must finish in the session that started it")
+		}
 	}
 
 	// Exchange code for access token
@@ -166,11 +183,25 @@ func (h *AuthHandler) GithubCallback(ctx context.Context, input *githubCallbackI
 		ghUser.Name = ghUser.Login
 	}
 
-	userID, err := h.federated.Provision(ctx, identity.FederatedProfile{
+	profile := identity.FederatedProfile{
 		Provider: "github", AccountID: fmt.Sprintf("%d", ghUser.ID),
 		Email: ghUser.Email, EmailVerified: true, Name: ghUser.Name, ImageURL: ghUser.AvatarURL,
-	})
+	}
+	if stateData.LinkUserID != "" {
+		if err := h.federated.Link(ctx, stateData.LinkUserID, profile); err != nil {
+			if errors.Is(err, identity.ErrFederatedAccountInUse) {
+				return nil, huma.Error409Conflict("GitHub account is already linked to another user")
+			}
+			slog.ErrorContext(ctx, "failed to link GitHub identity", "userID", stateData.LinkUserID, "error", err)
+			return nil, huma.Error500InternalServerError("failed to link GitHub account")
+		}
+		return &authCodeOutput{Body: authCodeResponse{Linked: true}}, nil
+	}
+	userID, err := h.federated.Provision(ctx, profile)
 	if err != nil {
+		if errors.Is(err, identity.ErrEmailInUse) {
+			return nil, huma.Error409Conflict("email already belongs to an existing account; sign in with its original login method")
+		}
 		slog.ErrorContext(ctx, "failed to provision GitHub identity", "error", err)
 		return nil, huma.Error500InternalServerError("failed to create user")
 	}

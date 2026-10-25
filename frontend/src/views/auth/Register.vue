@@ -65,7 +65,6 @@ import { toTypedSchema } from "@vee-validate/zod";
 
 import { useRouter } from "vue-router";
 import { useAlert } from "@/composables/useAlert";
-import { setToken } from "@/helpers/api";
 import { signUpEmail } from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,7 +91,7 @@ const { handleSubmit, isSubmitting } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  const { data, error } = await signUpEmail({
+  const { error } = await signUpEmail({
     body: {
       email: values.email,
       password: values.password,
@@ -103,10 +102,6 @@ const onSubmit = handleSubmit(async (values) => {
   if (error) {
     alert.error((error as unknown as { message?: string }).message ?? t("auth.failedRegister"));
     return;
-  }
-
-  if (data?.token) {
-    setToken(data.token);
   }
 
   await router.push({ name: "account.login" });

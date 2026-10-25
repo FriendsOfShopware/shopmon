@@ -348,6 +348,32 @@ func (q *Queries) AdminUnbanUser(ctx context.Context, id string) error {
 	return err
 }
 
+const confirmUserEmail = `-- name: ConfirmUserEmail :execrows
+WITH consumed AS (
+    DELETE FROM verification
+    WHERE verification.id = $3
+      AND identifier = 'verify-email:' || $1::text || ':' || $2::text
+      AND expires_at > NOW()
+    RETURNING id
+)
+UPDATE "user" SET email_verified = true, updated_at = NOW()
+WHERE "user".id = $1 AND email = $2 AND email_verified = false AND EXISTS (SELECT 1 FROM consumed)
+`
+
+type ConfirmUserEmailParams struct {
+	ID             string `json:"id"`
+	Email          string `json:"email"`
+	VerificationID string `json:"verification_id"`
+}
+
+func (q *Queries) ConfirmUserEmail(ctx context.Context, arg ConfirmUserEmailParams) (int64, error) {
+	result, err := q.db.Exec(ctx, confirmUserEmail, arg.ID, arg.Email, arg.VerificationID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const createAccount = `-- name: CreateAccount :exec
 INSERT INTO account (id, account_id, provider_id, user_id, password, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
@@ -1049,6 +1075,20 @@ func (q *Queries) ListUserSessions(ctx context.Context, userID string) ([]ListUs
 	return items, nil
 }
 
+const lockFederatedAccount = `-- name: LockFederatedAccount :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text || ':' || $2::text, 0))
+`
+
+type LockFederatedAccountParams struct {
+	ProviderID string `json:"provider_id"`
+	AccountID  string `json:"account_id"`
+}
+
+func (q *Queries) LockFederatedAccount(ctx context.Context, arg LockFederatedAccountParams) error {
+	_, err := q.db.Exec(ctx, lockFederatedAccount, arg.ProviderID, arg.AccountID)
+	return err
+}
+
 const refreshSessionExpiry = `-- name: RefreshSessionExpiry :exec
 UPDATE session SET expires_at = $2, updated_at = NOW() WHERE id = $1
 `
@@ -1092,16 +1132,23 @@ func (q *Queries) UpdatePasskeyCounter(ctx context.Context, arg UpdatePasskeyCou
 }
 
 const updateUserEmail = `-- name: UpdateUserEmail :exec
-UPDATE "user" SET email = $1, updated_at = NOW() WHERE id = $2
+WITH cleared_verifications AS (
+    DELETE FROM verification WHERE identifier = $1::text
+        OR starts_with(identifier, 'verify-email:' || $1::text || ':')
+), changed_user AS (
+    UPDATE "user" SET email = $2, email_verified = false, updated_at = NOW() WHERE id = $1
+    RETURNING id
+)
+DELETE FROM session WHERE user_id IN (SELECT id FROM changed_user)
 `
 
 type UpdateUserEmailParams struct {
-	Email string `json:"email"`
 	ID    string `json:"id"`
+	Email string `json:"email"`
 }
 
 func (q *Queries) UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error {
-	_, err := q.db.Exec(ctx, updateUserEmail, arg.Email, arg.ID)
+	_, err := q.db.Exec(ctx, updateUserEmail, arg.ID, arg.Email)
 	return err
 }
 

@@ -3,6 +3,7 @@ package auth_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -29,15 +30,22 @@ func TestSignUpEmail(t *testing.T) {
 	var result map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 
-	user := result["user"].(map[string]any)
-	assert.Equal(t, "New User", user["name"])
-	assert.Equal(t, "new@example.com", user["email"])
-	assert.NotEmpty(t, user["id"])
+	assert.Equal(t, "ok", result["status"])
+	assert.Empty(t, result["token"])
+	var sessions int
+	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM session`).Scan(&sessions))
+	assert.Zero(t, sessions)
 
-	// Should have a token in the response
-	token, ok := result["token"].(string)
-	require.True(t, ok, "response must contain a token")
-	assert.NotEmpty(t, token)
+	body, err = json.Marshal(map[string]string{"email": "new@example.com", "password": "password123!"})
+	require.NoError(t, err)
+	login, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+	require.NoError(t, err)
+	defer func() { _ = login.Body.Close() }()
+	assert.Equal(t, http.StatusForbidden, login.StatusCode)
+	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM session`).Scan(&sessions))
+	assert.Zero(t, sessions)
+	verifyEmail(t, env, "new@example.com")
+	assert.NotEmpty(t, signIn(t, env, "new@example.com", "password123!"))
 }
 
 func TestSignUpEmail_DuplicateEmail(t *testing.T) {
@@ -93,6 +101,8 @@ func TestSignInEmail(t *testing.T) {
 	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
+
+	verifyEmail(t, env, "login@example.com")
 
 	// Now login
 	body, _ = json.Marshal(map[string]string{
@@ -154,6 +164,8 @@ func TestSignInEmail_Ban(t *testing.T) {
 			require.NoError(t, err)
 			_ = resp.Body.Close()
 
+			verifyEmail(t, env, tt.email)
+
 			_, err = env.Pool.Exec(t.Context(), tt.banSQL, tt.email)
 			require.NoError(t, err)
 
@@ -210,10 +222,9 @@ func TestGetSession(t *testing.T) {
 	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 
-	var signUpResult map[string]any
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
 	_ = resp.Body.Close()
-	token := signUpResult["token"].(string)
+	verifyEmail(t, env, "session@example.com")
+	token := signIn(t, env, "session@example.com", "password123!")
 	require.NotEmpty(t, token)
 
 	// Get session using the Bearer token
@@ -252,10 +263,9 @@ func TestGetSession_ExpiredBan(t *testing.T) {
 	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 
-	var signUpResult map[string]any
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
 	_ = resp.Body.Close()
-	token := signUpResult["token"].(string)
+	verifyEmail(t, env, "expired-session-ban@example.com")
+	token := signIn(t, env, "expired-session-ban@example.com", "password123!")
 	require.NotEmpty(t, token)
 
 	_, err = env.Pool.Exec(t.Context(), `
@@ -284,10 +294,9 @@ func TestSignOut(t *testing.T) {
 	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 
-	var signUpResult map[string]any
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
 	_ = resp.Body.Close()
-	token := signUpResult["token"].(string)
+	verifyEmail(t, env, "signout@example.com")
+	token := signIn(t, env, "signout@example.com", "password123!")
 	require.NotEmpty(t, token)
 
 	// Sign out
@@ -321,7 +330,7 @@ func TestVerifyEmail(t *testing.T) {
 	// Get the verification token from DB
 	var verificationToken string
 	err = env.Pool.QueryRow(t.Context(),
-		`SELECT value FROM verification WHERE identifier = 'verify@example.com'`).Scan(&verificationToken)
+		`SELECT value FROM verification WHERE identifier LIKE 'verify-email:%:verify@example.com'`).Scan(&verificationToken)
 	require.NoError(t, err)
 
 	// Verify email
@@ -336,6 +345,12 @@ func TestVerifyEmail(t *testing.T) {
 		`SELECT email_verified FROM "user" WHERE email = 'verify@example.com'`).Scan(&verified)
 	require.NoError(t, err)
 	assert.True(t, verified)
+	// Confirmation links are single use.
+	replay, err := testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token="+verificationToken)
+	require.NoError(t, err)
+	defer func() { _ = replay.Body.Close() }()
+	assert.Equal(t, http.StatusBadRequest, replay.StatusCode)
+
 }
 
 func TestVerifyEmail_InvalidToken(t *testing.T) {
@@ -394,6 +409,8 @@ func TestResetPassword(t *testing.T) {
 	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
+
+	verifyEmail(t, env, "reset@example.com")
 
 	// Request reset
 	body, _ = json.Marshal(map[string]string{"email": "reset@example.com"})
@@ -474,4 +491,148 @@ func TestSignInEmail_BannedUser(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestChangeEmail_RequiresNewMailboxVerification(t *testing.T) {
+	env := testutil.Setup(t)
+	token := signUp(t, env, "old@example.com", "password123!", "User")
+	secondToken := signIn(t, env, "old@example.com", "password123!")
+
+	// An outstanding link for the old address must not verify the new address.
+	_, err := env.Pool.Exec(t.Context(), `INSERT INTO verification (id, identifier, value, expires_at, created_at, updated_at)
+		SELECT 'old-link', 'verify-email:' || id || ':' || email, 'old-token', NOW() + INTERVAL '1 hour', NOW(), NOW()
+		FROM "user" WHERE email = 'old@example.com'`)
+	require.NoError(t, err)
+
+	resp := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/change-email", token,
+		map[string]string{"newEmail": "new@example.com", "currentPassword": "password123!"})
+	_ = resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	sent, ok := env.Mail.Last()
+	require.True(t, ok)
+	assert.Contains(t, string(sent.Bytes()), "To: new@example.com")
+
+	var verified bool
+	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT email_verified FROM "user" WHERE email = 'new@example.com'`).Scan(&verified))
+	assert.False(t, verified)
+	for _, oldToken := range []string{token, secondToken} {
+		resp = authRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", oldToken, nil)
+		_ = resp.Body.Close()
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	}
+	resp, err = testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token=old-token")
+	require.NoError(t, err)
+	_ = resp.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	body, err := json.Marshal(map[string]string{"email": "new@example.com", "password": "password123!"})
+	require.NoError(t, err)
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+	require.NoError(t, err)
+	_ = resp.Body.Close()
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+
+	verifyEmail(t, env, "new@example.com")
+	assert.NotEmpty(t, signIn(t, env, "new@example.com", "password123!"))
+}
+
+func TestGetSession_UnverifiedLegacySession(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "legacy", "Legacy", "legacy@example.com", "user")
+	_, err := env.Pool.Exec(t.Context(), `UPDATE "user" SET email_verified = false WHERE id = 'legacy'`)
+	require.NoError(t, err)
+	resp := authRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", token, nil)
+	defer func() { _ = resp.Body.Close() }()
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	_, err = env.Pool.Exec(t.Context(), `INSERT INTO verification (id, identifier, value, expires_at, created_at, updated_at)
+		VALUES ('legacy-link', 'verify-email:legacy:legacy@example.com', 'legacy-confirmation', NOW() + INTERVAL '1 hour', NOW(), NOW())`)
+	require.NoError(t, err)
+	verifyEmail(t, env, "legacy@example.com")
+	// Old sessions must not become usable when the owner confirms ownership.
+	after := authRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", token, nil)
+	defer func() { _ = after.Body.Close() }()
+	assert.Equal(t, http.StatusUnauthorized, after.StatusCode)
+
+}
+
+func TestChangeEmail_MailFailureStillCompletesChange(t *testing.T) {
+	env := testutil.Setup(t)
+	token := signUp(t, env, "before@example.com", "password123!", "User")
+	env.Mail.FailNext(errors.New("mail relay unavailable"))
+	resp := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/change-email", token,
+		map[string]string{"newEmail": "after@example.com", "currentPassword": "password123!"})
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	var result struct {
+		Status                string `json:"status"`
+		EmailVerificationSent bool   `json:"emailVerificationSent"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	_ = resp.Body.Close()
+	assert.Equal(t, "ok", result.Status)
+	assert.False(t, result.EmailVerificationSent)
+	user, err := env.Queries.GetUserByEmail(t.Context(), "after@example.com")
+	require.NoError(t, err)
+	assert.False(t, user.EmailVerified)
+	blocked := authRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", token, nil)
+	_ = blocked.Body.Close()
+	assert.Equal(t, http.StatusUnauthorized, blocked.StatusCode)
+
+	// Recovery can resend confirmation without the revoked session.
+	resend := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/send-verification-email", "",
+		map[string]string{"email": "after@example.com"})
+	_ = resend.Body.Close()
+	require.Equal(t, http.StatusOK, resend.StatusCode)
+	verifyEmail(t, env, "after@example.com")
+	assert.NotEmpty(t, signIn(t, env, "after@example.com", "password123!"))
+}
+
+func TestExtraConfirmationLink_DoesNotRevokeFreshSessions(t *testing.T) {
+	env := testutil.Setup(t)
+	registration := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/sign-up/email", "",
+		map[string]string{"email": "confirmed@example.com", "password": "password123!", "name": "User"})
+	_ = registration.Body.Close()
+	require.Equal(t, http.StatusOK, registration.StatusCode)
+	resend := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/send-verification-email", "",
+		map[string]string{"email": "confirmed@example.com"})
+	_ = resend.Body.Close()
+	require.Equal(t, http.StatusOK, resend.StatusCode)
+	rows, err := env.Pool.Query(t.Context(), `SELECT value FROM verification ORDER BY created_at`)
+	require.NoError(t, err)
+	var tokens []string
+	for rows.Next() {
+		var token string
+		require.NoError(t, rows.Scan(&token))
+		tokens = append(tokens, token)
+	}
+	require.NoError(t, rows.Err())
+	rows.Close()
+	require.Len(t, tokens, 2)
+	first, err := testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token="+tokens[0])
+	require.NoError(t, err)
+	_ = first.Body.Close()
+	require.Equal(t, http.StatusOK, first.StatusCode)
+	token := signIn(t, env, "confirmed@example.com", "password123!")
+	extra, err := testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token="+tokens[1])
+	require.NoError(t, err)
+	_ = extra.Body.Close()
+	assert.Equal(t, http.StatusBadRequest, extra.StatusCode)
+	current := authRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", token, nil)
+	_ = current.Body.Close()
+	assert.Equal(t, http.StatusOK, current.StatusCode)
+}
+
+func TestSendVerificationEmail_DoesNotRevealAccountStatus(t *testing.T) {
+	env := testutil.Setup(t)
+	env.SeedUser(t, "confirmed", "User", "confirmed@example.com", "user")
+	for _, email := range []string{"missing@example.com", "confirmed@example.com"} {
+		resp := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/send-verification-email", "", map[string]string{"email": email})
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		var body map[string]string
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
+		_ = resp.Body.Close()
+		assert.Equal(t, map[string]string{"status": "ok"}, body)
+	}
+	_, sent := env.Mail.Last()
+	assert.False(t, sent)
 }

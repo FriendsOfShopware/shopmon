@@ -366,8 +366,10 @@ import IconPasskey from "~icons/material-symbols/passkey";
 import IconDesktop from "~icons/fa6-solid/desktop";
 import IconBell from "~icons/fa6-solid/bell";
 import IconBellSlash from "~icons/fa6-regular/bell-slash";
+import { useRouter } from "vue-router";
+import { setToken } from "@/helpers/api";
 import { useAlert } from "@/composables/useAlert";
-import { useSession } from "@/composables/useSession";
+import { clearSession, useSession } from "@/composables/useSession";
 import { useNotificationPreferences } from "@/composables/useNotificationPreferences";
 import {
   changeEmail,
@@ -393,6 +395,7 @@ import { startRegistration } from "@simplewebauthn/browser";
 const { t } = useI18n();
 const { session: sessionData } = useSession();
 const alert = useAlert();
+const router = useRouter();
 
 // The notification matrix UI lives in NotificationMatrix; here we only need to
 // load the shared preference state once on mount.
@@ -468,7 +471,7 @@ async function saveEmail() {
     alert.error(t("settings.currentPasswordRequired"));
     return;
   }
-  const { error } = await changeEmail({
+  const { data, error } = await changeEmail({
     body: { newEmail: emailAddress.value, currentPassword: emailCurrentPassword.value },
   });
   if (error) {
@@ -476,7 +479,14 @@ async function saveEmail() {
     return;
   }
   emailCurrentPassword.value = "";
-  alert.success(t("settings.emailUpdated"));
+  setToken(null);
+  clearSession();
+  await router.push({ name: "account.login" });
+  if (data?.emailVerificationSent === false) {
+    alert.error(t("settings.emailConfirmationFailed"));
+  } else {
+    alert.success(t("settings.emailUpdated"));
+  }
 }
 
 const currentPassword = ref("");
@@ -629,7 +639,11 @@ async function linkSocial(provider: "github") {
     const { data } = await apiLinkSocial({
       body: { provider, callbackURL: window.location.href },
     });
-    if (data?.url) window.location.href = data.url;
+    if (data?.url) {
+      const state = new URL(data.url).searchParams.get("state");
+      if (state) sessionStorage.setItem("oauth_state", state);
+      window.location.href = data.url;
+    }
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }

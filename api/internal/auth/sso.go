@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -276,6 +277,9 @@ func (h *AuthHandler) SsoCallback(ctx context.Context, input *ssoCallbackInput) 
 		OrganizationID: provider.OrganizationID,
 	})
 	if err != nil {
+		if errors.Is(err, identity.ErrEmailInUse) {
+			return nil, huma.Error409Conflict("email already belongs to an existing account; sign in with its original login method")
+		}
 		slog.ErrorContext(ctx, "failed to provision SSO identity", "provider", providerId, "error", err)
 		return nil, huma.Error500InternalServerError("failed to create user")
 	}

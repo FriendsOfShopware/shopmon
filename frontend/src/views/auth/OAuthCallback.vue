@@ -35,6 +35,12 @@ async function handleCallback() {
       query: { code, state },
     });
 
+    if (callbackData?.linked) {
+      await fetchSession();
+      await router.replace({ name: "account.settings" });
+      return;
+    }
+
     if (!callbackData?.code) {
       router.replace({ name: "account.login" });
       return;

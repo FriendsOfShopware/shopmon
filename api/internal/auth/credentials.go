@@ -14,25 +14,19 @@ import (
 )
 
 // SignUpEmail handles email+password registration.
-func (h *AuthHandler) SignUpEmail(ctx context.Context, input *signUpEmailInput) (*tokenUserOutput, error) {
+func (h *AuthHandler) SignUpEmail(ctx context.Context, input *signUpEmailInput) (*statusOutput, error) {
 	request := input.Body
 	if request.Email == "" || request.Password == "" || request.Name == "" {
 		return nil, huma.Error400BadRequest("email, password, and name are required")
 	}
 
-	authentication, err := h.credentials.SignUp(ctx, identity.SignUpCommand{
+	err := h.credentials.SignUp(ctx, identity.SignUpCommand{
 		Email: request.Email, Password: request.Password, Name: request.Name,
-		Session: sessionMetadata(requestFromContext(ctx)),
 	})
 	if err != nil {
 		return nil, h.credentialError(ctx, "sign up", err)
 	}
-	return &tokenUserOutput{Body: tokenUserResponse{
-		Token: authentication.Token,
-		User: authenticatedUserResponse{
-			ID: authentication.User.ID, Name: authentication.User.Name, Email: authentication.User.Email,
-		},
-	}}, nil
+	return statusOK(), nil
 }
 
 // SignInEmail handles email+password login.
@@ -138,6 +132,8 @@ func (h *AuthHandler) credentialError(ctx context.Context, operation string, err
 		return huma.Error409Conflict("user with this email already exists")
 	case errors.Is(err, identity.ErrInvalidCredentials):
 		return huma.Error401Unauthorized("invalid email or password")
+	case errors.Is(err, identity.ErrEmailUnverified):
+		return huma.Error403Forbidden(err.Error())
 	case errors.Is(err, identity.ErrAccountBanned):
 		return huma.Error403Forbidden("account is banned")
 	case errors.Is(err, identity.ErrInvalidVerification):
@@ -148,4 +144,12 @@ func (h *AuthHandler) credentialError(ctx context.Context, operation string, err
 		slog.ErrorContext(ctx, "credential operation failed", "operation", operation, "error", err)
 		return huma.Error500InternalServerError("credential operation failed")
 	}
+}
+
+// SendVerificationEmail never reveals whether an unverified account exists.
+func (h *AuthHandler) SendVerificationEmail(ctx context.Context, input *forgetPasswordInput) (*statusOutput, error) {
+	if err := h.credentials.RequestEmailVerification(ctx, input.Body.Email); err != nil {
+		slog.ErrorContext(ctx, "email confirmation recovery failed", "error", err)
+	}
+	return statusOK(), nil
 }

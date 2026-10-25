@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import Login from "./Login.vue";
 
 // Mock router
@@ -17,6 +17,7 @@ vi.mock("vue-router", () => ({
 
 vi.mock("@/api/generated", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/generated")>()),
+  sendVerificationEmail: vi.fn(),
   signInEmail: vi.fn(),
   signInSocial: vi.fn(),
   signInSso: vi.fn(),
@@ -50,6 +51,8 @@ vi.mock("@/composables/useReturnUrl", () => ({
   }),
 }));
 
+import { sendVerificationEmail } from "@/api/generated";
+
 describe("Login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,6 +61,25 @@ describe("Login", () => {
   function mountComponent() {
     return mount(Login);
   }
+
+  it("can resend confirmation without a password", async () => {
+    vi.mocked(sendVerificationEmail).mockResolvedValue({
+      data: { status: "ok" },
+      error: undefined,
+      response: new Response(),
+    });
+    const wrapper = mountComponent();
+    await wrapper.find('input[type="email"]').setValue("passkey@example.com");
+    await flushPromises();
+    const resend = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Resend confirmation email");
+    expect(resend).toBeDefined();
+    await resend!.trigger("click");
+    await flushPromises();
+    expect(sendVerificationEmail).toHaveBeenCalledWith({ body: { email: "passkey@example.com" } });
+    wrapper.unmount();
+  });
 
   it("renders successfully", () => {
     const wrapper = mountComponent();

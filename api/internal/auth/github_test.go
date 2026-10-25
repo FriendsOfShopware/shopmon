@@ -11,6 +11,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -268,6 +269,15 @@ func TestGithubCallback_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "12345", accountID)
 	assert.Equal(t, "github", providerID)
+	// The existing provider binding still permits subsequent logins.
+	state = initiateGithubSignIn(t, env.Server.URL)
+	repeat := githubCallback(t, env.Server.URL, "valid-code", state)
+	defer func() { _ = repeat.Body.Close() }()
+	assert.Equal(t, http.StatusOK, repeat.StatusCode)
+	var accountCount int
+	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM account`).Scan(&accountCount))
+	assert.Equal(t, 1, accountCount)
+
 }
 
 // TestGithubCallback_EmailFallback covers the case where GET /user returns no
@@ -323,10 +333,8 @@ func TestGithubCallback_NoAccessToken(t *testing.T) {
 	assert.Equal(t, 0, count)
 }
 
-// TestGithubCallback_LinksExistingUser ensures that when a user with the same
-// email already exists, the github account is linked to that user instead of
-// creating a duplicate.
-func TestGithubCallback_LinksExistingUser(t *testing.T) {
+// A verified provider email must not authorize linking a local account.
+func TestGithubCallback_RejectsExistingUser(t *testing.T) {
 	mock := newMockGithub(t)
 	defer mock.server.Close()
 	mock.user = map[string]any{
@@ -356,7 +364,7 @@ func TestGithubCallback_LinksExistingUser(t *testing.T) {
 	resp = githubCallback(t, env.Server.URL, "valid-code", state)
 	defer func() { _ = resp.Body.Close() }()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	// Still exactly one user with that email.
 	var userCount int
@@ -364,10 +372,87 @@ func TestGithubCallback_LinksExistingUser(t *testing.T) {
 		`SELECT COUNT(*) FROM "user" WHERE email = 'existing@github.com'`).Scan(&userCount))
 	assert.Equal(t, 1, userCount)
 
-	// The github account links to the pre-existing user.
-	var linkedUserID string
+	// No provider binding or session may be added to the planted account.
+	var accountCount, sessionCount int
 	require.NoError(t, env.Pool.QueryRow(t.Context(),
-		`SELECT user_id FROM account WHERE provider_id = 'github' AND account_id = '24680'`).
-		Scan(&linkedUserID))
-	assert.Equal(t, existingUserID, linkedUserID)
+		`SELECT COUNT(*) FROM account WHERE provider_id = 'github'`).Scan(&accountCount))
+	require.NoError(t, env.Pool.QueryRow(t.Context(),
+		`SELECT COUNT(*) FROM session WHERE user_id = $1`, existingUserID).Scan(&sessionCount))
+	assert.Zero(t, accountCount)
+	assert.Zero(t, sessionCount)
+}
+
+func TestGithubLink_BoundToInitiatingSession(t *testing.T) {
+	for _, scenario := range []string{"same email", "different email", "signed out", "different user", "different session", "revoked session", "already linked"} {
+		t.Run(scenario, func(t *testing.T) {
+			mock := newMockGithub(t)
+			defer mock.server.Close()
+			mock.user = map[string]any{"id": 12345, "email": "local@example.com", "name": "GitHub User"}
+			env := setupGithubEnv(t, mock)
+			token := env.SeedUser(t, "local-user", "Local User", "local@example.com", "user")
+			otherToken := env.SeedUser(t, "other-user", "Other User", "other@example.com", "user")
+			if scenario == "different email" {
+				mock.user["email"] = "github@example.com"
+			}
+			if scenario == "already linked" {
+				require.NoError(t, env.Queries.CreateAccount(t.Context(), queries.CreateAccountParams{
+					ID: "github-account", AccountID: "12345", ProviderID: "github", UserID: "other-user",
+				}))
+			}
+			resp := authRequest(t, http.MethodPost, env.Server.URL+"/api/auth/link-social", token,
+				map[string]string{"provider": "github", "callbackURL": "http://localhost:3000/app/settings"})
+			require.Equal(t, http.StatusOK, resp.StatusCode)
+			var result map[string]string
+			require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+			_ = resp.Body.Close()
+			authorize, err := url.Parse(result["url"])
+			require.NoError(t, err)
+			state := authorize.Query().Get("state")
+			require.NotEmpty(t, state)
+
+			callbackToken := token
+			want := http.StatusOK
+			switch scenario {
+			case "signed out":
+				callbackToken = ""
+				want = http.StatusUnauthorized
+			case "different user":
+				callbackToken = otherToken
+				want = http.StatusForbidden
+			case "different session":
+				_, err := env.Pool.Exec(t.Context(), `INSERT INTO session (id, token, user_id, expires_at, created_at, updated_at)
+					VALUES ('second-session', 'second-token', 'local-user', NOW() + INTERVAL '1 day', NOW(), NOW())`)
+				require.NoError(t, err)
+				callbackToken = "second-token"
+				want = http.StatusForbidden
+			case "revoked session":
+				require.NoError(t, env.Queries.DeleteSession(t.Context(), token))
+				want = http.StatusUnauthorized
+			case "already linked":
+				want = http.StatusConflict
+			}
+			callbackURL := env.Server.URL + "/api/auth/callback/github?code=valid-code&state=" + url.QueryEscape(state)
+			resp = authRequest(t, http.MethodGet, callbackURL, callbackToken, nil)
+			require.Equal(t, want, resp.StatusCode)
+			if want == http.StatusOK {
+				var linked map[string]any
+				require.NoError(t, json.NewDecoder(resp.Body).Decode(&linked))
+				assert.Equal(t, true, linked["linked"])
+				assert.Empty(t, linked["code"], "linking must not issue a sign-in code")
+			}
+			_ = resp.Body.Close()
+			accounts, err := env.Queries.ListUserAccounts(t.Context(), "local-user")
+			require.NoError(t, err)
+			if want == http.StatusOK {
+				require.Len(t, accounts, 1)
+				assert.Equal(t, "github", accounts[0].ProviderID)
+				// Linking state is consumed once.
+				replay := authRequest(t, http.MethodGet, callbackURL, callbackToken, nil)
+				_ = replay.Body.Close()
+				assert.Equal(t, http.StatusBadRequest, replay.StatusCode)
+			} else {
+				assert.Empty(t, accounts)
+			}
+		})
+	}
 }

@@ -93,6 +93,14 @@
           <icon-line-md:loading-twotone-loop v-if="isSubmitting" class="size-5" />
           {{ $t("auth.signInButton") }}
         </Button>
+        <Button
+          type="button"
+          variant="link"
+          :disabled="isSendingConfirmation"
+          @click="resendConfirmation"
+        >
+          {{ $t("auth.resendConfirmation") }}
+        </Button>
       </form>
 
       <!-- Enterprise SSO -->
@@ -145,6 +153,7 @@ import {
   signInEmail,
   signInSocial,
   signInSso,
+  sendVerificationEmail,
 } from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,7 +178,7 @@ const schema = z.object({
   password: z.string().min(1, t("validation.passwordRequired")),
 });
 
-const { handleSubmit, isSubmitting } = useForm({
+const { handleSubmit, isSubmitting, values } = useForm({
   validationSchema: toTypedSchema(schema),
 });
 
@@ -178,6 +187,27 @@ async function goToDashboard() {
   const redirectUrl = returnUrl.value ?? "/app/dashboard";
   clearReturnUrl();
   await router.push(redirectUrl);
+}
+
+const isSendingConfirmation = ref(false);
+
+async function resendConfirmation() {
+  const email = z.string().email().safeParse(values.email);
+  if (!email.success) {
+    alert.error(t("validation.emailRequired"));
+    return;
+  }
+  isSendingConfirmation.value = true;
+  try {
+    const { error } = await sendVerificationEmail({ body: { email: email.data } });
+    if (error) {
+      alert.error((error as { message?: string }).message ?? t("auth.failedVerifyEmail"));
+      return;
+    }
+    alert.success(t("auth.confirmationEmailSent"));
+  } finally {
+    isSendingConfirmation.value = false;
+  }
 }
 
 const onSubmit = handleSubmit(async (values) => {

@@ -170,7 +170,14 @@ SELECT id, provider_id, account_id, created_at FROM account WHERE user_id = $1;
 DELETE FROM account WHERE provider_id = $1 AND user_id = $2;
 
 -- name: UpdateUserEmail :exec
-UPDATE "user" SET email = $1, updated_at = NOW() WHERE id = $2;
+WITH cleared_verifications AS (
+    DELETE FROM verification WHERE identifier = sqlc.arg(id)::text
+        OR starts_with(identifier, 'verify-email:' || sqlc.arg(id)::text || ':')
+), changed_user AS (
+    UPDATE "user" SET email = sqlc.arg(email), email_verified = false, updated_at = NOW() WHERE id = sqlc.arg(id)
+    RETURNING id
+)
+DELETE FROM session WHERE user_id IN (SELECT id FROM changed_user);
 
 -- name: UpdateUserName :exec
 UPDATE "user" SET name = $1, updated_at = NOW() WHERE id = $2;
@@ -194,3 +201,17 @@ DELETE FROM invitation WHERE id = $1;
 -- name: CreateSSOProvider :exec
 INSERT INTO sso_provider (id, issuer, oidc_config, provider_id, organization_id, domain)
 VALUES ($1, $2, $3, $4, $5, $6);
+
+-- name: ConfirmUserEmail :execrows
+WITH consumed AS (
+    DELETE FROM verification
+    WHERE verification.id = sqlc.arg(verification_id)
+      AND identifier = 'verify-email:' || sqlc.arg(id)::text || ':' || sqlc.arg(email)::text
+      AND expires_at > NOW()
+    RETURNING id
+)
+UPDATE "user" SET email_verified = true, updated_at = NOW()
+WHERE "user".id = sqlc.arg(id) AND email = sqlc.arg(email) AND email_verified = false AND EXISTS (SELECT 1 FROM consumed);
+
+-- name: LockFederatedAccount :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(provider_id)::text || ':' || sqlc.arg(account_id)::text, 0));

@@ -12,13 +12,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// signUp registers a new user and returns the session token from the JSON response.
-func signUp(t *testing.T, serverURL, email, password, name string) string {
+// signUp registers a user, confirms mailbox ownership, and signs in.
+func signUp(t *testing.T, env *testutil.TestEnv, email, password, name string) string {
 	t.Helper()
 	body, _ := json.Marshal(map[string]string{
 		"email": email, "password": password, "name": name,
 	})
-	resp, err := testutil.Post(t, serverURL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	verifyEmail(t, env, email)
+	return signIn(t, env, email, password)
+}
+
+func verifyEmail(t *testing.T, env *testutil.TestEnv, email string) {
+	t.Helper()
+	var token string
+	require.NoError(t, env.Pool.QueryRow(t.Context(),
+		`SELECT value FROM verification WHERE identifier = 'verify-email:' || (SELECT id FROM "user" WHERE email = $1) || ':' || $1 ORDER BY created_at DESC LIMIT 1`, email).Scan(&token))
+	resp, err := testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token="+token)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func signIn(t *testing.T, env *testutil.TestEnv, email, password string) string {
+	t.Helper()
+	body, err := json.Marshal(map[string]string{"email": email, "password": password})
+	require.NoError(t, err)
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -115,7 +139,7 @@ func inviteAndAccept(t *testing.T, serverURL string, ownerCookie string, orgID, 
 
 func TestOrgCreate(t *testing.T) {
 	env := testutil.Setup(t)
-	cookie := signUp(t, env.Server.URL, "alice@example.com", "password123", "Alice")
+	cookie := signUp(t, env, "alice@example.com", "password123", "Alice")
 
 	org := createOrg(t, env.Server.URL, cookie, "My Organization")
 
@@ -136,7 +160,7 @@ func TestOrgCreate_Unauthenticated(t *testing.T) {
 
 func TestOrgUpdate(t *testing.T) {
 	env := testutil.Setup(t)
-	cookie := signUp(t, env.Server.URL, "alice@example.com", "password123", "Alice")
+	cookie := signUp(t, env, "alice@example.com", "password123", "Alice")
 
 	org := createOrg(t, env.Server.URL, cookie, "Original Name")
 	orgID := org["id"].(string)
@@ -154,7 +178,7 @@ func TestOrgUpdate(t *testing.T) {
 
 func TestOrgDelete(t *testing.T) {
 	env := testutil.Setup(t)
-	cookie := signUp(t, env.Server.URL, "alice@example.com", "password123", "Alice")
+	cookie := signUp(t, env, "alice@example.com", "password123", "Alice")
 
 	org := createOrg(t, env.Server.URL, cookie, "To Delete")
 	orgID := org["id"].(string)
@@ -169,8 +193,8 @@ func TestOrgDelete(t *testing.T) {
 
 func TestOrgDelete_NonOwner(t *testing.T) {
 	env := testutil.Setup(t)
-	ownerCookie := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
-	memberCookie := signUp(t, env.Server.URL, "member@example.com", "password123", "Member")
+	ownerCookie := signUp(t, env, "owner@example.com", "password123", "Owner")
+	memberCookie := signUp(t, env, "member@example.com", "password123", "Member")
 
 	org := createOrg(t, env.Server.URL, ownerCookie, "Owner Org")
 	orgID := org["id"].(string)
@@ -186,8 +210,8 @@ func TestOrgDelete_NonOwner(t *testing.T) {
 
 func TestOrgInviteAndAccept(t *testing.T) {
 	env := testutil.Setup(t)
-	ownerCookie := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
-	memberCookie := signUp(t, env.Server.URL, "member@example.com", "password123", "Member")
+	ownerCookie := signUp(t, env, "owner@example.com", "password123", "Owner")
+	memberCookie := signUp(t, env, "member@example.com", "password123", "Member")
 
 	org := createOrg(t, env.Server.URL, ownerCookie, "Invite Org")
 	orgID := org["id"].(string)
@@ -206,8 +230,8 @@ func TestOrgInviteAndAccept(t *testing.T) {
 
 func TestOrgInviteAndReject(t *testing.T) {
 	env := testutil.Setup(t)
-	ownerCookie := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
-	memberCookie := signUp(t, env.Server.URL, "member@example.com", "password123", "Member")
+	ownerCookie := signUp(t, env, "owner@example.com", "password123", "Owner")
+	memberCookie := signUp(t, env, "member@example.com", "password123", "Member")
 
 	org := createOrg(t, env.Server.URL, ownerCookie, "Reject Org")
 	orgID := org["id"].(string)
@@ -239,8 +263,8 @@ func TestOrgInviteAndReject(t *testing.T) {
 
 func TestOrgRemoveMember(t *testing.T) {
 	env := testutil.Setup(t)
-	ownerCookie := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
-	memberCookie := signUp(t, env.Server.URL, "member@example.com", "password123", "Member")
+	ownerCookie := signUp(t, env, "owner@example.com", "password123", "Owner")
+	memberCookie := signUp(t, env, "member@example.com", "password123", "Member")
 
 	org := createOrg(t, env.Server.URL, ownerCookie, "Remove Org")
 	orgID := org["id"].(string)
@@ -283,8 +307,8 @@ func TestOrgRemoveMember(t *testing.T) {
 
 func TestOrgLeave(t *testing.T) {
 	env := testutil.Setup(t)
-	ownerCookie := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
-	memberCookie := signUp(t, env.Server.URL, "member@example.com", "password123", "Member")
+	ownerCookie := signUp(t, env, "owner@example.com", "password123", "Owner")
+	memberCookie := signUp(t, env, "member@example.com", "password123", "Member")
 
 	org := createOrg(t, env.Server.URL, ownerCookie, "Leave Org")
 	orgID := org["id"].(string)
@@ -309,7 +333,7 @@ func TestOrgLeave(t *testing.T) {
 
 func TestOrgLeave_OnlyOwner(t *testing.T) {
 	env := testutil.Setup(t)
-	cookie := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
+	cookie := signUp(t, env, "owner@example.com", "password123", "Owner")
 
 	org := createOrg(t, env.Server.URL, cookie, "Solo Org")
 	orgID := org["id"].(string)
@@ -322,8 +346,8 @@ func TestOrgLeave_OnlyOwner(t *testing.T) {
 
 func TestOrgSetRole(t *testing.T) {
 	env := testutil.Setup(t)
-	ownerCookie := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
-	memberCookie := signUp(t, env.Server.URL, "member@example.com", "password123", "Member")
+	ownerCookie := signUp(t, env, "owner@example.com", "password123", "Owner")
+	memberCookie := signUp(t, env, "member@example.com", "password123", "Member")
 
 	org := createOrg(t, env.Server.URL, ownerCookie, "Role Org")
 	orgID := org["id"].(string)
@@ -371,7 +395,7 @@ func TestOrgSetRole(t *testing.T) {
 
 func TestOrgListMembers(t *testing.T) {
 	env := testutil.Setup(t)
-	cookie := signUp(t, env.Server.URL, "alice@example.com", "password123", "Alice")
+	cookie := signUp(t, env, "alice@example.com", "password123", "Alice")
 
 	org := createOrg(t, env.Server.URL, cookie, "List Org")
 	orgID := org["id"].(string)
@@ -391,7 +415,7 @@ func TestOrgListMembers(t *testing.T) {
 
 func TestOrgListMembers_MissingOrganization(t *testing.T) {
 	env := testutil.Setup(t)
-	token := signUp(t, env.Server.URL, "alice@example.com", "password123", "Alice")
+	token := signUp(t, env, "alice@example.com", "password123", "Alice")
 
 	resp := authGet(t, env.Server.URL, "/api/auth/organizations/missing-org/members", token)
 	defer func() { _ = resp.Body.Close() }()
@@ -401,8 +425,8 @@ func TestOrgListMembers_MissingOrganization(t *testing.T) {
 
 func TestOrganizationPermissionByRole(t *testing.T) {
 	env := testutil.Setup(t)
-	ownerToken := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
-	memberToken := signUp(t, env.Server.URL, "member@example.com", "password123", "Member")
+	ownerToken := signUp(t, env, "owner@example.com", "password123", "Owner")
+	memberToken := signUp(t, env, "member@example.com", "password123", "Member")
 
 	org := createOrg(t, env.Server.URL, ownerToken, "Permission Org")
 	orgID := org["id"].(string)

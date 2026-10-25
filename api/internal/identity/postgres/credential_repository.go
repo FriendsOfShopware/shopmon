@@ -103,13 +103,17 @@ func (r *CredentialRepository) FindVerification(ctx context.Context, token strin
 	return identity.Verification{ID: row.ID, Identifier: row.Identifier, Token: row.Value, ExpiresAt: row.ExpiresAt.Time}, nil
 }
 
-func (r *CredentialRepository) VerifyEmail(ctx context.Context, userID, verificationID string) error {
+func (r *CredentialRepository) VerifyEmail(ctx context.Context, userID, email, verificationID string) error {
 	return r.withTx(ctx, func(txq *queries.Queries) error {
-		if err := txq.UpdateUserEmailVerified(ctx, userID); err != nil {
+		updated, err := txq.ConfirmUserEmail(ctx, queries.ConfirmUserEmailParams{ID: userID, Email: email, VerificationID: verificationID})
+		if err != nil {
 			return fmt.Errorf("mark user email verified: %w", err)
 		}
-		if err := txq.DeleteVerification(ctx, verificationID); err != nil {
-			return fmt.Errorf("delete email verification: %w", err)
+		if updated == 0 {
+			return identity.ErrInvalidVerification
+		}
+		if err := txq.DeleteUserSessions(ctx, userID); err != nil {
+			return fmt.Errorf("revoke sessions before email verification: %w", err)
 		}
 		return nil
 	})
