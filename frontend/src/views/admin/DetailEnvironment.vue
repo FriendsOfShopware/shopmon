@@ -311,6 +311,7 @@
 </template>
 
 <script setup lang="ts">
+import { isNewerExtensionVersion } from "@/helpers/extensionVersion";
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import {
@@ -385,7 +386,7 @@ function checkLevelClass(level: string): string {
 }
 
 function isOutdated(ext: AdminEnvironmentExtension): boolean {
-  return Boolean(ext.latestVersion && ext.latestVersion !== ext.version);
+  return Boolean(isNewerExtensionVersion(ext.version, ext.latestVersion));
 }
 
 function shortRuntimeVersion(value?: string | null): string {

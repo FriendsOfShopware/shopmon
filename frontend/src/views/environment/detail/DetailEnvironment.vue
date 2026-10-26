@@ -326,6 +326,7 @@
 </template>
 
 <script setup lang="ts">
+import { isNewerExtensionVersion } from "@/helpers/extensionVersion";
 import {
   checkExtensionCompatibility,
   getEnvironmentChangelogs,
@@ -481,7 +482,7 @@ const sortedCriticalChecks = computed(() => {
 const outdatedExtensions = computed(() => {
   if (!environment.value?.extensions) return [];
   return environment.value.extensions
-    .filter((ext) => ext.installed && ext.latestVersion && ext.version !== ext.latestVersion)
+    .filter((ext) => ext.installed && isNewerExtensionVersion(ext.version, ext.latestVersion))
     .slice(0, 5);
 });
 

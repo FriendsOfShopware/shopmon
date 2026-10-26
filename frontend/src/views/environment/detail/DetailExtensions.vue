@@ -127,6 +127,7 @@
 </template>
 
 <script setup lang="ts">
+import { isNewerExtensionVersion } from "@/helpers/extensionVersion";
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { formatDate } from "@/helpers/formatter";
@@ -176,7 +177,7 @@ const counts = computed(() => ({
 }));
 
 function hasUpdate(ext: Extension): boolean {
-  return !!(ext.installed && ext.latestVersion && ext.version !== ext.latestVersion);
+  return !!(ext.installed && isNewerExtensionVersion(ext.version, ext.latestVersion));
 }
 
 function getExtensionState(extension: Extension) {

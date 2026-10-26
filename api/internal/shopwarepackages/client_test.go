@@ -101,3 +101,12 @@ func TestNewClientDefaults(t *testing.T) {
 	assert.Equal(t, DefaultBaseURL, client.baseURL)
 	assert.NotNil(t, client.httpClient)
 }
+
+func TestPackageFeedAcceptsEmptyRequirementsArray(t *testing.T) {
+	srv := feedServer(t, http.StatusOK, `{"versions":[{"version":"2.8.1","require":[]},{"version":"2.8.0","require":{"shopware/core":"~6.7.0"}}]}`)
+	pkg, err := NewClient(srv.URL, nil).PackageFeed(context.Background(), "store.shopware.com/swagplatformsecurity")
+	require.NoError(t, err)
+	require.Len(t, pkg.Versions, 2)
+	assert.Empty(t, pkg.Versions[0].Require)
+	assert.Equal(t, "~6.7.0", pkg.Versions[1].Require["shopware/core"])
+}
