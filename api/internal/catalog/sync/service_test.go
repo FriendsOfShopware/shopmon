@@ -196,11 +196,15 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 
 		feedVersions := make([]map[string]any, 0, len(versions))
 		for _, v := range versions {
+			var requirements any = map[string]string{"shopware/core": v.constraint}
+			if v.constraint == "" {
+				requirements = []string{}
+			}
 			feedVersions = append(feedVersions, map[string]any{
 				"version":   v.version,
 				"date":      "2023-01-01T00:00:00+00:00",
 				"changelog": "changelog " + v.version,
-				"require":   map[string]string{"shopware/core": v.constraint},
+				"require":   requirements,
 			})
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -525,6 +529,9 @@ func TestStoreExtensionSyncFeedFallback(t *testing.T) {
 		"no evaluable constraint": func(store *mockStoreServer) {
 			store.feeds["froshtools"] = []mockFeedVersion{{version: "1.2.0", constraint: ""}}
 		},
+		"newer release without constraints": func(store *mockStoreServer) {
+			store.feeds["froshtools"] = []mockFeedVersion{{version: "1.2.0", constraint: ""}, {version: "1.1.0", constraint: "~6.6.0"}, {version: "1.0.0", constraint: "~6.5.0"}}
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h, pool, store := setupSyncTest(t)
@@ -616,9 +623,14 @@ func TestLatestCompatibleVersion(t *testing.T) {
 		{Version: "1.3.0"},
 	}, versions...)
 	latest, ok = latestCompatibleVersion(withNoise, "6.6.0.0")
-	require.True(t, ok, "evaluable")
+	assert.False(t, ok, "a newer release without constraints requires a Store probe")
+	assert.Nil(t, latest)
+
+	withOlderUnknown := append(versions, shopwarepackages.PackageVersion{Version: "0.9.0"})
+	latest, ok = latestCompatibleVersion(withOlderUnknown, "6.6.0.0")
+	require.True(t, ok)
 	require.NotNil(t, latest)
-	assert.Equal(t, "1.2.0", *latest, "pre-release and constraint-less versions skipped")
+	assert.Equal(t, "1.2.0", *latest)
 
 	// The require key match is case-insensitive and range constraints work.
 	ranged := []shopwarepackages.PackageVersion{

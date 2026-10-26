@@ -707,8 +707,8 @@ func (h *Service) probeVersion(ctx context.Context, client *shopwareaccount.Clie
 // for each Shopware version from the packages.shopware.com feed. It returns
 // nil when the feed cannot be used — unknown package (custom plugins are not
 // on packages.shopware.com), request failure, or no version with an evaluable
-// shopware/core constraint — in which case the caller falls back to probing
-// the store API per Shopware version.
+// shopware/core constraint, or a newer release has unknown compatibility —
+// in which case the caller falls back to probing the store API.
 func (h *Service) compatibleVersionsFromFeed(ctx context.Context, name string, shopwareVersions []string) (map[string]*string, []shopwarepackages.PackageVersion, error) {
 	feed, err := h.packagesClient().PackageFeed(ctx, storePackageName(name))
 	if err != nil {
@@ -727,9 +727,12 @@ func (h *Service) compatibleVersionsFromFeed(ctx context.Context, name string, s
 	evaluable := false
 	for _, swv := range shopwareVersions {
 		latest, ok := latestCompatibleVersion(feed.Versions, swv)
-		if ok {
-			evaluable = true
+		if !ok {
+			// A newer release with unknown compatibility could beat the feed
+			// result. Only a Store probe can safely resolve this feed.
+			return nil, nil, nil
 		}
+		evaluable = true
 		byShopwareVersion[swv] = latest
 	}
 	if !evaluable {
@@ -757,9 +760,9 @@ func storeAvailableVersions(sd *storemodel.Data) []string {
 
 // latestCompatibleVersion returns the newest feed version whose shopware/core
 // constraint matches the given Shopware version. Versions with a pre-release
-// marker or without a constraint are skipped. The second return value reports
-// whether any version had an evaluable constraint, so the caller can tell a
-// genuinely incompatible extension apart from a feed it cannot make sense of.
+// marker are skipped. The second return value is false when the feed cannot
+// establish the latest compatible release, including when a newer release has
+// missing or invalid constraints.
 func latestCompatibleVersion(versions []shopwarepackages.PackageVersion, shopwareVersion string) (*string, bool) {
 	var latest *string
 	evaluable := false
@@ -779,6 +782,16 @@ func latestCompatibleVersion(versions []shopwarepackages.PackageVersion, shopwar
 		if latest == nil || version.Compare(*latest, feedVersion.Version) < 0 {
 			v := feedVersion.Version
 			latest = &v
+		}
+	}
+	for _, feedVersion := range versions {
+		if strings.Contains(feedVersion.Version, "-") {
+			continue
+		}
+		constraint := shopwareCoreConstraint(feedVersion.Require)
+		_, err := version.Satisfies(shopwareVersion, constraint)
+		if (constraint == "" || err != nil) && (latest == nil || version.Compare(feedVersion.Version, *latest) > 0) {
+			return nil, false
 		}
 	}
 	return latest, evaluable
