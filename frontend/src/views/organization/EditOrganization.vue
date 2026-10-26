@@ -89,7 +89,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import { useForm } from "vee-validate";
-import { toTypedSchema } from "@vee-validate/zod";
+import { toTypedSchema } from "@/helpers/toTypedSchema";
 import { z } from "zod";
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";

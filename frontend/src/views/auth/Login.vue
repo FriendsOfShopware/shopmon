@@ -139,7 +139,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { z } from "zod";
 import { useForm } from "vee-validate";
-import { toTypedSchema } from "@vee-validate/zod";
+import { toTypedSchema } from "@/helpers/toTypedSchema";
 import { startAuthentication } from "@simplewebauthn/browser";
 
 import { useAlert } from "@/composables/useAlert";
