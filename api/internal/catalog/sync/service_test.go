@@ -563,6 +563,37 @@ func TestStoreExtensionSyncFeedFallback(t *testing.T) {
 	}
 }
 
+func TestStoreExtensionSyncFilteredFeedUncertain(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+	store.extensions["FroshTools"].latestByShopwareVersion = map[string]string{"6.5.0.0": "3.0.0", "6.6.0.0": "3.0.0"}
+	store.extensions["FroshTools"].changelogVersions = []string{"3.0.0", "2.0.0", "1.0.0"}
+	store.feeds["froshtools"] = []mockFeedVersion{
+		{version: "3.0.0", constraint: ">=6.5.0 <6.7.0"},
+		{version: "2.0.0", constraint: ""},
+		{version: "1.0.0", constraint: ">=6.5.0 <6.7.0"},
+	}
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false))
+	store.extensions["FroshTools"].latestByShopwareVersion["6.6.0.0"] = "2.0.0"
+	store.extensions["FroshTools"].changelogVersions = []string{"2.0.0", "1.0.0"}
+	ageSyncBookkeeping(t, pool, "2 hours", "25 hours")
+	store.resetSeen()
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false))
+	assert.Equal(t, []string{"en_GB@6.6.0.0", "de_DE@6.6.0.0"}, store.seenLocales())
+	readVersion := func(swv string) string {
+		var latest string
+		require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = $1`, swv).Scan(&latest))
+		return latest
+	}
+	assert.Equal(t, "2.0.0", readVersion("6.6.0.0"), "use Store result for the probed version")
+	assert.Equal(t, "3.0.0", readVersion("6.5.0.0"), "preserve the unchecked version")
+	ageSyncBookkeeping(t, pool, "2 hours", "5 minutes")
+	store.resetSeen()
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false))
+	assert.Empty(t, store.seenLocales(), "cached Store snapshot requires no new probe")
+	assert.Equal(t, "2.0.0", readVersion("6.6.0.0"), "preserve prior Store result without a probe")
+}
+
 func TestStoreExtensionSyncWithdrawnRelease(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	ctx := context.Background()

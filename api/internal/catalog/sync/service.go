@@ -403,7 +403,21 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 			}
 		}
 		for _, swv := range swvs {
-			compat[name][swv], _ = latestCompatibleVersion(filtered, swv)
+			latestVersion, known := latestCompatibleVersion(filtered, swv)
+			if known {
+				compat[name][swv] = latestVersion
+				continue
+			}
+			// An uncertain feed is not evidence that no release exists. Use
+			// the Store response only for the version actually probed, and
+			// leave all other existing compatibility rows untouched.
+			delete(compat[name], swv)
+			if probe, ok := claimed[name]; ok && probedOK[name] && probe.shopwareVersion == swv {
+				compat[name][swv] = nil
+				if sd := best[name]; sd != nil && sd.Primary() != nil {
+					compat[name][swv] = nilIfEmpty(sd.Primary().Version)
+				}
+			}
 		}
 	}
 
