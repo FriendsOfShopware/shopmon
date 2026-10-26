@@ -5,6 +5,7 @@
 package shopwarepackages
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -72,10 +73,10 @@ type rawFeed struct {
 	Name     string `json:"name"`
 	Link     string `json:"link"`
 	Versions []struct {
-		Version   string            `json:"version"`
-		Date      string            `json:"date"`
-		Changelog string            `json:"changelog"`
-		Require   map[string]string `json:"require"`
+		Version   string          `json:"version"`
+		Date      string          `json:"date"`
+		Changelog string          `json:"changelog"`
+		Require   json.RawMessage `json:"require"`
 	} `json:"versions"`
 }
 
@@ -116,11 +117,23 @@ func (c *Client) PackageFeed(ctx context.Context, name string) (*Package, error)
 		Versions: make([]PackageVersion, 0, len(raw.Versions)),
 	}
 	for _, v := range raw.Versions {
+		var requirements map[string]string
+		rawRequire := bytes.TrimSpace(v.Require)
+		if len(rawRequire) > 0 && rawRequire[0] == '[' {
+			var empty []json.RawMessage
+			if err := json.Unmarshal(rawRequire, &empty); err != nil || len(empty) != 0 {
+				return nil, fmt.Errorf("parse package feed requirements for %s: expected an empty array", v.Version)
+			}
+		} else if len(rawRequire) > 0 && string(rawRequire) != "null" {
+			if err := json.Unmarshal(v.Require, &requirements); err != nil {
+				return nil, fmt.Errorf("parse package feed requirements for %s: %w", v.Version, err)
+			}
+		}
 		pkg.Versions = append(pkg.Versions, PackageVersion{
 			Version:    v.Version,
 			Changelog:  v.Changelog,
 			ReleasedAt: parseFeedDate(v.Date),
-			Require:    v.Require,
+			Require:    requirements,
 		})
 	}
 	return pkg, nil

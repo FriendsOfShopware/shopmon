@@ -1,3 +1,4 @@
+import { isNewerExtensionVersion } from "@/helpers/extensionVersion";
 import type {
   AccountExtension,
   AccountExtensionEnvironment,
@@ -16,7 +17,7 @@ export function normalizeWebsite(url?: string | null): string | null {
 }
 
 export function envHasUpdate(env: AccountExtensionEnvironment): boolean {
-  return !!(env.installed && env.latestVersion && env.version !== env.latestVersion);
+  return !!(env.installed && isNewerExtensionVersion(env.version, env.latestVersion));
 }
 
 // An extension has an update when any environment it is installed in runs an
