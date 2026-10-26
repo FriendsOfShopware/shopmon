@@ -1,0 +1,25 @@
+schemaVersion: "2"
+kind: mixin
+name: shopmon-dev
+description: mise tooling and sandbox-local frontend dependencies for Shopmon
+
+args:
+  workspace:
+    required: true
+    description: Absolute path of the directly mounted project workspace
+
+# Keep Linux native npm packages separate from the host's node_modules.
+volumes:
+  - path: ${{ kit.args.workspace }}/frontend/node_modules
+
+setup:
+  install:
+    - description: Install the shared library required by Node.js on ARM64
+      command: apt-get update -qq && apt-get install -y --no-install-recommends libatomic1
+    - description: Install mise and expose its tool shims to sandbox shells
+      command: |
+        set -eu
+        curl -fsSL https://mise.run -o /tmp/shopmon-install-mise.sh
+        MISE_INSTALL_PATH=/usr/local/bin/mise sh /tmp/shopmon-install-mise.sh
+        rm /tmp/shopmon-install-mise.sh
+        echo 'export PATH="/home/agent/.local/share/mise/shims:$PATH"' >> /etc/sandbox-persistent.sh

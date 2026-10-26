@@ -49,6 +49,40 @@ mise run dev            # start API, worker, and frontend
 
 Open http://localhost:3000 in your browser.
 
+### Docker Sandbox
+
+With [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/configuration/environment-files/)
+and the `sbx` CLI installed, use the committed environment from the repository root:
+
+```bash
+sbx env plan .                  # Review the environment
+sbx env create .                # Install mise, project tools, and dependencies
+sbx env exec . -- mise run lint
+sbx env exec . -- mise run test
+sbx env run .                   # Attach to Codex
+```
+
+The sandbox mounts your checkout, so source edits appear on the host. Its own
+Docker Engine runs Compose services and testcontainers; Linux frontend dependencies
+live in a sandbox volume, separate from the host's `frontend/node_modules`.
+Tool versions and development settings come from `.mise.toml`.
+
+To start the application, run these commands in the sandbox (or prefix them with
+`sbx env exec . --` on the host):
+
+```bash
+mise run up
+mise run load-fixtures
+mise run dev
+```
+
+The frontend, Mailpit, demo shop, Jaeger, and LavinMQ management UI use the same
+host ports listed below. Stop any host development services using those ports
+before creating the sandbox. The frontend proxies `/api` to the sandbox API.
+The root `sbxenv.yaml` stays read-only inside the sandbox. After changing its
+ports, resources, or kit, use `sbx env rm .` and create it again; removal also
+deletes the sandbox's installed tools, dependencies, and database volumes.
+
 ### Useful Commands
 
 ```bash

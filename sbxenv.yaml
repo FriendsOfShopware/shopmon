@@ -1,0 +1,40 @@
+schemaVersion: "1"
+name: shopmon
+agent: codex
+workspace: .
+
+kits:
+  - source: ./.sandbox
+    args:
+      workspace: ${{ env.fileDir }}
+
+sandboxOptions:
+  cpus: 4
+  memory: 8g
+
+ports:
+  - sandbox: 3000
+    host: 3000
+  - sandbox: 8025
+    host: 8025
+  - sandbox: 3889
+    host: 3889
+  - sandbox: 16686
+    host: 16686
+  - sandbox: 15672
+    host: 15672
+
+# Lifecycle commands run on the host; execute project setup inside the sandbox.
+lifecycle:
+  postCreate:
+    - name: Install the project toolchain and dependencies
+      timeout: 20m
+      command: |
+        sbx exec "$SBX_SANDBOX_NAME" bash -lc '
+          set -euo pipefail
+          cd "$WORKSPACE_DIR"
+          sudo chown agent:agent frontend/node_modules
+          mise trust
+          mise install
+          mise run setup
+        '
