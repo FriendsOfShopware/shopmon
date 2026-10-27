@@ -60,7 +60,7 @@
             <CardTitle class="text-lg">{{ $t("ecosystem.shopwareDistribution") }}</CardTitle>
             <div class="flex items-center gap-2">
               <span class="text-xs text-muted-foreground">{{ $t("ecosystem.groupByMinor") }}</span>
-              <Switch v-model:checked="groupByMinor" />
+              <Switch v-model="groupByMinor" />
             </div>
           </div>
         </CardHeader>

@@ -149,9 +149,9 @@ const extensions = ref<AccountExtension[]>([]);
 const loading = ref(true);
 
 const filters = [
-  { label: t("extensions.filterAll"), value: "all" },
-  { label: t("extensions.filterUpdates"), value: "updates" },
-  { label: t("extensions.filterInactive"), value: "inactive" },
+  { label: t("extensions.filterAll"), value: "all" as const },
+  { label: t("extensions.filterUpdates"), value: "updates" as const },
+  { label: t("extensions.filterInactive"), value: "inactive" as const },
 ];
 
 getAccountExtensions({ query: { language: apiLanguage() } })
