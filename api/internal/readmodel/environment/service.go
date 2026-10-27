@@ -107,6 +107,7 @@ type detailAggregate struct {
 	queues         []queries.EnvironmentQueue
 	cache          *queries.EnvironmentCache
 	checks         []queries.EnvironmentCheck
+	scrapeIssues   []queries.EnvironmentScrapeIssue
 	sitespeeds     []queries.EnvironmentSitespeed
 	changelogCount int32
 	deployCount    int32
@@ -156,6 +157,14 @@ func (s *Service) loadAggregate(ctx context.Context, environmentID int32, langua
 			return fmt.Errorf("get environment checks: %w", err)
 		}
 		aggregate.checks = rows
+		return nil
+	})
+	group.Go(func() error {
+		rows, err := s.queries.GetEnvironmentScrapeIssues(groupCtx, environmentID)
+		if err != nil {
+			return fmt.Errorf("get environment scrape issues: %w", err)
+		}
+		aggregate.scrapeIssues = rows
 		return nil
 	})
 	group.Go(func() error {
@@ -290,6 +299,7 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		Queues:             mapEnvironmentQueues(aggregate.queues),
 		Cache:              mapEnvironmentCache(aggregate.cache),
 		Checks:             mapEnvironmentChecks(aggregate.checks),
+		ScrapeIssues:       mapEnvironmentScrapeIssues(aggregate.scrapeIssues),
 		Sitespeeds:         mapEnvironmentSitespeeds(aggregate.sitespeeds),
 		ChangelogsCount:    int(aggregate.changelogCount),
 		DeploymentsCount:   int(aggregate.deployCount),

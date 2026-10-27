@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
 )
@@ -28,6 +29,7 @@ func (r *ScheduleRepository) ListEnvironmentScrapeTargets(ctx context.Context) (
 		targets = append(targets, jobs.ScheduledEnvironment{
 			ID:                   row.ID,
 			ConnectionIssueCount: row.ConnectionIssueCount,
+			LastScrapedAt:        database.TimePtr(row.LastScrapedAt),
 		})
 	}
 	return targets, nil

@@ -227,6 +227,20 @@ CREATE TABLE "environment_check" (
   UNIQUE ("environment_id", "check_id")
 );
 
+CREATE TABLE "environment_scrape_issue" (
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
+  "issue_key" text NOT NULL,
+  "kind" text NOT NULL,
+  "dataset" text NOT NULL,
+  "message_key" text NOT NULL,
+  "params" jsonb NOT NULL DEFAULT '{}'::jsonb,
+  "consecutive_count" integer NOT NULL DEFAULT 1,
+  "first_seen_at" timestamp NOT NULL DEFAULT NOW(),
+  "last_seen_at" timestamp NOT NULL DEFAULT NOW(),
+  "notified_at" timestamp,
+  PRIMARY KEY ("environment_id", "issue_key")
+);
+
 -- environment_extension holds only extensions that are NOT known to the Shopware
 -- store (api.shopware.com). Store-known extensions live in the normalized
 -- store_extension* tables and are linked per environment via

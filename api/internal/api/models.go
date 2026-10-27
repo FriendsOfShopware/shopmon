@@ -1229,6 +1229,28 @@ type EnvironmentCheck struct {
 	Params *map[string]any `json:"params,omitempty"`
 }
 
+// EnvironmentScrapeIssue defines model for EnvironmentScrapeIssue.
+type EnvironmentScrapeIssue struct {
+	// Dataset The shop data set that could not be refreshed (plugins, queue, sbom, auth, …).
+	Dataset string `json:"dataset"`
+
+	FirstSeenAt time.Time `json:"firstSeenAt"`
+
+	// Key Stable identifier of the issue within the environment.
+	Key string `json:"key"`
+
+	// Kind Classified failure kind (missing_privilege, timeout, invalid_credentials, …).
+	Kind string `json:"kind"`
+
+	LastSeenAt time.Time `json:"lastSeenAt"`
+
+	// MessageKey Translation key for the issue; render with params client-side.
+	MessageKey string `json:"messageKey"`
+
+	// Params Structured params for interpolating messageKey.
+	Params *map[string]any `json:"params,omitempty"`
+}
+
 // EnvironmentDetail defines model for EnvironmentDetail.
 type EnvironmentDetail struct {
 	Cache *CacheInfo `json:"cache"`
@@ -1255,6 +1277,9 @@ type EnvironmentDetail struct {
 	PhpVersion         *string                `json:"phpVersion,omitempty"`
 	Queues             []Queue                `json:"queues"`
 	ScheduledTasks     []ScheduledTask        `json:"scheduledTasks"`
+
+	// ScrapeIssues Current background-refresh problems (missing integration privileges, unreachable shop, …). Empty when the refresh is healthy.
+	ScrapeIssues []EnvironmentScrapeIssue `json:"scrapeIssues"`
 	ShopDescription    *string                `json:"shopDescription"`
 	ShopId             *int                   `json:"shopId"`
 	ShopName           *string                `json:"shopName"`

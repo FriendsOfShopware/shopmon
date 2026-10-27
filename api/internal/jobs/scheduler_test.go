@@ -19,18 +19,29 @@ func TestSchedulerRegistersRecurringJobs(t *testing.T) {
 }
 
 func TestSchedulerFiltersRepeatedConnectionFailures(t *testing.T) {
+	now := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	recent := now.Add(-time.Hour)
+	stale := now.Add(-25 * time.Hour)
 	repository := &scheduleRepositoryStub{environments: []ScheduledEnvironment{
 		{ID: 1},
-		{ID: 2, ConnectionIssueCount: 3},
+		// At the backoff threshold and scraped recently: skipped until the
+		// daily retry is due.
+		{ID: 2, ConnectionIssueCount: 3, LastScrapedAt: &recent},
 		{ID: 3, ConnectionIssueCount: 2},
+		// At the threshold but the daily retry is due: dispatched, so a fixed
+		// shop recovers without a manual refresh.
+		{ID: 4, ConnectionIssueCount: 5, LastScrapedAt: &stale},
+		// At the threshold but never scraped: dispatched.
+		{ID: 5, ConnectionIssueCount: 3},
 	}}
 	dispatcher := &scheduleDispatcherStub{}
 	scheduler, err := NewScheduler(repository, dispatcher, SchedulerConfig{})
 	require.NoError(t, err)
+	scheduler.now = func() time.Time { return now }
 
 	scheduler.enqueueEnvironmentScrapes(context.Background())
 
-	assert.Equal(t, []int32{1, 3}, dispatcher.environmentScrapes)
+	assert.Equal(t, []int32{1, 3, 4, 5}, dispatcher.environmentScrapes)
 }
 
 func TestSchedulerOnlyQueriesSitespeedTargetsWhenEnabled(t *testing.T) {

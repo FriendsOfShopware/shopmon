@@ -3,8 +3,10 @@ package shopware
 import (
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
+	"strings"
 )
 
 // ConnectionErrorMessage returns only fixed guidance, never URLs, credentials,
@@ -18,6 +20,9 @@ func ConnectionErrorMessage(err error) string {
 	var hostname x509.HostnameError
 	if errors.As(err, &certificate) || errors.As(err, &unknownAuthority) || errors.As(err, &hostname) {
 		return "The shop TLS certificate could not be verified. Check its hostname, certificate chain and validity."
+	}
+	if privileges := MissingPrivileges(err); len(privileges) > 0 {
+		return fmt.Sprintf("The integration is missing Shopware permissions: %s. Grant them in the Shopware Administration under Settings → System → Integrations.", strings.Join(privileges, ", "))
 	}
 	var apiErr *ApiError
 	if errors.As(err, &apiErr) {

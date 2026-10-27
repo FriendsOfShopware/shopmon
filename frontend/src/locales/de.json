@@ -21,6 +21,52 @@
       "titleOne": "Umgebung: {name} hat eine neue Sicherheitsmeldung",
       "message": "{count} neue Meldungen betreffen diese Umgebung",
       "messageOne": "1 neue Meldung betrifft diese Umgebung"
+    },
+    "scrapeIssue": {
+      "title": "Umgebung: {name} konnte nicht aktualisiert werden",
+      "message": "Shopmon konnte die Daten dieser Umgebung nicht aktualisieren. Bitte behebe Folgendes im Shop:"
+    },
+    "scrapeRecovered": {
+      "title": "Umgebung: {name} wird wieder aktualisiert",
+      "message": "Die zuvor gemeldeten Aktualisierungsprobleme sind behoben. Shopmon erhält wieder aktuelle Daten."
+    },
+    "scrapePaused": {
+      "title": "Umgebung: {name} Aktualisierung verlangsamt",
+      "message": "Die Aktualisierung schlägt weiterhin fehl. Shopmon versucht es daher nur noch einmal täglich statt stündlich, bis der Shop wieder erreichbar ist. Nutze nach der Behebung die manuelle Aktualisierung. Details:"
+    }
+  },
+  "scrapeIssue": {
+    "missing_privilege": "Der Shopmon-Integration fehlen Berechtigungen: {privileges}. Vergib sie in der Shopware-Administration unter Einstellungen → System → Integrationen.",
+    "invalid_credentials": "Der Shop hat die Zugangsdaten der Integration abgelehnt. Prüfe Access-Key-ID und Secret und ob die Integration aktiv ist.",
+    "forbidden": "Der Shop hat den API-Zugriff verweigert (403). Prüfe Firewall- oder Webserver-Regeln (z. B. WAF oder IP-Allowlist), die die Shopmon-Integration blockieren.",
+    "not_found": "Die Shopware-API wurde unter der konfigurierten Shop-URL nicht gefunden (404). Prüfe die URL, inklusive eines eventuellen Unterverzeichnisses.",
+    "redirect": "Der Shop leitet API-Anfragen weiter. Verwende die kanonische HTTPS-Shop-URL, damit Anfragen nicht weitergeleitet werden.",
+    "timeout": "Der Shop hat nicht rechtzeitig geantwortet. Prüfe die Verfügbarkeit und Auslastung des Shops.",
+    "tls": "Das TLS-Zertifikat des Shops konnte nicht verifiziert werden. Prüfe Hostname, Zertifikatskette und Ablaufdatum.",
+    "unreachable": "Der Shop konnte über das Netzwerk nicht erreicht werden. Prüfe URL, DNS und Firewall.",
+    "shop_error": "Der Shop hat einen Serverfehler zurückgegeben. Details stehen im Fehlerprotokoll des Shops.",
+    "invalid_response": "Der Shop hat eine unerwartete Antwort zurückgegeben. Prüfe auf eine Wartungsseite oder eine Firewall vor der API.",
+    "unknown": "Die Aktualisierung ist aus unbekanntem Grund fehlgeschlagen. Prüfe die Shop-URL und die Integration.",
+    "plugins": {
+      "missing_privilege": "Erweiterungen konnten nicht gelesen werden: Der Integration fehlen Berechtigungen: {privileges}. Shopmon kann keine Erweiterungs-Updates oder Sicherheitsprobleme melden, bis dies behoben ist."
+    },
+    "apps": {
+      "missing_privilege": "Apps konnten nicht gelesen werden: Der Integration fehlen Berechtigungen: {privileges}."
+    },
+    "scheduled_tasks": {
+      "missing_privilege": "Geplante Aufgaben konnten nicht gelesen werden: Der Integration fehlen Berechtigungen: {privileges}. Shopmon kann nicht vor überfälligen Aufgaben warnen, bis dies behoben ist."
+    },
+    "queue": {
+      "missing_privilege": "Message-Queue-Statistiken konnten nicht gelesen werden: Der Integration fehlen Berechtigungen: {privileges}."
+    },
+    "cache_info": {
+      "missing_privilege": "Cache- und Systeminformationen konnten nicht gelesen werden: Der Integration fehlen Berechtigungen: {privileges}."
+    },
+    "frosh_tools": {
+      "missing_privilege": "FroshTools-Prüfungen konnten nicht gelesen werden: Der Integration fehlen Berechtigungen: {privileges}. Health- und Performance-Prüfungen fehlen, bis dies behoben ist."
+    },
+    "sbom": {
+      "missing_privilege": "Die Composer-Paketliste konnte nicht gelesen werden: Der Integration fehlen Berechtigungen: {privileges}. Sicherheitsmeldungen können nicht pro Paket abgeglichen werden, bis dies behoben ist."
     }
   },
   "statusHistory": {
@@ -573,6 +619,9 @@
       "status_recovered": "Status wiederhergestellt",
       "auth_error": "Verbindungs-/Authentifizierungsfehler",
       "data_fetch_error": "Fehler beim Datenabruf",
+      "scrape_issue": "Aktualisierungsprobleme (Berechtigungen, Verbindung)",
+      "scrape_recovered": "Aktualisierung funktioniert wieder",
+      "scrape_paused": "Aktualisierung nach wiederholten Fehlern verlangsamt",
       "advisory_detected": "Neue Sicherheitsmeldungen"
     },
     "watchedEnvironments": "Beobachtete Umgebungen",
@@ -667,7 +716,8 @@
     "perEventHint": "Pro Ereignis und Kanal für diese Umgebung überschreiben. \"Erben\" verwendet deine globale Einstellung.",
     "clearCache": "Umgebungs-Cache leeren",
     "refreshData": "Umgebungsdaten aktualisieren",
-    "autoUpdateDisabled": "Diese Umgebung wird nicht mehr automatisch aktualisiert. Bitte aktualisieren Sie die API-Zugangsdaten oder die URL, um dieses Problem zu beheben.",
+    "autoUpdateDisabled": "Diese Umgebung konnte nicht aktualisiert werden. Bitte aktualisieren Sie die API-Zugangsdaten oder die URL, um dieses Problem zu beheben.",
+    "scrapeIssuesTitle": "Diese Umgebung kann nicht vollständig aktualisiert werden",
     "refreshTitle": "{name} aktualisieren",
     "pagespeedQuestion": "Möchten Sie auch einen neuen Pagespeed-Test ausführen?",
     "refreshDescription": "Dadurch werden die Umgebungsdaten aktualisiert.",

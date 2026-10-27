@@ -250,44 +250,5 @@ func decodeParams(raw []byte) map[string]any {
 	return params
 }
 
-// notifyAuthError dispatches notifications when authentication fails.
-func (h *Service) notifyAuthError(ctx context.Context, env queries.GetAllEnvironmentsRow, authErr error) {
-	errMsg := fmt.Sprintf("%v", authErr)
-	if len(errMsg) > 50 {
-		errMsg = errMsg[:50] + "..."
-	}
-
-	h.notifier.Dispatch(ctx, notify.Event{
-		Type:       notify.EventAuthError,
-		Level:      notify.LevelError,
-		ScopeType:  notify.ScopeEnvironment,
-		ScopeID:    strconv.Itoa(int(env.ID)),
-		OrgID:      env.OrganizationID,
-		DedupKey:   fmt.Sprintf("environment.update-auth-error.%d", env.ID),
-		TitleKey:   "notification.authError.title",
-		MessageKey: "notification.authError.message",
-		Params: map[string]any{
-			"name":  environmentDisplayName(env.Name, env.ShopName),
-			"error": errMsg,
-		},
-		Link: environmentLink(env.ID),
-	}, h.environmentRecipients(ctx, env))
-}
-
-// notifyDataFetchError dispatches notifications when data fetching fails.
-func (h *Service) notifyDataFetchError(ctx context.Context, env queries.GetAllEnvironmentsRow, _ string) {
-	h.notifier.Dispatch(ctx, notify.Event{
-		Type:       notify.EventDataFetchError,
-		Level:      notify.LevelError,
-		ScopeType:  notify.ScopeEnvironment,
-		ScopeID:    strconv.Itoa(int(env.ID)),
-		OrgID:      env.OrganizationID,
-		DedupKey:   fmt.Sprintf("environment.not.updated_%d", env.ID),
-		TitleKey:   "notification.dataFetchError.title",
-		MessageKey: "notification.dataFetchError.message",
-		Params: map[string]any{
-			"name": environmentDisplayName(env.Name, env.ShopName),
-		},
-		Link: environmentLink(env.ID),
-	}, h.environmentRecipients(ctx, env))
-}
+// Scrape failure notifications live in issues.go: auth/config failures and
+// per-dataset fetch failures all become classified scrape issues there.

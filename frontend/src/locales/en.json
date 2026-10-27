@@ -21,6 +21,52 @@
       "titleOne": "Environment: {name} has a new security advisory",
       "message": "{count} new advisories affect this environment",
       "messageOne": "1 new advisory affects this environment"
+    },
+    "scrapeIssue": {
+      "title": "Environment: {name} could not be updated",
+      "message": "Shopmon could not refresh this environment's data. Please fix the following in the shop:"
+    },
+    "scrapeRecovered": {
+      "title": "Environment: {name} is updating again",
+      "message": "The refresh problems reported earlier are resolved. Shopmon is receiving current data again."
+    },
+    "scrapePaused": {
+      "title": "Environment: {name} refresh slowed down",
+      "message": "Refreshing keeps failing, so Shopmon now retries once a day instead of hourly until the shop can be reached again. Use the manual refresh after fixing the problem. Details:"
+    }
+  },
+  "scrapeIssue": {
+    "missing_privilege": "The Shopmon integration is missing permissions: {privileges}. Grant them in the Shopware Administration under Settings → System → Integrations.",
+    "invalid_credentials": "The shop rejected the integration credentials. Check the access key ID and secret and that the integration is active.",
+    "forbidden": "The shop refused API access (403). Check firewall or web-server rules (for example a WAF or IP allowlist) blocking the Shopmon integration.",
+    "not_found": "The Shopware API was not found at the configured shop URL (404). Check the URL, including any subdirectory.",
+    "redirect": "The shop redirects API requests. Use the canonical HTTPS shop URL so requests are not redirected.",
+    "timeout": "The shop did not respond in time. Check the shop's availability and server load.",
+    "tls": "The shop's TLS certificate could not be verified. Check its hostname, certificate chain and expiry.",
+    "unreachable": "The shop could not be reached over the network. Check the URL, DNS and firewall.",
+    "shop_error": "The shop returned a server error. Check the shop's error log for details.",
+    "invalid_response": "The shop returned an unexpected response. Check for a maintenance page or a firewall in front of the API.",
+    "unknown": "Updating failed for an unknown reason. Check the shop URL and the integration.",
+    "plugins": {
+      "missing_privilege": "Extensions could not be read: the integration is missing permissions: {privileges}. Shopmon cannot report extension updates or security issues until this is fixed."
+    },
+    "apps": {
+      "missing_privilege": "Apps could not be read: the integration is missing permissions: {privileges}."
+    },
+    "scheduled_tasks": {
+      "missing_privilege": "Scheduled tasks could not be read: the integration is missing permissions: {privileges}. Shopmon cannot warn about overdue tasks until this is fixed."
+    },
+    "queue": {
+      "missing_privilege": "Message-queue statistics could not be read: the integration is missing permissions: {privileges}."
+    },
+    "cache_info": {
+      "missing_privilege": "Cache and system information could not be read: the integration is missing permissions: {privileges}."
+    },
+    "frosh_tools": {
+      "missing_privilege": "FroshTools checks could not be read: the integration is missing permissions: {privileges}. Health and performance checks are missing until this is fixed."
+    },
+    "sbom": {
+      "missing_privilege": "The Composer package list could not be read: the integration is missing permissions: {privileges}. Security advisories cannot be matched per package until this is fixed."
     }
   },
   "statusHistory": {
@@ -573,6 +619,9 @@
       "status_recovered": "Status recovered",
       "auth_error": "Connection / authentication errors",
       "data_fetch_error": "Data fetch errors",
+      "scrape_issue": "Refresh problems (permissions, connection)",
+      "scrape_recovered": "Refresh working again",
+      "scrape_paused": "Refresh slowed down after repeated failures",
       "advisory_detected": "New security advisories"
     },
     "watchedEnvironments": "Watched environments",
@@ -667,7 +716,8 @@
     "perEventHint": "Override per event and channel for this environment. \"Inherit\" uses your global setting.",
     "clearCache": "Clear environment cache",
     "refreshData": "Refresh environment data",
-    "autoUpdateDisabled": "This environment will not be automatically updated anymore. Please update the API credentials or URL to fix this issue.",
+    "autoUpdateDisabled": "This environment could not be updated. Please update the API credentials or URL to fix this issue.",
+    "scrapeIssuesTitle": "This environment cannot be fully updated",
     "refreshTitle": "Refresh {name}",
     "pagespeedQuestion": "Do you also want to run a new pagespeed test?",
     "refreshDescription": "This will refresh the environment data.",

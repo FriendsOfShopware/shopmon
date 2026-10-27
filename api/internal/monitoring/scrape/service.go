@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"sort"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
@@ -131,13 +133,13 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 
 		if err != nil {
 			log.Warn("authentication failed", "error", err)
-			h.notifyAuthError(ctx, env, err)
 			if err := h.queries.UpdateEnvironmentScrapeError(ctx, queries.UpdateEnvironmentScrapeErrorParams{
-				LastScrapedError: new(fmt.Sprintf("Authentication failed: %v", err)),
+				LastScrapedError: new(shopware.ConnectionErrorMessage(err)),
 				ID:               env.ID,
 			}); err != nil {
 				slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
 			}
+			h.handleTotalScrapeFailure(ctx, env, datasetAuth, err, map[string]bool{})
 			outcome = metrics.OutcomeAuthError
 			return nil
 		}
@@ -192,15 +194,34 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	wg.Wait()
 	fetchSpan.End()
 	log.Info("fetched environment data")
+
+	// Per-dataset fetch failures become owner-visible scrape issues at the end
+	// of the scrape. Parse failures overwrite the slot of their dataset (the
+	// bytes arrived but were unusable, which classifies differently).
+	fetchErrByDataset := make(map[string]error)
+	for dataset, fetchErr := range map[string]error{
+		datasetPlugins:        fr.pluginErr,
+		datasetApps:           fr.appErr,
+		datasetScheduledTasks: fr.taskErr,
+		datasetQueue:          fr.queueErr,
+		datasetCacheInfo:      fr.cacheInfoErr,
+	} {
+		if fetchErr != nil {
+			fetchErrByDataset[dataset] = fetchErr
+		}
+	}
+
 	if fr.configErr != nil {
-		errMsg := fmt.Sprintf("failed to fetch environment config: %v", fr.configErr)
-		h.notifyDataFetchError(ctx, env, errMsg)
 		if err := h.queries.UpdateEnvironmentScrapeError(ctx, queries.UpdateEnvironmentScrapeErrorParams{
-			LastScrapedError: new(errMsg),
+			LastScrapedError: new(shopware.ConnectionErrorMessage(fr.configErr)),
 			ID:               env.ID,
 		}); err != nil {
 			slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
 		}
+		// Authentication succeeded to get here, so a stored auth issue may
+		// resolve; the other datasets were fetched in parallel but their
+		// results are discarded with the scrape, so their issues must not.
+		h.handleTotalScrapeFailure(ctx, env, datasetConfig, fr.configErr, map[string]bool{datasetAuth: true})
 		outcome = metrics.OutcomeDataFetchError
 		return nil
 	}
@@ -222,6 +243,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		var pluginsResp shopwareSearchResponse[shopwarePlugin]
 		if err := json.Unmarshal(fr.pluginData, &pluginsResp); err != nil {
 			slog.Warn("failed to parse Shopware plugins", "environmentId", env.ID, "error", err)
+			fetchErrByDataset[datasetPlugins] = err
 			missing.Extensions = true
 		} else {
 			for _, p := range pluginsResp.Data {
@@ -248,6 +270,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		var appsResp shopwareSearchResponse[shopwareApp]
 		if err := json.Unmarshal(fr.appData, &appsResp); err != nil {
 			slog.Warn("failed to parse Shopware apps", "environmentId", env.ID, "error", err)
+			fetchErrByDataset[datasetApps] = err
 			missing.Extensions = true
 		} else {
 			for _, a := range appsResp.Data {
@@ -271,6 +294,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		var tasksResp shopwareSearchResponse[shopwareScheduledTask]
 		if err := json.Unmarshal(fr.taskData, &tasksResp); err != nil {
 			slog.Warn("failed to parse Shopware scheduled tasks", "environmentId", env.ID, "error", err)
+			fetchErrByDataset[datasetScheduledTasks] = err
 			missing.ScheduledTasks = true
 		} else {
 			scheduledTasks = tasksResp.Data
@@ -284,6 +308,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	if fr.queueErr == nil {
 		if err := json.Unmarshal(fr.queueData, &queueEntries); err != nil {
 			slog.Error("failed to parse queue data", "environmentId", env.ID, "error", err)
+			fetchErrByDataset[datasetQueue] = err
 		}
 	} else {
 		slog.Warn("failed to fetch Shopware queue data", "environmentId", env.ID, "error", fr.queueErr)
@@ -293,6 +318,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	if fr.cacheInfoErr == nil {
 		if err := json.Unmarshal(fr.cacheInfoData, &cacheInfo); err != nil {
 			slog.Warn("failed to parse cache info", "environmentId", env.ID, "error", err)
+			fetchErrByDataset[datasetCacheInfo] = err
 			missing.CacheInfo = true
 		}
 	} else {
@@ -424,6 +450,10 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	}
 	checkSpan.End()
 
+	for _, fe := range checkerResult.FetchErrors {
+		fetchErrByDataset[fe.Dataset] = fe.Err
+	}
+
 	// Capture the previously persisted checks before they are replaced so the
 	// status transition can be explained by the specific checks that changed.
 	oldChecks, err := h.queries.GetEnvironmentChecks(ctx, env.ID)
@@ -491,6 +521,47 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		runtimeAdvisories: runtimeAdvisories,
 	}); err != nil {
 		return err
+	}
+
+	// Record this scrape's refresh problems for the owner (banner +
+	// notification) now that the result is persisted. Every dataset fetched
+	// above counts as evaluated, so problems that stopped occurring resolve;
+	// FroshTools/SBOM only count when the extension list was available to
+	// tell whether FroshTools should have answered at all.
+	currentIssues := make([]scrapeIssueInput, 0, len(fetchErrByDataset)+1)
+	for dataset, fetchErr := range fetchErrByDataset {
+		currentIssues = append(currentIssues, issueFromError(dataset, fetchErr))
+	}
+	if sbomRes.supported && !sbomRes.fetched {
+		switch {
+		case sbomRes.fetchErr != nil:
+			currentIssues = append(currentIssues, issueFromError(datasetSBOM, sbomRes.fetchErr))
+		case sbomRes.err == "sbom contained no composer packages":
+			currentIssues = append(currentIssues, issueFromFailure(datasetSBOM, shopware.Failure{Class: shopware.FailureInvalidResponse}))
+		}
+	}
+	sort.Slice(currentIssues, func(i, j int) bool { return currentIssues[i].key < currentIssues[j].key })
+
+	evaluated := map[string]bool{
+		datasetAuth: true, datasetConfig: true, datasetPlugins: true,
+		datasetApps: true, datasetScheduledTasks: true, datasetQueue: true,
+		datasetCacheInfo: true,
+	}
+	if !missing.Extensions {
+		evaluated[datasetFroshTools] = true
+		evaluated[datasetSBOM] = true
+	}
+
+	recorded := h.recordScrapeIssues(ctx, env, currentIssues, evaluated)
+	if len(currentIssues) > 0 {
+		outcome = metrics.OutcomePartialError
+		span.SetAttributes(attribute.Int("scrape.issue_count", len(currentIssues)))
+	}
+	if len(recorded.toNotify) > 0 {
+		h.dispatchScrapeIssues(ctx, env, recorded.toNotify)
+	}
+	if recorded.recoveredNotified && len(currentIssues) == 0 {
+		h.dispatchScrapeRecovered(ctx, env)
 	}
 
 	h.dispatchStoreExtensionSync(ctx, extensions, shopConfig.Version, catalog)

@@ -81,7 +81,7 @@ func Fetch(ctx context.Context, client Fetcher) (*Document, error) {
 	raw, err := client.Get(ctx, Path)
 	if err != nil {
 		// Only a missing route means "this shop cannot serve an SBOM". A 403
-		// means the integration lacks the frosh_tools:read ACL — a fixable
+		// means the integration lacks the frosh_tools_security:read ACL — a fixable
 		// configuration problem that must surface as an error with last_error,
 		// not be filed away as a permanent capability gap nobody is told about.
 		if isMissingRoute(err) {
