@@ -180,7 +180,7 @@ mise run lint
 mise run test
 ```
 
-- **`mise run lint`** — API (`golangci-lint`) + frontend (oxlint, `vue-tsc`, oxfmt check, Vitest unit tests)
+- **`mise run lint`** — API (`golangci-lint`) + frontend (oxlint, `tsc` with the Vue content mapper, oxfmt check, Vitest unit tests)
 - **`mise run test`** — API integration tests (`go test ./internal/...`)
 
 Do not rely only on targeted package/file test runs. Fix any failures (including format drift from oxfmt) and re-run both commands until they pass. If format check fails, run `cd frontend && npm run format:fix` (or `npx oxfmt <file>`) and include the formatting fix in the change.
