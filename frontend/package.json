@@ -26,7 +26,6 @@
     "@simplewebauthn/browser": "^14.0.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/vue-table": "^9.3.1",
-    "@vee-validate/zod": "^4.15.1",
     "@vueuse/core": "^15.0.0",
     "chart.js": "^4.6.1",
     "chartjs-adapter-date-fns": "^3.0.0",
@@ -49,7 +48,7 @@
     "vue-i18n": "11",
     "vue-router": "5.4.0",
     "vue-sonner": "^2.0.9",
-    "zod": "^3.25.76"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.99.0",
@@ -68,24 +67,29 @@
     "@iconify-json/ri": "^1.2.10",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
-    "@unhead/vue": "^2.1.17",
+    "@unhead/vue": "^3.4.3",
     "@vitejs/plugin-vue": "6.0.10",
     "@vitest/coverage-v8": "^5.0.5",
     "@vitest/ui": "^5.0.0",
     "@vue/test-utils": "^2.5.1",
-    "beasties": "^0.3.5",
+    "beasties": "^0.5.5",
     "jsdom": "^30.1.3",
     "oxfmt": "^0.74.0",
     "oxlint": "^1.89.0",
     "oxlint-tsgolint": "^7.0.2005",
     "patch-package": "^8.0.1",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "vite": "8.3.5",
     "vite-ssg": "^28.3.0",
     "vitest": "^5.0.0",
     "vue-tsc": "3.3.11"
   },
   "overrides": {
-    "@unhead/dom": "2.1.15"
+    "@unhead/dom": "3.4.3",
+    "@unhead/vue": "$@unhead/vue",
+    "unhead": "3.4.3",
+    "vite-ssg": {
+      "beasties": "$beasties"
+    }
   }
 }

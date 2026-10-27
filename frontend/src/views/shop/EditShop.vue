@@ -268,7 +268,7 @@ import StatusIcon from "@/components/StatusIcon.vue";
 import IconShop from "~icons/fa6-solid/store";
 import IconEarthAmericas from "~icons/fa6-solid/earth-americas";
 import { useForm } from "vee-validate";
-import { toTypedSchema } from "@vee-validate/zod";
+import { toTypedSchema } from "@/helpers/toTypedSchema";
 import { z } from "zod";
 import { ref, computed, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";

@@ -293,7 +293,7 @@ import { useForm } from "vee-validate";
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import { toTypedSchema } from "@vee-validate/zod";
+import { toTypedSchema } from "@/helpers/toTypedSchema";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -391,7 +391,7 @@ const schema = toTypedSchema(
     clientId: z.string().optional(),
     clientSecret: z.string().optional(),
     taskGraceMinutes: z.coerce
-      .number({ invalid_type_error: t("validation.taskGraceRange") })
+      .number({ error: t("validation.taskGraceRange") })
       .int(t("validation.taskGraceRange"))
       .min(0, t("validation.taskGraceRange")),
   }),

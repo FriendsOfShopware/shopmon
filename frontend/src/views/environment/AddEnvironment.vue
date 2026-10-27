@@ -206,7 +206,7 @@ import { useForm } from "vee-validate";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import { toTypedSchema } from "@vee-validate/zod";
+import { toTypedSchema } from "@/helpers/toTypedSchema";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";

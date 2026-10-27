@@ -17,3 +17,40 @@ index 6fec988..fc1b760 100644
      });
      if (import.meta.env.SSR) {
        const route = context.routePath ?? "/";
+diff --git a/node_modules/vite-ssg/dist/node.mjs b/node_modules/vite-ssg/dist/node.mjs
+index 835b629..c6197c2 100644
+--- a/node_modules/vite-ssg/dist/node.mjs
++++ b/node_modules/vite-ssg/dist/node.mjs
+@@ -4,7 +4,6 @@ import 'node:fs/promises';
+ import 'node:path';
+ import 'node:process';
+ import 'node:url';
+-import '@unhead/dom';
+ import 'ansis';
+ import 'jsdom';
+ import 'vite';
+diff --git a/node_modules/vite-ssg/dist/node/cli.mjs b/node_modules/vite-ssg/dist/node/cli.mjs
+index 2c3b9da..ba0e47b 100644
+--- a/node_modules/vite-ssg/dist/node/cli.mjs
++++ b/node_modules/vite-ssg/dist/node/cli.mjs
+@@ -6,7 +6,6 @@ import 'node:fs';
+ import 'node:fs/promises';
+ import 'node:path';
+ import 'node:url';
+-import '@unhead/dom';
+ import 'jsdom';
+ import 'vite';
+ import '../shared/vite-ssg.C6pK7rvr.mjs';
+diff --git a/node_modules/vite-ssg/dist/shared/vite-ssg.D5Fdxh1E.mjs b/node_modules/vite-ssg/dist/shared/vite-ssg.D5Fdxh1E.mjs
+index e895c28..f368020 100644
+--- a/node_modules/vite-ssg/dist/shared/vite-ssg.D5Fdxh1E.mjs
++++ b/node_modules/vite-ssg/dist/shared/vite-ssg.D5Fdxh1E.mjs
+@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
+ import { resolve, isAbsolute, parse, join, dirname } from 'node:path';
+ import process from 'node:process';
+ import { pathToFileURL } from 'node:url';
+-import { renderDOMHead } from '@unhead/dom';
++import { renderDOMHead } from 'unhead/client';
+ import { gray, yellow, blue, dim, cyan, red, green } from 'ansis';
+ import { JSDOM } from 'jsdom';
+ import { resolveConfig, build as build$1, mergeConfig } from 'vite';

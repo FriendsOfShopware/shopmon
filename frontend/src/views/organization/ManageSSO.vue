@@ -274,7 +274,7 @@ import {
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "vee-validate";
-import { toTypedSchema } from "@vee-validate/zod";
+import { toTypedSchema } from "@/helpers/toTypedSchema";
 import { z } from "zod";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";

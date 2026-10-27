@@ -210,7 +210,7 @@ import {
 } from "@/components/ui/select";
 import PluginConnectionModal from "@/components/modal/PluginConnectionModal.vue";
 import { useForm } from "vee-validate";
-import { toTypedSchema } from "@vee-validate/zod";
+import { toTypedSchema } from "@/helpers/toTypedSchema";
 import { z } from "zod";
 import { onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";

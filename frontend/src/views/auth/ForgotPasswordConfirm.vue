@@ -49,7 +49,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { z } from "zod";
 import { useForm } from "vee-validate";
-import { toTypedSchema } from "@vee-validate/zod";
+import { toTypedSchema } from "@/helpers/toTypedSchema";
 
 import { useAlert } from "@/composables/useAlert";
 import { resetPassword } from "@/api/generated";

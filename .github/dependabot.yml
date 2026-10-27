@@ -13,16 +13,9 @@ updates:
     labels:
       - "dependencies"
     ignore:
-      # Major bumps blocked by peer deps; revisit when the consumers catch up.
-      # zod 4 / typescript 6 / beasties 0.4 / @unhead/vue 3 break
-      # @vee-validate/zod, openapi-typescript, vite-ssg respectively.
-      - dependency-name: "zod"
-        update-types: ["version-update:semver-major"]
+      # TypeScript 7 has no JavaScript programmatic API, so vue-tsc cannot
+      # typecheck Vue SFCs against it. Stay on the 6.x line.
       - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "beasties"
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
-      - dependency-name: "@unhead/vue"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "gomod"
