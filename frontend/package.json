@@ -61,9 +61,9 @@
     "@iconify-json/fluent": "^1.2.60",
     "@iconify-json/ic": "1.2.4",
     "@iconify-json/line-md": "1.2.16",
-    "@iconify-json/material-symbols": "^1.2.95",
+    "@iconify-json/material-symbols": "^1.2.96",
     "@iconify-json/mdi": "^1.2.3",
-    "@iconify-json/octicon": "^1.2.39",
+    "@iconify-json/octicon": "^1.2.40",
     "@iconify-json/ri": "^1.2.10",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
@@ -82,7 +82,7 @@
     "vite": "8.3.5",
     "vite-ssg": "^28.3.0",
     "vitest": "^5.0.0",
-    "vue-tsc": "3.3.11"
+    "vue-tsc": "3.3.13"
   },
   "overrides": {
     "@unhead/dom": "3.4.3",
