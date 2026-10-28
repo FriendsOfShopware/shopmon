@@ -252,6 +252,22 @@ func TestSlackLockErrorIsAFailure(t *testing.T) {
 	assert.Zero(t, res.Skipped)
 }
 
+// The same holds for email: an unknown lock state must not let the caller
+// record the alert as delivered just because the in-app send succeeded.
+func TestEmailLockErrorIsAFailure(t *testing.T) {
+	inApp := &recordingChannel{name: ChannelInApp}
+	email := &recordingChannel{name: ChannelEmail}
+	d := newTestDispatcher(inApp, email, &fakeLocker{err: assert.AnError})
+
+	res := d.Dispatch(context.Background(), degradeEvent(), []Recipient{{ID: "u1", Locale: "en"}})
+
+	assert.Len(t, inApp.sent, 1)
+	assert.Empty(t, email.sent)
+	assert.Equal(t, 1, res.Failed)
+	assert.Zero(t, res.Skipped)
+	assert.False(t, res.Delivery())
+}
+
 // Replacing a webhook inside the dedup window must not dedup the new channel
 // against the old one.
 func TestSlackReplacedWebhookIsNotDeduped(t *testing.T) {

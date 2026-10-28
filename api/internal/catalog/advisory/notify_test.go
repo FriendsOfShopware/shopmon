@@ -253,6 +253,11 @@ func TestNotifyNewAdvisoriesPostsToSlackWithoutSubscribers(t *testing.T) {
 	require.NoError(t, env.Queries.UpsertOrganizationSlackWebhook(ctx, queries.UpsertOrganizationSlackWebhookParams{
 		OrganizationID: "org-1", WebhookUrl: encrypted,
 	}))
+	shopEncrypted, err := crypto.Encrypt("https://hooks.slack.com/services/shop", env.Cfg.AppSecret)
+	require.NoError(t, err)
+	require.NoError(t, env.Queries.UpsertShopSlackWebhook(ctx, queries.UpsertShopSlackWebhookParams{
+		ShopID: int32(shopID), WebhookUrl: shopEncrypted,
+	}))
 
 	poster := &testutil.SlackRecorder{}
 	svc := &Service{
@@ -271,7 +276,9 @@ func TestNotifyNewAdvisoriesPostsToSlackWithoutSubscribers(t *testing.T) {
 	_, err = svc.rematchEnvironment(ctx, envID, index)
 	require.NoError(t, err)
 
-	require.Len(t, poster.Posts, 1)
+	require.Len(t, poster.Posts, 2)
+	assert.Equal(t, "https://hooks.slack.com/services/org", poster.Posts[0].URL)
+	assert.Equal(t, "https://hooks.slack.com/services/shop", poster.Posts[1].URL)
 	assert.Contains(t, poster.Posts[0].Text, "CVE-2026-1234")
 	notified, err := env.Queries.ListNotifiedAdvisoryIDsForEnvironment(ctx, envID)
 	require.NoError(t, err)

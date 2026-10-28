@@ -97,10 +97,13 @@ func (d *Dispatcher) dispatchRecipients(ctx context.Context, ev Event, meta even
 
 	// Email dedup is decided once per event (not per recipient): acquire the
 	// lock up front and skip the email channel for everyone when it is held.
-	emailAllowed := true
+	emailAllowed, emailLockFailed := true, false
 	if meta.emailDedupTTL > 0 {
-		// On an unknown lock state, do not send: avoids spamming.
-		emailAllowed, _ = d.locker.acquire(ctx, "alert_"+ev.DedupKey, meta.emailDedupTTL)
+		// On an unknown lock state, do not send (avoids spamming), but report it
+		// as a failure so callers retry instead of recording the alert as sent.
+		var err error
+		emailAllowed, err = d.locker.acquire(ctx, "alert_"+ev.DedupKey, meta.emailDedupTTL)
+		emailLockFailed = err != nil
 	}
 
 	for _, r := range recipients {
@@ -117,7 +120,12 @@ func (d *Dispatcher) dispatchRecipients(ctx context.Context, ev Event, meta even
 
 		for _, name := range channels {
 			if name == ChannelEmail && !emailAllowed {
-				res.Skipped++
+				if emailLockFailed {
+					metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(name))
+					res.Failed++
+				} else {
+					res.Skipped++
+				}
 				continue
 			}
 			ch, ok := d.channels[name]

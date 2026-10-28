@@ -216,6 +216,8 @@ func TestShopSlackWebhookRejectsOutOfRangeShopIDs(t *testing.T) {
 		url := "/api/organizations/org-1/shops/" + shopID + "/slack-webhook"
 		resp = slackRequestAt(t, env, http.MethodDelete, url, token, nil)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode, shopID)
+		resp = slackRequestAt(t, env, http.MethodGet, url, token, nil)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode, shopID)
 		resp = slackRequestAt(t, env, http.MethodPut, url, token, api.UpdateSlackWebhookRequest{WebhookUrl: testWebhookURL})
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode, shopID)
 	}
