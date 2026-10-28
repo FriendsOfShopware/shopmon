@@ -14,6 +14,13 @@
       <icon-line-md:loading-twotone-loop class="size-4" />
     </div>
 
+    <div v-else-if="loadFailed" class="flex items-center gap-3 text-sm text-destructive">
+      {{ $t("slack.failedLoad") }}
+      <Button type="button" variant="outline" size="sm" @click="load">
+        {{ $t("slack.retry") }}
+      </Button>
+    </div>
+
     <p v-else-if="!canManage" class="text-sm text-muted-foreground">
       {{ configured ? $t("slack.connectedHint") : $t("slack.notConnectedMember") }}
     </p>
@@ -27,7 +34,7 @@
           class="flex-1"
           :placeholder="configured ? $t('slack.webhookKeep') : 'https://hooks.slack.com/services/…'"
         />
-        <Button type="submit" size="sm" :disabled="!webhookUrl || isSaving">
+        <Button type="submit" size="sm" :disabled="!webhookUrl || isBusy">
           <icon-line-md:loading-twotone-loop v-if="isSaving" class="mr-1.5 size-3.5" />
           {{ $t("common.save") }}
         </Button>
@@ -35,7 +42,7 @@
       <p class="text-xs text-muted-foreground">{{ $t("slack.webhookHelp") }}</p>
 
       <div v-if="configured" class="flex gap-2">
-        <Button type="button" variant="outline" size="sm" :disabled="isTesting" @click="sendTest">
+        <Button type="button" variant="outline" size="sm" :disabled="isBusy" @click="sendTest">
           <icon-fa6-solid:paper-plane v-if="!isTesting" class="mr-1.5 size-3" />
           <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3" />
           {{ $t("slack.sendTest") }}
@@ -45,7 +52,7 @@
           variant="ghost"
           size="sm"
           class="text-muted-foreground hover:text-destructive"
-          :disabled="isRemoving"
+          :disabled="isBusy"
           @click="remove"
         >
           <icon-fa6-solid:trash class="mr-1.5 size-3" />
@@ -57,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   deleteShopSlackWebhook,
@@ -116,6 +123,10 @@ const isLoading = ref(true);
 const isSaving = ref(false);
 const isTesting = ref(false);
 const isRemoving = ref(false);
+const loadFailed = ref(false);
+// One request at a time: each handler sets `configured` from its own response,
+// so overlapping save and disconnect could leave the card showing the wrong state.
+const isBusy = computed(() => isSaving.value || isTesting.value || isRemoving.value);
 
 function errorMessage(error: unknown, fallback: string): string {
   return (error as { message?: string } | undefined)?.message ?? fallback;
@@ -123,10 +134,19 @@ function errorMessage(error: unknown, fallback: string): string {
 
 async function load() {
   isLoading.value = true;
+  loadFailed.value = false;
   try {
-    const { data } = await api.get();
-    configured.value = data?.configured ?? false;
-    canManage.value = data?.canManage ?? false;
+    const { data, error } = await api.get();
+    // A failed load must not read as "not connected", which would also hide
+    // the controls from managers.
+    if (error || !data) {
+      loadFailed.value = true;
+      return;
+    }
+    configured.value = data.configured;
+    canManage.value = data.canManage;
+  } catch {
+    loadFailed.value = true;
   } finally {
     isLoading.value = false;
   }

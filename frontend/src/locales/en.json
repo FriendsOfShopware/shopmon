@@ -846,6 +846,8 @@
     "disconnect": "Disconnect",
     "saved": "Slack webhook saved",
     "failedSave": "Failed to save Slack webhook",
+    "failedLoad": "Could not load the Slack connection.",
+    "retry": "Retry",
     "testSent": "Test message sent",
     "failedTest": "Failed to send test message",
     "disconnected": "Slack disconnected",

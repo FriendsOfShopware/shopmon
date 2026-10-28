@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 
@@ -66,6 +67,12 @@ func TestSlackWebhookLifecycle(t *testing.T) {
 	resp := slackRequest(t, env, http.MethodPut, "", token, api.UpdateSlackWebhookRequest{WebhookUrl: testWebhookURL})
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	assert.True(t, slackConfigured(t, env, token))
+
+	// The status response never carries the URL.
+	raw := slackRequest(t, env, http.MethodGet, "", token, nil)
+	body, err := io.ReadAll(raw.Body)
+	require.NoError(t, err)
+	assert.NotContains(t, string(body), "hooks.slack.com")
 
 	// Stored encrypted, never in plain text.
 	var stored string
@@ -183,7 +190,38 @@ func TestShopSlackWebhookRejectsShopOfAnotherOrganization(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	resp = slackRequestAt(t, env, http.MethodGet, url, token, nil)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	resp = slackRequestAt(t, env, http.MethodDelete, url, token, nil)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	resp = slackRequestAt(t, env, http.MethodPost, url+"/test", token, nil)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	assert.Empty(t, env.Slack.Posts)
 
+	var count int
+	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM shop_slack_webhook`).Scan(&count))
+	assert.Zero(t, count)
+}
+
+// Zero would address the organization webhook and values beyond int32 would
+// wrap onto another shop, so both must be rejected before reaching storage.
+func TestShopSlackWebhookRejectsOutOfRangeShopIDs(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	env.SeedShop(t, "org-1", "Shop")
+
+	resp := slackRequest(t, env, http.MethodPut, "", token, api.UpdateSlackWebhookRequest{WebhookUrl: testWebhookURL})
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	for _, shopID := range []string{"0", "4294967296", "4294967297"} {
+		url := "/api/organizations/org-1/shops/" + shopID + "/slack-webhook"
+		resp = slackRequestAt(t, env, http.MethodDelete, url, token, nil)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode, shopID)
+		resp = slackRequestAt(t, env, http.MethodPut, url, token, api.UpdateSlackWebhookRequest{WebhookUrl: testWebhookURL})
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode, shopID)
+	}
+
+	// The organization webhook survived the DELETE on shop 0.
+	assert.True(t, slackConfigured(t, env, token))
 	var count int
 	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM shop_slack_webhook`).Scan(&count))
 	assert.Zero(t, count)

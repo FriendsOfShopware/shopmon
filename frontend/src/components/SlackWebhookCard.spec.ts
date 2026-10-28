@@ -14,9 +14,11 @@ vi.mock("@/api/generated", () => ({
   deleteShopSlackWebhook: vi.fn(),
 }));
 import {
+  deleteShopSlackWebhook,
   deleteSlackWebhook,
   getShopSlackWebhook,
   getSlackWebhook,
+  testShopSlackWebhook,
   testSlackWebhook,
   updateShopSlackWebhook,
   updateSlackWebhook,
@@ -106,5 +108,52 @@ it("manages the shop webhook when a shop is given", async () => {
     body: { webhookUrl: "https://hooks.slack.com/services/shop" },
   });
   expect(updateSlackWebhook).not.toHaveBeenCalled();
+  wrapper.unmount();
+});
+it("tests and disconnects the shop webhook", async () => {
+  vi.mocked(getShopSlackWebhook).mockResolvedValue(status(true));
+  vi.mocked(testShopSlackWebhook).mockResolvedValue({} as any);
+  vi.mocked(deleteShopSlackWebhook).mockResolvedValue({} as any);
+  const wrapper = mountCard(5);
+  await flushPromises();
+  const vm = wrapper.vm as any;
+  await vm.sendTest();
+  expect(testShopSlackWebhook).toHaveBeenCalledWith({ path: { orgId: "org", shopId: 5 } });
+  expect(testSlackWebhook).not.toHaveBeenCalled();
+  await vm.remove();
+  expect(deleteShopSlackWebhook).toHaveBeenCalledWith({ path: { orgId: "org", shopId: 5 } });
+  expect(deleteSlackWebhook).not.toHaveBeenCalled();
+  wrapper.unmount();
+});
+it("reports a failed load instead of showing the webhook as disconnected", async () => {
+  vi.mocked(getSlackWebhook)
+    .mockResolvedValueOnce({ error: { message: "boom" } } as any)
+    .mockResolvedValueOnce(status(true));
+  const wrapper = mountCard();
+  await flushPromises();
+  const vm = wrapper.vm as any;
+  expect(vm.loadFailed).toBe(true);
+  expect(wrapper.find("form").exists()).toBe(false);
+  await vm.load();
+  expect(vm.loadFailed).toBe(false);
+  expect(vm.configured).toBe(true);
+  expect(vm.canManage).toBe(true);
+  wrapper.unmount();
+});
+it("blocks other actions while one is running", async () => {
+  vi.mocked(getSlackWebhook).mockResolvedValue(status(true));
+  let finish!: (value: unknown) => void;
+  vi.mocked(updateSlackWebhook).mockReturnValue(
+    new Promise((resolve) => (finish = resolve)) as any,
+  );
+  const wrapper = mountCard();
+  await flushPromises();
+  const vm = wrapper.vm as any;
+  vm.webhookUrl = "https://hooks.slack.com/services/a";
+  const saving = vm.save();
+  expect(vm.isBusy).toBe(true);
+  finish({});
+  await saving;
+  expect(vm.isBusy).toBe(false);
   wrapper.unmount();
 });

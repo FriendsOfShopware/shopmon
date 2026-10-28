@@ -68,3 +68,37 @@ func TestSlackDispatchResolvesOrganizationAndShopWebhooks(t *testing.T) {
 	require.Len(t, poster.Posts, 3)
 	assert.Equal(t, "https://hooks.slack.com/services/org", poster.Posts[2].URL)
 }
+
+// The failed post must release its row in the lock table, so a retry within
+// the dedup window still reaches Slack.
+func TestSlackFailedPostReleasesLockInDatabase(t *testing.T) {
+	env := testutil.Setup(t)
+	env.SeedUser(t, "user-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+
+	ctx := context.Background()
+	encrypted, err := crypto.Encrypt("https://hooks.slack.com/services/org", env.Cfg.AppSecret)
+	require.NoError(t, err)
+	require.NoError(t, env.Queries.UpsertOrganizationSlackWebhook(ctx, queries.UpsertOrganizationSlackWebhookParams{
+		OrganizationID: "org-1", WebhookUrl: encrypted,
+	}))
+
+	poster := &testutil.SlackRecorder{Err: assert.AnError}
+	d := notify.NewDispatcher(env.Queries, nil, notify.SlackConfig{AppSecret: env.Cfg.AppSecret, Poster: poster})
+	ev := notify.Event{
+		Type:       notify.EventAuthError,
+		Level:      notify.LevelError,
+		OrgID:      "org-1",
+		DedupKey:   "environment.update-auth-error.1",
+		TitleKey:   "notification.authError.title",
+		MessageKey: "notification.authError.message",
+	}
+
+	res := d.Dispatch(ctx, ev, nil)
+	require.Equal(t, 1, res.Failed)
+
+	poster.Err = nil
+	res = d.Dispatch(ctx, ev, nil)
+	assert.Equal(t, 1, res.Delivered)
+	assert.Len(t, poster.Posts, 1)
+}

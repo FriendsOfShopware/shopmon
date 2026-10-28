@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"math"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
@@ -41,8 +42,13 @@ func orgSlackTarget(orgID string) slackwebhook.Target {
 	return slackwebhook.Target{OrganizationID: orgID}
 }
 
-func shopSlackTarget(orgID string, shopID api.ShopId) slackwebhook.Target {
-	return slackwebhook.Target{OrganizationID: orgID, ShopID: int32(shopID)}
+// shopSlackTarget rejects IDs that do not fit a shop: zero would address the
+// organization webhook, and values beyond int32 would wrap onto another shop.
+func shopSlackTarget(orgID string, shopID api.ShopId) (slackwebhook.Target, error) {
+	if shopID < 1 || shopID > math.MaxInt32 {
+		return slackwebhook.Target{}, huma.Error404NotFound("shop not found")
+	}
+	return slackwebhook.Target{OrganizationID: orgID, ShopID: int32(shopID)}, nil
 }
 
 // GetSlackWebhook reports whether the organization has a Slack webhook.
@@ -52,7 +58,11 @@ func (h *Handler) GetSlackWebhook(ctx context.Context, input *slackWebhookPathIn
 
 // GetShopSlackWebhook reports whether a shop has a Slack webhook.
 func (h *Handler) GetShopSlackWebhook(ctx context.Context, input *shopSlackWebhookPathInput) (*getSlackWebhookOutput, error) {
-	return h.getSlackWebhook(ctx, shopSlackTarget(input.OrgID, input.ShopID))
+	target, err := shopSlackTarget(input.OrgID, input.ShopID)
+	if err != nil {
+		return nil, err
+	}
+	return h.getSlackWebhook(ctx, target)
 }
 
 // UpdateSlackWebhook stores the organization's Slack webhook.
@@ -62,7 +72,11 @@ func (h *Handler) UpdateSlackWebhook(ctx context.Context, input *updateSlackWebh
 
 // UpdateShopSlackWebhook stores a shop's Slack webhook.
 func (h *Handler) UpdateShopSlackWebhook(ctx context.Context, input *updateShopSlackWebhookInput) (*struct{}, error) {
-	return h.updateSlackWebhook(ctx, shopSlackTarget(input.OrgID, input.ShopID), input.Body.WebhookUrl)
+	target, err := shopSlackTarget(input.OrgID, input.ShopID)
+	if err != nil {
+		return nil, err
+	}
+	return h.updateSlackWebhook(ctx, target, input.Body.WebhookUrl)
 }
 
 // DeleteSlackWebhook removes the organization's Slack webhook.
@@ -72,7 +86,11 @@ func (h *Handler) DeleteSlackWebhook(ctx context.Context, input *slackWebhookPat
 
 // DeleteShopSlackWebhook removes a shop's Slack webhook.
 func (h *Handler) DeleteShopSlackWebhook(ctx context.Context, input *shopSlackWebhookPathInput) (*struct{}, error) {
-	return h.deleteSlackWebhook(ctx, shopSlackTarget(input.OrgID, input.ShopID))
+	target, err := shopSlackTarget(input.OrgID, input.ShopID)
+	if err != nil {
+		return nil, err
+	}
+	return h.deleteSlackWebhook(ctx, target)
 }
 
 // TestSlackWebhook posts a test message to the organization's Slack webhook.
@@ -82,7 +100,11 @@ func (h *Handler) TestSlackWebhook(ctx context.Context, input *slackWebhookPathI
 
 // TestShopSlackWebhook posts a test message to a shop's Slack webhook.
 func (h *Handler) TestShopSlackWebhook(ctx context.Context, input *shopSlackWebhookPathInput) (*struct{}, error) {
-	return h.testSlackWebhook(ctx, shopSlackTarget(input.OrgID, input.ShopID))
+	target, err := shopSlackTarget(input.OrgID, input.ShopID)
+	if err != nil {
+		return nil, err
+	}
+	return h.testSlackWebhook(ctx, target)
 }
 
 func (h *Handler) getSlackWebhook(ctx context.Context, target slackwebhook.Target) (*getSlackWebhookOutput, error) {

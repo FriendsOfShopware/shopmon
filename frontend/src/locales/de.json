@@ -846,6 +846,8 @@
     "disconnect": "Trennen",
     "saved": "Slack-Webhook gespeichert",
     "failedSave": "Slack-Webhook konnte nicht gespeichert werden",
+    "failedLoad": "Slack-Verbindung konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
     "testSent": "Testnachricht gesendet",
     "failedTest": "Testnachricht konnte nicht gesendet werden",
     "disconnected": "Slack getrennt",

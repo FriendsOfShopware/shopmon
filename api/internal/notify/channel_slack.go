@@ -2,6 +2,8 @@ package notify
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -9,6 +11,7 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/slack"
 	"github.com/jackc/pgx/v5"
 )
@@ -38,7 +41,7 @@ type SlackPoster interface {
 // by *queries.Queries).
 type slackWebhookStore interface {
 	GetOrganizationSlackWebhook(ctx context.Context, organizationID string) (string, error)
-	GetEnvironmentShopSlackWebhook(ctx context.Context, environmentID int32) (string, error)
+	GetEnvironmentShopSlackWebhook(ctx context.Context, arg queries.GetEnvironmentShopSlackWebhookParams) (string, error)
 }
 
 // slackTarget is one webhook an event is posted to. lockPrefix keeps the dedup
@@ -80,9 +83,14 @@ func (c *slackChannel) targets(ctx context.Context, ev Event) ([]slackTarget, er
 		}
 	}
 
-	if ev.ScopeType == ScopeEnvironment {
+	// Scoped by organization too, so an event can only ever reach a channel of
+	// the organization it belongs to.
+	if ev.ScopeType == ScopeEnvironment && ev.OrgID != "" {
 		if envID, err := strconv.ParseInt(ev.ScopeID, 10, 32); err == nil {
-			url, err := c.decrypt(c.store.GetEnvironmentShopSlackWebhook(ctx, int32(envID)))
+			url, err := c.decrypt(c.store.GetEnvironmentShopSlackWebhook(ctx, queries.GetEnvironmentShopSlackWebhookParams{
+				ID:             int32(envID),
+				OrganizationID: ev.OrgID,
+			}))
 			switch {
 			case err != nil:
 				errs = append(errs, fmt.Errorf("shop webhook: %w", err))
@@ -93,6 +101,13 @@ func (c *slackChannel) targets(ctx context.Context, ev Event) ([]slackTarget, er
 	}
 
 	return out, errors.Join(errs...)
+}
+
+// lockKey dedups an event per webhook. Including the webhook means a channel
+// replaced within the dedup window still gets the alert.
+func (t slackTarget) lockKey(dedupKey string) string {
+	sum := sha256.Sum256([]byte(t.url))
+	return t.lockPrefix + hex.EncodeToString(sum[:6]) + "_" + dedupKey
 }
 
 // decrypt turns a stored webhook into its URL, or "" when none is configured.

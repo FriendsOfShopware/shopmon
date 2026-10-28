@@ -203,7 +203,7 @@
       />
 
       <!-- Slack -->
-      <SlackWebhookCard :organization-id="shop.organizationId" :shop-id="shop.id" />
+      <SlackWebhookCard :key="shop.id" :organization-id="shop.organizationId" :shop-id="shop.id" />
 
       <!-- Danger zone -->
       <Card class="border-destructive/30">

@@ -154,7 +154,7 @@
     </CardSection>
 
     <!-- Slack -->
-    <SlackWebhookCard :organization-id="organization.id" />
+    <SlackWebhookCard :key="organization.id" :organization-id="organization.id" />
 
     <!-- Leave org -->
     <Card class="border-destructive/30">

@@ -17,7 +17,7 @@ WHERE w.shop_id = $1 AND s.organization_id = $2;
 -- name: GetEnvironmentShopSlackWebhook :one
 SELECT w.webhook_url FROM shop_slack_webhook w
 JOIN environment e ON e.shop_id = w.shop_id
-WHERE e.id = $1;
+WHERE e.id = $1 AND e.organization_id = $2;
 
 -- name: ShopBelongsToOrganization :one
 SELECT EXISTS (SELECT 1 FROM shop WHERE id = $1 AND organization_id = $2);

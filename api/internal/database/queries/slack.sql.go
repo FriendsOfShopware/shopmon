@@ -30,11 +30,16 @@ func (q *Queries) DeleteShopSlackWebhook(ctx context.Context, shopID int32) erro
 const getEnvironmentShopSlackWebhook = `-- name: GetEnvironmentShopSlackWebhook :one
 SELECT w.webhook_url FROM shop_slack_webhook w
 JOIN environment e ON e.shop_id = w.shop_id
-WHERE e.id = $1
+WHERE e.id = $1 AND e.organization_id = $2
 `
 
-func (q *Queries) GetEnvironmentShopSlackWebhook(ctx context.Context, id int32) (string, error) {
-	row := q.db.QueryRow(ctx, getEnvironmentShopSlackWebhook, id)
+type GetEnvironmentShopSlackWebhookParams struct {
+	ID             int32  `json:"id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+func (q *Queries) GetEnvironmentShopSlackWebhook(ctx context.Context, arg GetEnvironmentShopSlackWebhookParams) (string, error) {
+	row := q.db.QueryRow(ctx, getEnvironmentShopSlackWebhook, arg.ID, arg.OrganizationID)
 	var webhook_url string
 	err := row.Scan(&webhook_url)
 	return webhook_url, err

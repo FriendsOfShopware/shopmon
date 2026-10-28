@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,9 +31,9 @@ func (s *fakeWebhookStore) GetOrganizationSlackWebhook(_ context.Context, orgID 
 	return encrypted, nil
 }
 
-func (s *fakeWebhookStore) GetEnvironmentShopSlackWebhook(_ context.Context, environmentID int32) (string, error) {
+func (s *fakeWebhookStore) GetEnvironmentShopSlackWebhook(_ context.Context, arg queries.GetEnvironmentShopSlackWebhookParams) (string, error) {
 	s.lookups++
-	encrypted, ok := s.shopWebhooks[environmentID]
+	encrypted, ok := s.shopWebhooks[arg.ID]
 	if !ok {
 		return "", pgx.ErrNoRows
 	}
@@ -235,6 +236,34 @@ func TestSlackShopFailureDoesNotHoldBackOrganization(t *testing.T) {
 	assert.Equal(t, 1, res.Skipped)
 	require.Len(t, poster.posts, 2)
 	assert.Equal(t, shopWebhook, poster.posts[1].url)
+}
+
+// An unknown lock state must count as a failure: a skip would let the caller
+// record the alert as delivered although Slack was never called.
+func TestSlackLockErrorIsAFailure(t *testing.T) {
+	poster := &recordingPoster{}
+	d, _ := newSlackTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	d.locker = &fakeLocker{err: assert.AnError}
+
+	res := d.Dispatch(context.Background(), orgDegradeEvent(), nil)
+
+	assert.Empty(t, poster.posts)
+	assert.Equal(t, 1, res.Failed)
+	assert.Zero(t, res.Skipped)
+}
+
+// Replacing a webhook inside the dedup window must not dedup the new channel
+// against the old one.
+func TestSlackReplacedWebhookIsNotDeduped(t *testing.T) {
+	poster := &recordingPoster{}
+	d, store := newSlackTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+
+	d.Dispatch(context.Background(), orgDegradeEvent(), nil)
+	store.webhooks["org-1"] = encryptWebhook(t, "https://hooks.slack.com/services/replaced")
+	d.Dispatch(context.Background(), orgDegradeEvent(), nil)
+
+	require.Len(t, poster.posts, 2)
+	assert.Equal(t, "https://hooks.slack.com/services/replaced", poster.posts[1].url)
 }
 
 func TestSlackRenderEscapesAndLinks(t *testing.T) {

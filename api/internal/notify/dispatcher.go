@@ -81,19 +81,26 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 	var res DispatchResult
 	meta := metaFor(ev.Type)
 
-	// The organization channel does not depend on anyone watching the
-	// environment, so it runs before the recipient check.
+	d.dispatchRecipients(ctx, ev, meta, recipients, &res)
+	// Slack does not depend on anyone watching the environment. It runs last so
+	// slow webhook posts never delay in-app and email delivery.
 	d.dispatchSlack(ctx, ev, meta, &res)
+	return res
+}
 
+// dispatchRecipients delivers the event to each recipient on their resolved
+// channels.
+func (d *Dispatcher) dispatchRecipients(ctx context.Context, ev Event, meta eventMeta, recipients []Recipient, res *DispatchResult) {
 	if len(recipients) == 0 {
-		return res
+		return
 	}
 
 	// Email dedup is decided once per event (not per recipient): acquire the
 	// lock up front and skip the email channel for everyone when it is held.
 	emailAllowed := true
 	if meta.emailDedupTTL > 0 {
-		emailAllowed = d.locker.acquire(ctx, "alert_"+ev.DedupKey, meta.emailDedupTTL)
+		// On an unknown lock state, do not send: avoids spamming.
+		emailAllowed, _ = d.locker.acquire(ctx, "alert_"+ev.DedupKey, meta.emailDedupTTL)
 	}
 
 	for _, r := range recipients {
@@ -129,8 +136,6 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 			res.Delivered++
 		}
 	}
-
-	return res
 }
 
 // dispatchSlack posts the event once to each configured Slack webhook (the
@@ -149,10 +154,20 @@ func (d *Dispatcher) dispatchSlack(ctx context.Context, ev Event, meta eventMeta
 	}
 
 	for _, target := range targets {
-		lockKey := target.lockPrefix + ev.DedupKey
-		if meta.emailDedupTTL > 0 && !d.locker.acquire(ctx, lockKey, meta.emailDedupTTL) {
-			res.Skipped++
-			continue
+		lockKey := target.lockKey(ev.DedupKey)
+		if meta.emailDedupTTL > 0 {
+			acquired, err := d.locker.acquire(ctx, lockKey, meta.emailDedupTTL)
+			if err != nil {
+				// Unknown lock state is a failure, not a skip: a skip would let the
+				// caller record the alert as delivered.
+				metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelSlack))
+				res.Failed++
+				continue
+			}
+			if !acquired {
+				res.Skipped++
+				continue
+			}
 		}
 
 		if err := d.slack.Send(ctx, target.url, ev); err != nil {
