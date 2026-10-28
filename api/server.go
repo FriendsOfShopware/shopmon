@@ -44,6 +44,8 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/organization"
 	organizationmail "github.com/friendsofshopware/shopmon/api/internal/organization/invitationmail"
 	organizationpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/postgres"
+	"github.com/friendsofshopware/shopmon/api/internal/organization/slackwebhook"
+	slackpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/slackwebhook/postgres"
 	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 	ssooidc "github.com/friendsofshopware/shopmon/api/internal/organization/sso/oidc"
 	ssopostgres "github.com/friendsofshopware/shopmon/api/internal/organization/sso/postgres"
@@ -55,6 +57,7 @@ import (
 	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
+	"github.com/friendsofshopware/shopmon/api/internal/slack"
 	"github.com/friendsofshopware/shopmon/api/internal/storage"
 	"github.com/friendsofshopware/shopmon/api/internal/suppression"
 	suppressionpostgres "github.com/friendsofshopware/shopmon/api/internal/suppression/postgres"
@@ -169,6 +172,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	ssoRepository := ssopostgres.NewRepository(q)
 	ssoGateway := ssooidc.NewGateway(15 * time.Second)
 	ssoService := organizationsso.NewService(ssoRepository, organizationAuthorizer, ssoGateway)
+	slackService := slackwebhook.NewService(slackpostgres.NewRepository(q), organizationAuthorizer, slack.NewClient(10*time.Second), cfg.AppSecret)
 	identityAccountRepository := identitypostgres.NewAccountRepository(q)
 	identityAccountService := identity.NewAccountService(identityAccountRepository)
 	identityAdminRepository := identitypostgres.NewAdminRepository(pool, q)
@@ -216,6 +220,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		Deployments:   deploymentService,
 		Catalog:       catalogService,
 		SSO:           ssoService,
+		Slack:         slackService,
 		Account:       accountReadModel,
 		Admin:         adminReadModel,
 		Environments:  environmentReadModel,

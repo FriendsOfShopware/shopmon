@@ -122,7 +122,7 @@ func TestNotifyNewAdvisoriesEmailIncludesDetails(t *testing.T) {
 	svc := &Service{
 		pool:     env.Pool,
 		queries:  env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, mailSender),
+		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.SlackConfig{}),
 	}
 	index := sbom.NewIndex([]sbom.AdvisoryPackage{{
 		AdvisoryID:       "CVE-2026-1234",
@@ -190,7 +190,7 @@ func TestNotifyNewAdvisoriesEmailPluralLinksToEnvironment(t *testing.T) {
 	svc := &Service{
 		pool:     env.Pool,
 		queries:  env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, mailSender),
+		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.SlackConfig{}),
 	}
 	index := sbom.NewIndex([]sbom.AdvisoryPackage{
 		{AdvisoryID: "CVE-2026-1", PackageName: "shopware/core", AffectedVersions: ">=6.7.0.0,<6.7.10.1"},

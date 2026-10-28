@@ -42,6 +42,8 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/organization"
 	organizationmail "github.com/friendsofshopware/shopmon/api/internal/organization/invitationmail"
 	organizationpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/postgres"
+	"github.com/friendsofshopware/shopmon/api/internal/organization/slackwebhook"
+	slackpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/slackwebhook/postgres"
 	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 	ssooidc "github.com/friendsofshopware/shopmon/api/internal/organization/sso/oidc"
 	ssopostgres "github.com/friendsofshopware/shopmon/api/internal/organization/sso/postgres"
@@ -74,6 +76,31 @@ type TestEnv struct {
 	// Mail captures every email sent during the test, in place of real
 	// delivery. Use the mailertest assertion helpers against it.
 	Mail *mailertest.RecordingTransport
+	// Slack captures Slack webhook posts in place of real delivery.
+	Slack *SlackRecorder
+}
+
+// SlackRecorder records Slack webhook posts. Set Err to simulate Slack
+// rejecting the message.
+type SlackRecorder struct {
+	mu    sync.Mutex
+	Posts []SlackPost
+	Err   error
+}
+
+type SlackPost struct {
+	URL  string
+	Text string
+}
+
+func (r *SlackRecorder) Post(_ context.Context, webhookURL, text string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.Err != nil {
+		return r.Err
+	}
+	r.Posts = append(r.Posts, SlackPost{URL: webhookURL, Text: text})
+	return nil
 }
 
 // shared holds the singleton Redis container shared across tests. Postgres is
@@ -141,6 +168,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	}
 
 	mailRecorder := mailertest.NewRecordingTransport("")
+	slackRecorder := &SlackRecorder{}
 	mailSender, err := mail.NewServiceWithTransport(mailRecorder, "noreply@shopmon.test", "", cfg.FrontendURL)
 	if err != nil {
 		t.Fatalf("create mail service: %v", err)
@@ -224,6 +252,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Deployments:   deploymentService,
 		Catalog:       catalogService,
 		SSO:           ssoService,
+		Slack:         slackwebhook.NewService(slackpostgres.NewRepository(q), organizationAuthorizer, slackRecorder, cfg.AppSecret),
 		Account:       accountReadModel,
 		Admin:         adminReadModel,
 		Environments:  environmentReadModel,
@@ -278,6 +307,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Server:  srv,
 		Cfg:     cfg,
 		Mail:    mailRecorder,
+		Slack:   slackRecorder,
 	}
 }
 

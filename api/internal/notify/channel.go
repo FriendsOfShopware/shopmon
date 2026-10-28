@@ -9,6 +9,9 @@ type ChannelName string
 const (
 	ChannelInApp ChannelName = "in_app"
 	ChannelEmail ChannelName = "email"
+	// ChannelSlack is organization-level: it is not a per-recipient Channel
+	// and is dispatched once per event (see Dispatcher.dispatchSlack).
+	ChannelSlack ChannelName = "slack"
 )
 
 // Recipient is a user targeted by an event, resolved to the fields delivery and

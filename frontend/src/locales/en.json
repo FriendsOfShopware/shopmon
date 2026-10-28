@@ -833,6 +833,24 @@
     "providerDeleted": "SSO provider deleted successfully",
     "failedDiscover": "Failed to discover OpenID configuration"
   },
+  "slack": {
+    "title": "Slack",
+    "description": "Post this organization's alerts (status changes, connection errors, new security advisories) to a Slack channel.",
+    "shopDescription": "Post this shop's alerts to its own Slack channel, in addition to the organization channel.",
+    "connected": "Connected",
+    "connectedHint": "Alerts are posted to a Slack channel.",
+    "notConnectedMember": "Not connected. An organization admin can connect a Slack channel.",
+    "webhookKeep": "Paste a new webhook URL to replace the current one",
+    "webhookHelp": "Create an incoming webhook in Slack (Apps → Incoming Webhooks) for the target channel and paste its URL. It is stored encrypted and never shown again.",
+    "sendTest": "Send test message",
+    "disconnect": "Disconnect",
+    "saved": "Slack webhook saved",
+    "failedSave": "Failed to save Slack webhook",
+    "testSent": "Test message sent",
+    "failedTest": "Failed to send test message",
+    "disconnected": "Slack disconnected",
+    "failedDisconnect": "Failed to disconnect Slack"
+  },
   "shopDetail": {
     "shopInfo": "Environment Information",
     "shopwareVersion": "Shopware Version",

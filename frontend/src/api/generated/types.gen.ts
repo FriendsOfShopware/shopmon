@@ -1171,6 +1171,11 @@ export type SitespeedSettingsRequest = {
     urls?: Array<string>;
 };
 
+export type SlackWebhookStatus = {
+    canManage: boolean;
+    configured: boolean;
+};
+
 export type SocialSignInRequest = {
     callbackURL: string;
     provider: string;
@@ -1288,6 +1293,10 @@ export type UpdateShopRequest = {
     description?: string;
     gitUrl?: string;
     name?: string;
+};
+
+export type UpdateSlackWebhookRequest = {
+    webhookUrl: string;
 };
 
 export type UpdateSsoProviderRequest = {
@@ -5652,6 +5661,370 @@ export type SyncPackagesTokenResponses = {
 };
 
 export type SyncPackagesTokenResponse = SyncPackagesTokenResponses[keyof SyncPackagesTokenResponses];
+
+export type DeleteShopSlackWebhookData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook';
+};
+
+export type DeleteShopSlackWebhookErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteShopSlackWebhookError = DeleteShopSlackWebhookErrors[keyof DeleteShopSlackWebhookErrors];
+
+export type DeleteShopSlackWebhookResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteShopSlackWebhookResponse = DeleteShopSlackWebhookResponses[keyof DeleteShopSlackWebhookResponses];
+
+export type GetShopSlackWebhookData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook';
+};
+
+export type GetShopSlackWebhookErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetShopSlackWebhookError = GetShopSlackWebhookErrors[keyof GetShopSlackWebhookErrors];
+
+export type GetShopSlackWebhookResponses = {
+    /**
+     * OK
+     */
+    200: SlackWebhookStatus;
+};
+
+export type GetShopSlackWebhookResponse = GetShopSlackWebhookResponses[keyof GetShopSlackWebhookResponses];
+
+export type UpdateShopSlackWebhookData = {
+    body: UpdateSlackWebhookRequest;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook';
+};
+
+export type UpdateShopSlackWebhookErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type UpdateShopSlackWebhookError = UpdateShopSlackWebhookErrors[keyof UpdateShopSlackWebhookErrors];
+
+export type UpdateShopSlackWebhookResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateShopSlackWebhookResponse = UpdateShopSlackWebhookResponses[keyof UpdateShopSlackWebhookResponses];
+
+export type TestShopSlackWebhookData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook/test';
+};
+
+export type TestShopSlackWebhookErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type TestShopSlackWebhookError = TestShopSlackWebhookErrors[keyof TestShopSlackWebhookErrors];
+
+export type TestShopSlackWebhookResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type TestShopSlackWebhookResponse = TestShopSlackWebhookResponses[keyof TestShopSlackWebhookResponses];
+
+export type DeleteSlackWebhookData = {
+    body?: never;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/slack-webhook';
+};
+
+export type DeleteSlackWebhookErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteSlackWebhookError = DeleteSlackWebhookErrors[keyof DeleteSlackWebhookErrors];
+
+export type DeleteSlackWebhookResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteSlackWebhookResponse = DeleteSlackWebhookResponses[keyof DeleteSlackWebhookResponses];
+
+export type GetSlackWebhookData = {
+    body?: never;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/slack-webhook';
+};
+
+export type GetSlackWebhookErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetSlackWebhookError = GetSlackWebhookErrors[keyof GetSlackWebhookErrors];
+
+export type GetSlackWebhookResponses = {
+    /**
+     * OK
+     */
+    200: SlackWebhookStatus;
+};
+
+export type GetSlackWebhookResponse = GetSlackWebhookResponses[keyof GetSlackWebhookResponses];
+
+export type UpdateSlackWebhookData = {
+    body: UpdateSlackWebhookRequest;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/slack-webhook';
+};
+
+export type UpdateSlackWebhookErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type UpdateSlackWebhookError = UpdateSlackWebhookErrors[keyof UpdateSlackWebhookErrors];
+
+export type UpdateSlackWebhookResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateSlackWebhookResponse = UpdateSlackWebhookResponses[keyof UpdateSlackWebhookResponses];
+
+export type TestSlackWebhookData = {
+    body?: never;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/slack-webhook/test';
+};
+
+export type TestSlackWebhookErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type TestSlackWebhookError = TestSlackWebhookErrors[keyof TestSlackWebhookErrors];
+
+export type TestSlackWebhookResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type TestSlackWebhookResponse = TestSlackWebhookResponses[keyof TestSlackWebhookResponses];
 
 export type GetSsoProvidersData = {
     body?: never;

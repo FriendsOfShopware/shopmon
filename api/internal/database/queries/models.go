@@ -322,6 +322,13 @@ type Organization struct {
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 }
 
+type OrganizationSlackWebhook struct {
+	OrganizationID string           `json:"organization_id"`
+	WebhookUrl     string           `json:"webhook_url"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
+}
+
 type Passkey struct {
 	ID           string           `json:"id"`
 	Name         *string          `json:"name"`
@@ -386,6 +393,13 @@ type ShopApiKey struct {
 	Scopes     json.RawMessage  `json:"scopes"`
 	CreatedAt  pgtype.Timestamp `json:"created_at"`
 	LastUsedAt pgtype.Timestamp `json:"last_used_at"`
+}
+
+type ShopSlackWebhook struct {
+	ShopID     int32            `json:"shop_id"`
+	WebhookUrl string           `json:"webhook_url"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
 
 type ShopwareVersion struct {

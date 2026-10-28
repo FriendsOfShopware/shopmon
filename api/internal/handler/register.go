@@ -14,6 +14,7 @@ func Register(api huma.API, h *Handler) {
 	registerPackagesTokens(api, h)
 	registerDeployments(api, h)
 	registerSSO(api, h)
+	registerSlack(api, h)
 	registerAdvisories(api, h)
 	registerAdmin(api, h)
 }

@@ -114,6 +114,12 @@ func (l *fakeLocker) acquire(_ context.Context, key string, _ time.Duration) boo
 	return true
 }
 
+func (l *fakeLocker) release(_ context.Context, key string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.held, key)
+}
+
 func newTestDispatcher(inApp, email *recordingChannel, locker lockAcquirer) *Dispatcher {
 	return &Dispatcher{
 		tr:     NewTranslator(),

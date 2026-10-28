@@ -121,6 +121,15 @@ instance with settings you did not choose.
 | `MAIL_FROM` | `noreply@shopmon.io` | Sender address |
 | `SMTP_REPLY_TO` | | Reply-to address |
 
+### Slack
+
+No configuration is needed on the instance. Organization owners and admins connect channels by pasting a Slack [incoming webhook](https://api.slack.com/messaging/webhooks) URL:
+
+- on the organization page, for every alert of the organization,
+- in a shop's settings, for that shop's alerts only.
+
+When both are set, both channels get the alert, so a team can keep one channel per shop next to an organization-wide one. Alerts are posted once per event and channel, whether or not anyone watches the environment. The worker must be able to reach `https://hooks.slack.com`. Webhook URLs are encrypted with `APP_SECRET`, so changing the secret means reconnecting Slack.
+
 ### Feature Toggles
 
 All features below are **disabled by default** unless configured. The frontend automatically hides UI for disabled features via the `GET /api/info/config` endpoint.
