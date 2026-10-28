@@ -33,6 +33,7 @@ const (
 const (
 	ChannelEmail = "email"
 	ChannelInApp = "in_app"
+	ChannelSlack = "slack"
 )
 
 var (
@@ -157,10 +158,10 @@ func NormalizeMailOutcome(outcome string) string {
 	}
 }
 
-// NormalizeNotifyChannel maps arbitrary strings onto email|in_app|unknown.
+// NormalizeNotifyChannel maps arbitrary strings onto email|in_app|slack|unknown.
 func NormalizeNotifyChannel(channel string) string {
 	switch channel {
-	case ChannelEmail, ChannelInApp:
+	case ChannelEmail, ChannelInApp, ChannelSlack:
 		return channel
 	default:
 		return OutcomeUnknown

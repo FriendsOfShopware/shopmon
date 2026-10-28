@@ -17,13 +17,16 @@ type Dispatcher struct {
 	prefs    PreferenceResolver
 	locker   lockAcquirer
 	channels map[ChannelName]Channel
+	// slack is the organization-level channel; nil when not configured.
+	slack *slackChannel
 }
 
-// NewDispatcher wires the default in-app and email channels. mailSvc may be nil
+// NewDispatcher wires the default in-app and email channels, plus the
+// organization Slack channel when slackCfg is usable. mailSvc may be nil
 // (email delivery becomes a no-op).
-func NewDispatcher(q *queries.Queries, mailSvc mail.Sender) *Dispatcher {
+func NewDispatcher(q *queries.Queries, mailSvc mail.Sender, slackCfg SlackConfig) *Dispatcher {
 	tr := NewTranslator()
-	return &Dispatcher{
+	d := &Dispatcher{
 		tr:     tr,
 		prefs:  queryResolver{q: q},
 		locker: queryLocker{q: q},
@@ -32,6 +35,16 @@ func NewDispatcher(q *queries.Queries, mailSvc mail.Sender) *Dispatcher {
 			ChannelEmail: &emailChannel{mail: mailSvc, tr: tr},
 		},
 	}
+	if slackCfg.AppSecret != "" && slackCfg.Poster != nil {
+		d.slack = &slackChannel{
+			store:     q,
+			poster:    slackCfg.Poster,
+			appSecret: slackCfg.AppSecret,
+			baseURL:   slackCfg.FrontendURL,
+			tr:        tr,
+		}
+	}
+	return d
 }
 
 // Translator exposes the shared catalog so callers can render text outside the
@@ -66,17 +79,31 @@ func (r DispatchResult) Delivery() bool {
 // state and must not mark a failed alert as sent.
 func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipient) DispatchResult {
 	var res DispatchResult
-	if len(recipients) == 0 {
-		return res
-	}
-
 	meta := metaFor(ev.Type)
+
+	d.dispatchRecipients(ctx, ev, meta, recipients, &res)
+	// Slack does not depend on anyone watching the environment. It runs last so
+	// slow webhook posts never delay in-app and email delivery.
+	d.dispatchSlack(ctx, ev, meta, &res)
+	return res
+}
+
+// dispatchRecipients delivers the event to each recipient on their resolved
+// channels.
+func (d *Dispatcher) dispatchRecipients(ctx context.Context, ev Event, meta eventMeta, recipients []Recipient, res *DispatchResult) {
+	if len(recipients) == 0 {
+		return
+	}
 
 	// Email dedup is decided once per event (not per recipient): acquire the
 	// lock up front and skip the email channel for everyone when it is held.
-	emailAllowed := true
+	emailAllowed, emailLockFailed := true, false
 	if meta.emailDedupTTL > 0 {
-		emailAllowed = d.locker.acquire(ctx, "alert_"+ev.DedupKey, meta.emailDedupTTL)
+		// On an unknown lock state, do not send (avoids spamming), but report it
+		// as a failure so callers retry instead of recording the alert as sent.
+		var err error
+		emailAllowed, err = d.locker.acquire(ctx, "alert_"+ev.DedupKey, meta.emailDedupTTL)
+		emailLockFailed = err != nil
 	}
 
 	for _, r := range recipients {
@@ -93,7 +120,12 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 
 		for _, name := range channels {
 			if name == ChannelEmail && !emailAllowed {
-				res.Skipped++
+				if emailLockFailed {
+					metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(name))
+					res.Failed++
+				} else {
+					res.Skipped++
+				}
 				continue
 			}
 			ch, ok := d.channels[name]
@@ -112,6 +144,53 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 			res.Delivered++
 		}
 	}
+}
 
-	return res
+// dispatchSlack posts the event once to each configured Slack webhook (the
+// organization's and the shop's), deduped per webhook with the same window as
+// email so a flapping check does not flood the channel.
+func (d *Dispatcher) dispatchSlack(ctx context.Context, ev Event, meta eventMeta, res *DispatchResult) {
+	if d.slack == nil {
+		return
+	}
+
+	targets, err := d.slack.targets(ctx, ev)
+	if err != nil {
+		slog.Warn("notify: failed to load slack webhook", "event", ev.Type, "organizationId", ev.OrgID, "error", err)
+		metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelSlack))
+		res.Failed++
+	}
+
+	for _, target := range targets {
+		lockKey := target.lockKey(ev.DedupKey)
+		if meta.emailDedupTTL > 0 {
+			acquired, err := d.locker.acquire(ctx, lockKey, meta.emailDedupTTL)
+			if err != nil {
+				// Unknown lock state is a failure, not a skip: a skip would let the
+				// caller record the alert as delivered.
+				metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelSlack))
+				res.Failed++
+				continue
+			}
+			if !acquired {
+				res.Skipped++
+				continue
+			}
+		}
+
+		if err := d.slack.Send(ctx, target.url, ev); err != nil {
+			// Without the release, the caller's retry would hit the lock, count as
+			// skipped, and record the alert as delivered although Slack never got it.
+			if meta.emailDedupTTL > 0 {
+				d.locker.release(ctx, lockKey)
+			}
+			slog.Warn("notify: channel delivery failed",
+				"channel", ChannelSlack, "event", ev.Type, "organizationId", ev.OrgID, "error", err)
+			metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelSlack))
+			res.Failed++
+			continue
+		}
+		metrics.RecordNotifyDelivery(ctx, metrics.OutcomeOK, string(ChannelSlack))
+		res.Delivered++
+	}
 }

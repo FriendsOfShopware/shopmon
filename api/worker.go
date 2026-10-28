@@ -20,6 +20,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
 	monitoringscrape "github.com/friendsofshopware/shopmon/api/internal/monitoring/scrape"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring/sitespeed"
+	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwarepackages"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
 	goqueue "github.com/shyim/go-queue"
@@ -92,6 +93,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		GithubToken: cfg.GithubToken,
 		NVDAPIKey:   cfg.NVDAPIKey,
 		Mailer:      mailSvc,
+		Slack:       notify.NewSlackConfig(cfg.AppSecret, cfg.FrontendURL),
 	})
 	securityPluginSync := securityplugin.NewService(pool, q, shopwarepackages.NewClient(cfg.ShopwarePackagesURL, nil))
 	if err := jobs.RegisterHandlers(bus, jobs.Handlers{

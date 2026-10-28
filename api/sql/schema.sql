@@ -682,3 +682,19 @@ CREATE TABLE "security_plugin_coverage" (
   "parsed_at" timestamp NOT NULL DEFAULT NOW(),
   "last_error" text
 );
+
+-- Slack incoming webhooks per organization and per shop; both fire when set.
+-- webhook_url is encrypted with APP_SECRET.
+CREATE TABLE "organization_slack_webhook" (
+  "organization_id" text PRIMARY KEY NOT NULL REFERENCES "organization"("id") ON DELETE cascade,
+  "webhook_url" text NOT NULL,
+  "created_at" timestamp NOT NULL DEFAULT NOW(),
+  "updated_at" timestamp NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE "shop_slack_webhook" (
+  "shop_id" integer PRIMARY KEY NOT NULL REFERENCES "shop"("id") ON DELETE cascade,
+  "webhook_url" text NOT NULL,
+  "created_at" timestamp NOT NULL DEFAULT NOW(),
+  "updated_at" timestamp NOT NULL DEFAULT NOW()
+);

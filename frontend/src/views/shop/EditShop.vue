@@ -202,6 +202,9 @@
         :shop-id="shop.id"
       />
 
+      <!-- Slack -->
+      <SlackWebhookCard :key="shop.id" :organization-id="shop.organizationId" :shop-id="shop.id" />
+
       <!-- Danger zone -->
       <Card class="border-destructive/30">
         <CardHeader class="px-4 pb-3 sm:px-6">
@@ -255,6 +258,7 @@ import {
 } from "@/api/generated";
 import ApiKeysCard from "@/components/shop/ApiKeysCard.vue";
 import PackagesTokensCard from "@/components/shop/PackagesTokensCard.vue";
+import SlackWebhookCard from "@/components/SlackWebhookCard.vue";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

@@ -99,19 +99,30 @@ func (c *recordingChannel) Send(_ context.Context, _ Recipient, _ Event, msg Ren
 type fakeLocker struct {
 	mu   sync.Mutex
 	held map[string]bool
+	// err, when set, makes every acquire fail with an unknown lock state.
+	err error
 }
 
-func (l *fakeLocker) acquire(_ context.Context, key string, _ time.Duration) bool {
+func (l *fakeLocker) acquire(_ context.Context, key string, _ time.Duration) (bool, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if l.err != nil {
+		return false, l.err
+	}
 	if l.held == nil {
 		l.held = map[string]bool{}
 	}
 	if l.held[key] {
-		return false
+		return false, nil
 	}
 	l.held[key] = true
-	return true
+	return true, nil
+}
+
+func (l *fakeLocker) release(_ context.Context, key string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.held, key)
 }
 
 func newTestDispatcher(inApp, email *recordingChannel, locker lockAcquirer) *Dispatcher {

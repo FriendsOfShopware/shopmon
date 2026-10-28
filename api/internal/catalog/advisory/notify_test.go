@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/friendsofshopware/shopmon/api/internal/crypto"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
@@ -122,7 +123,7 @@ func TestNotifyNewAdvisoriesEmailIncludesDetails(t *testing.T) {
 	svc := &Service{
 		pool:     env.Pool,
 		queries:  env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, mailSender),
+		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.SlackConfig{}),
 	}
 	index := sbom.NewIndex([]sbom.AdvisoryPackage{{
 		AdvisoryID:       "CVE-2026-1234",
@@ -190,7 +191,7 @@ func TestNotifyNewAdvisoriesEmailPluralLinksToEnvironment(t *testing.T) {
 	svc := &Service{
 		pool:     env.Pool,
 		queries:  env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, mailSender),
+		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.SlackConfig{}),
 	}
 	index := sbom.NewIndex([]sbom.AdvisoryPackage{
 		{AdvisoryID: "CVE-2026-1", PackageName: "shopware/core", AffectedVersions: ">=6.7.0.0,<6.7.10.1"},
@@ -222,4 +223,64 @@ func unfoldQuotedPrintable(raw []byte) string {
 	s = strings.ReplaceAll(s, "=\r\n", "")
 	s = strings.ReplaceAll(s, "=\n", "")
 	return s
+}
+
+// Nobody watches the environment, but the organization has a Slack channel:
+// the alert must still reach Slack and the advisory must be recorded as
+// notified, or the next pass would alert again.
+func TestNotifyNewAdvisoriesPostsToSlackWithoutSubscribers(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+
+	env.SeedUser(t, "user-1", "Shyim", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Org One", "org-one", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Demo")
+	envID := int32(env.SeedEnvironment(t, "org-1", shopID, "Production", "https://example.com"))
+
+	_, err := env.Pool.Exec(ctx, `
+		INSERT INTO composer_advisory (advisory_id, title, cve, severity, is_visible)
+		VALUES ('CVE-2026-1234', 'SSE buffer grows unbounded', 'CVE-2026-1234', 'high', true)
+	`)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO environment_sbom_component (environment_id, package_name, version)
+		VALUES ($1, 'mcp/sdk', '1.2.3')
+	`, envID)
+	require.NoError(t, err)
+
+	encrypted, err := crypto.Encrypt("https://hooks.slack.com/services/org", env.Cfg.AppSecret)
+	require.NoError(t, err)
+	require.NoError(t, env.Queries.UpsertOrganizationSlackWebhook(ctx, queries.UpsertOrganizationSlackWebhookParams{
+		OrganizationID: "org-1", WebhookUrl: encrypted,
+	}))
+	shopEncrypted, err := crypto.Encrypt("https://hooks.slack.com/services/shop", env.Cfg.AppSecret)
+	require.NoError(t, err)
+	require.NoError(t, env.Queries.UpsertShopSlackWebhook(ctx, queries.UpsertShopSlackWebhookParams{
+		ShopID: int32(shopID), WebhookUrl: shopEncrypted,
+	}))
+
+	poster := &testutil.SlackRecorder{}
+	svc := &Service{
+		pool:    env.Pool,
+		queries: env.Queries,
+		notifier: notify.NewDispatcher(env.Queries, nil, notify.SlackConfig{
+			AppSecret: env.Cfg.AppSecret, Poster: poster,
+		}),
+	}
+	index := sbom.NewIndex([]sbom.AdvisoryPackage{{
+		AdvisoryID:       "CVE-2026-1234",
+		PackageName:      "mcp/sdk",
+		AffectedVersions: ">=1.0.0,<1.2.4",
+	}})
+
+	_, err = svc.rematchEnvironment(ctx, envID, index)
+	require.NoError(t, err)
+
+	require.Len(t, poster.Posts, 2)
+	assert.Equal(t, "https://hooks.slack.com/services/org", poster.Posts[0].URL)
+	assert.Equal(t, "https://hooks.slack.com/services/shop", poster.Posts[1].URL)
+	assert.Contains(t, poster.Posts[0].Text, "CVE-2026-1234")
+	notified, err := env.Queries.ListNotifiedAdvisoryIDsForEnvironment(ctx, envID)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"CVE-2026-1234"}, notified)
 }

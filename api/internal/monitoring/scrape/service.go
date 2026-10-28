@@ -61,7 +61,7 @@ func NewService(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mail
 		mail:       mail,
 		catalog:    catalog,
 		dispatcher: dispatcher,
-		notifier:   notify.NewDispatcher(q, mail),
+		notifier:   notify.NewDispatcher(q, mail, notify.NewSlackConfig(cfg.AppSecret, cfg.FrontendURL)),
 	}
 }
 

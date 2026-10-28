@@ -72,14 +72,9 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 			"environmentId", environmentID, "error", err)
 		return
 	}
-	if len(subscribers) == 0 {
-		// Nobody to tell. Mark them anyway: there is nothing to retry, and
-		// leaving them unmarked would re-evaluate the same advisories on every
-		// pass forever.
-		s.markNotified(ctx, environmentID, fresh)
-		return
-	}
-
+	// No subscribers still dispatches: the organization Slack channel does not
+	// depend on watchers. With nothing configured the result is empty, which
+	// counts as handled below, so the advisories are not re-evaluated forever.
 	recipients := make([]notify.Recipient, 0, len(subscribers))
 	for _, u := range subscribers {
 		recipients = append(recipients, notify.Recipient{

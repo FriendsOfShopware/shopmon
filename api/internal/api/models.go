@@ -1496,6 +1496,12 @@ type SitespeedSettingsRequest struct {
 	Urls    *[]string `json:"urls,omitempty"`
 }
 
+// SlackWebhookStatus defines model for SlackWebhookStatus.
+type SlackWebhookStatus struct {
+	CanManage  bool `json:"canManage"`
+	Configured bool `json:"configured"`
+}
+
 // SsoDiscovery defines model for SsoDiscovery.
 type SsoDiscovery struct {
 	AuthorizationEndpoint string   `json:"authorizationEndpoint"`
@@ -1601,6 +1607,11 @@ type UpdateShopRequest struct {
 	Description          *string `json:"description,omitempty"`
 	GitUrl               *string `json:"gitUrl,omitempty"`
 	Name                 *string `json:"name,omitempty"`
+}
+
+// UpdateSlackWebhookRequest defines model for UpdateSlackWebhookRequest.
+type UpdateSlackWebhookRequest struct {
+	WebhookUrl string `json:"webhookUrl"`
 }
 
 // UpdateSsoProviderRequest defines model for UpdateSsoProviderRequest.
