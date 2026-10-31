@@ -494,17 +494,21 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	// unreachable. Appending here also makes them show up as reasons on the
 	// status-change notification and on the status timeline for free.
 	//
-	// When the findings themselves could not be read, the group counts as
-	// unevaluated and its last known checks are carried over -- an unreadable
-	// table must not resolve a finding nobody acknowledged.
+	finalChecks = append(finalChecks, accountRes.checks...)
+
+	// A failed read of the stored findings does not stop this run from
+	// detecting new ones, so the freshly detected checks are appended either
+	// way -- dropping them would persist the event and send its alert while
+	// leaving the status unchanged until some later scrape. On top of that the
+	// last known checks are carried over, because an unreadable table must not
+	// resolve a finding nobody acknowledged. carryOverChecks skips whatever
+	// this run already reported.
 	if accountRes.unevaluated {
 		carried := carryOverChecks(oldChecks, finalChecks, accountsUnavailable())
 		if len(carried) > 0 {
 			log.Warn("account findings unreadable, keeping last known checks", "checks", len(carried))
 			finalChecks = append(finalChecks, carried...)
 		}
-	} else {
-		finalChecks = append(finalChecks, accountRes.checks...)
 	}
 
 	newStatus := string(checker.AggregateStatus(finalChecks, ignores))

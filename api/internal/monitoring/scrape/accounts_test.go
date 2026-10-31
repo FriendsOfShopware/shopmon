@@ -2,6 +2,7 @@ package scrape
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 	"testing"
@@ -629,4 +630,58 @@ func TestPersistAccountsInfoEventDoesNotBlockLaterFinding(t *testing.T) {
 		}
 	}
 	assert.Equal(t, 1, infos, "the informational row is still in the history")
+}
+
+// A failed read of the stored findings does not stop this run from detecting
+// new ones. Dropping the freshly detected checks would persist the event and
+// send its alert while leaving the environment status unchanged.
+func TestFetchAccountsKeepsFreshChecksWhenStoredOnesAreUnreadable(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	fetched := &accounts.Snapshot{Accounts: []accounts.Account{first, second}}
+
+	// The open-findings read fails while the shop still answers.
+	_, err := pool.Exec(ctx, `ALTER TABLE environment_account_event RENAME TO environment_account_event_moved`)
+	require.NoError(t, err)
+	defer func() {
+		_, err := pool.Exec(context.Background(),
+			`ALTER TABLE environment_account_event_moved RENAME TO environment_account_event`)
+		require.NoError(t, err)
+	}()
+
+	res := h.fetchAccounts(ctx, env, snapshotFetcher{snapshot: fetched}, froshToolsExtensions())
+	require.True(t, res.unevaluated, "the stored findings could not be read")
+	require.NotEmpty(t, res.checks, "the newly detected admin must still produce a check")
+
+	var ids []string
+	for _, c := range res.checks {
+		ids = append(ids, c.ID)
+	}
+	assert.Contains(t, ids,
+		"account.user.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.new_admin_user")
+}
+
+// snapshotFetcher serves a prepared snapshot in place of the shop.
+type snapshotFetcher struct{ snapshot *accounts.Snapshot }
+
+func (f snapshotFetcher) Get(context.Context, string) ([]byte, error) {
+	users := make([]map[string]any, 0, len(f.snapshot.Accounts))
+	for _, a := range f.snapshot.Accounts {
+		if a.Kind != accounts.KindUser {
+			continue
+		}
+		users = append(users, map[string]any{
+			"id": a.ID, "maskedEmail": a.Label, "active": a.Active, "admin": a.Admin,
+		})
+	}
+	return json.Marshal(map[string]any{"users": users})
+}
+
+func froshToolsExtensions() []extensionEntry {
+	return []extensionEntry{{Name: froshToolsExtension, Active: true, Installed: true}}
 }
