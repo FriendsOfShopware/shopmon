@@ -15,6 +15,10 @@ var (
 	// ErrAccountEventAlreadyAcknowledged keeps a double submit from looking
 	// like it recorded a second review.
 	ErrAccountEventAlreadyAcknowledged = errors.New("account event already acknowledged")
+	// ErrAccountEventChanged means a scrape refreshed the finding with a newer
+	// state after the reviewer's page was rendered. Confirming the older view
+	// would close a finding nobody has read.
+	ErrAccountEventChanged = errors.New("account event changed since it was read")
 )
 
 // maxAcknowledgeNoteLen bounds the reviewer's note before it is stored.
@@ -22,20 +26,17 @@ const maxAcknowledgeNoteLen = 500
 
 // AcknowledgeAccountEvent records that a reviewer accepted an account change
 // and refreshes the environment so the finding stops colouring its status.
-func (s *Service) AcknowledgeAccountEvent(ctx context.Context, userID string, environmentID int32, eventID int64, note *string) error {
+func (s *Service) AcknowledgeAccountEvent(ctx context.Context, userID string, environmentID int32, eventID int64, revision int32, note *string) error {
 	if _, err := s.authorizedEnvironment(ctx, userID, environmentID); err != nil {
 		return err
 	}
 
-	acknowledged, err := s.repository.AcknowledgeAccountEvent(ctx, environmentID, eventID, userID, boundNote(note))
-	if err != nil {
-		return fmt.Errorf("acknowledge account event: %w", err)
-	}
-	if !acknowledged {
-		// The row either belongs to another environment, does not exist, or
-		// was already reviewed. The handler maps both cases; the caller gets
-		// no signal about rows outside their environment either way.
-		return ErrAccountEventNotFound
+	// The revision pins what the reviewer actually saw. A scrape can refresh an
+	// open finding with a worse state between the page being rendered and the
+	// click, and closing it on the strength of the older view would bury a
+	// change nobody has read.
+	if err := s.repository.AcknowledgeAccountEvent(ctx, environmentID, eventID, revision, userID, boundNote(note)); err != nil {
+		return err
 	}
 
 	s.refreshAfterAcknowledge(ctx, environmentID)

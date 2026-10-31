@@ -1617,6 +1617,11 @@ type AccountFinding struct {
 	// CheckId ties the finding to the check it raises on the checks tab.
 	CheckId string `json:"checkId"`
 
+	// Revision changes whenever a scrape refreshes this finding with a newer
+	// state. Confirming carries it back so a reviewer cannot close a finding
+	// that has moved on since the page was rendered.
+	Revision int `json:"revision"`
+
 	Account *AccountSnapshot `json:"account,omitempty"`
 }
 
@@ -1682,6 +1687,12 @@ type AccountSnapshot struct {
 type AcknowledgeAccountEventRequest struct {
 	// Note is the reviewer's optional reason, kept as an audit trail.
 	Note *string `json:"note,omitempty" maxLength:"500"`
+
+	// Revision is the finding state the reviewer actually saw. A scrape can
+	// refresh an open finding with a worse state -- a permission role growing
+	// further, say -- and confirming the older view would close it without
+	// anyone having seen what it now says.
+	Revision int `json:"revision" minimum:"1"`
 }
 
 // UpdateAccountMonitoringRequest defines model for UpdateAccountMonitoringRequest.

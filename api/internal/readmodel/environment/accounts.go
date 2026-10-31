@@ -96,6 +96,7 @@ func (s *Service) Accounts(ctx context.Context, userID string, environmentID int
 			AdminUrl:   adminURL(environment.Url, e.AdminPath),
 			DetectedAt: database.Time(e.DetectedAt),
 			CheckId:    accounts.CheckID(e.AccountType, e.AccountID, e.Change),
+			Revision:   int(e.Revision),
 			Account:    snapshots[e.AccountType+":"+e.AccountID],
 		})
 	}

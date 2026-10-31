@@ -170,11 +170,12 @@ LIMIT $2;
 SELECT * FROM environment_account_event WHERE id = $1 AND environment_id = $2;
 
 -- name: AcknowledgeEnvironmentAccountEvent :execrows
--- Returns zero rows when the event is already acknowledged, which the handler
--- turns into a 409 rather than silently succeeding twice.
+-- Returns zero rows when the event is already acknowledged or has been
+-- refreshed since the reviewer saw it. The caller reads the row back to tell
+-- those apart, because they need different answers.
 UPDATE environment_account_event
 SET acknowledged_at = NOW(), acknowledged_by = $3, acknowledge_note = $4
-WHERE id = $1 AND environment_id = $2 AND acknowledged_at IS NULL;
+WHERE id = $1 AND environment_id = $2 AND acknowledged_at IS NULL AND revision = $5;
 
 -- name: AcknowledgeAllEnvironmentAccountEvents :exec
 -- Used when monitoring is switched off: open findings would otherwise stay red

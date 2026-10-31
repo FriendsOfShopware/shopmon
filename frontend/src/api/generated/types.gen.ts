@@ -103,6 +103,7 @@ export type AccountFinding = {
     params?: {
         [key: string]: unknown;
     };
+    revision: number;
 };
 
 export type AccountOrganization = {
@@ -151,6 +152,7 @@ export type AccountSnapshot = {
 
 export type AcknowledgeAccountEventRequest = {
     note?: string;
+    revision: number;
 };
 
 export type AdminAdvisory = {
@@ -4439,6 +4441,10 @@ export type AcknowledgeEnvironmentAccountEventErrors = {
      * Not Found
      */
     404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
     /**
      * Unprocessable Entity
      */

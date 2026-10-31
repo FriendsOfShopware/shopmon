@@ -480,6 +480,7 @@ func TestPersistAccountsRecordsRecurrenceAfterAcknowledgement(t *testing.T) {
 	rows, err := h.queries.AcknowledgeEnvironmentAccountEvent(ctx, queries.AcknowledgeEnvironmentAccountEventParams{
 		ID:            open[0].ID,
 		EnvironmentID: env.ID,
+		Revision:      open[0].Revision,
 	})
 	require.NoError(t, err)
 	require.EqualValues(t, 1, rows)
@@ -701,6 +702,7 @@ func TestNotifyAccountChangesSkipsAcknowledgedEvents(t *testing.T) {
 	rows, err := h.queries.AcknowledgeEnvironmentAccountEvent(ctx, queries.AcknowledgeEnvironmentAccountEventParams{
 		ID:            pending[0].ID,
 		EnvironmentID: env.ID,
+		Revision:      pending[0].Revision,
 	})
 	require.NoError(t, err)
 	require.EqualValues(t, 1, rows)

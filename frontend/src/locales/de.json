@@ -1638,6 +1638,7 @@
       "pending": "Noch nicht initialisiert — der erste Scrape erfasst nur den aktuellen Stand",
       "unsupported": "FroshTools in diesem Shop kennt den Konten-Endpunkt noch nicht",
       "error": "Die letzte Kontenprüfung ist fehlgeschlagen"
-    }
+    },
+    "acknowledgeStale": "Das Finding hat sich währenddessen geändert — bitte den aktuellen Stand prüfen"
   }
 }

@@ -1638,6 +1638,7 @@
       "pending": "Not initialised yet — the first scrape only records the current state",
       "unsupported": "FroshTools in this shop does not serve the account endpoint yet",
       "error": "The last account check failed"
-    }
+    },
+    "acknowledgeStale": "The finding changed while you were looking at it — please review the current state"
   }
 }

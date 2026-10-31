@@ -292,17 +292,38 @@ func (r *Repository) IsEnvironmentSubscribed(ctx context.Context, userID string,
 // AcknowledgeAccountEvent marks one account finding as reviewed. It reports
 // false when no open row matched: either the event belongs to a different
 // environment, or someone already reviewed it.
-func (r *Repository) AcknowledgeAccountEvent(ctx context.Context, environmentID int32, eventID int64, userID string, note *string) (bool, error) {
+func (r *Repository) AcknowledgeAccountEvent(ctx context.Context, environmentID int32, eventID int64, revision int32, userID string, note *string) error {
 	rows, err := r.queries.AcknowledgeEnvironmentAccountEvent(ctx, queries.AcknowledgeEnvironmentAccountEventParams{
 		ID:              eventID,
 		EnvironmentID:   environmentID,
 		AcknowledgedBy:  &userID,
 		AcknowledgeNote: note,
+		Revision:        revision,
 	})
 	if err != nil {
-		return false, fmt.Errorf("acknowledge account event: %w", err)
+		return fmt.Errorf("acknowledge account event: %w", err)
 	}
-	return rows > 0, nil
+	if rows > 0 {
+		return nil
+	}
+
+	// Nothing matched. Read the row back to say which of the three reasons it
+	// was: the reviewer needs to know whether to look again or whether somebody
+	// else already handled it.
+	row, err := r.queries.GetEnvironmentAccountEvent(ctx, queries.GetEnvironmentAccountEventParams{
+		ID:            eventID,
+		EnvironmentID: environmentID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return monitoring.ErrAccountEventNotFound
+		}
+		return fmt.Errorf("read account event after failed acknowledgement: %w", err)
+	}
+	if row.AcknowledgedAt.Valid {
+		return monitoring.ErrAccountEventAlreadyAcknowledged
+	}
+	return monitoring.ErrAccountEventChanged
 }
 
 // SetAccountMonitoring flips the per-environment switch.

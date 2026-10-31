@@ -34,10 +34,10 @@ type stubRepository struct {
 	updateEnvironmentErr   error
 
 	acknowledgedEvent       int64
+	acknowledgedRevision    int32
 	acknowledgedBy          string
 	acknowledgedNote        *string
 	acknowledgedEnvironment int32
-	acknowledgeResult       bool
 	acknowledgeErr          error
 
 	accountMonitoringEnvironment int32
@@ -124,12 +124,13 @@ func (r *stubRepository) IsEnvironmentSubscribed(context.Context, string, int32)
 	return false, nil
 }
 
-func (r *stubRepository) AcknowledgeAccountEvent(_ context.Context, environmentID int32, eventID int64, userID string, note *string) (bool, error) {
+func (r *stubRepository) AcknowledgeAccountEvent(_ context.Context, environmentID int32, eventID int64, revision int32, userID string, note *string) error {
 	r.acknowledgedEvent = eventID
+	r.acknowledgedRevision = revision
 	r.acknowledgedBy = userID
 	r.acknowledgedNote = note
 	r.acknowledgedEnvironment = environmentID
-	return r.acknowledgeResult, r.acknowledgeErr
+	return r.acknowledgeErr
 }
 
 func (r *stubRepository) SetAccountMonitoring(_ context.Context, environmentID int32, enabled bool, _ string) error {

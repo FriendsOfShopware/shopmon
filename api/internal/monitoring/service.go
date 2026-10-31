@@ -94,9 +94,10 @@ type Repository interface {
 	SubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error
 	UnsubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error
 	IsEnvironmentSubscribed(ctx context.Context, userID string, environmentID int32) (bool, error)
-	// AcknowledgeAccountEvent reports whether it acknowledged a row; false
-	// means the event was already reviewed or belongs elsewhere.
-	AcknowledgeAccountEvent(ctx context.Context, environmentID int32, eventID int64, userID string, note *string) (bool, error)
+	// AcknowledgeAccountEvent returns ErrAccountEventNotFound,
+	// ErrAccountEventAlreadyAcknowledged or ErrAccountEventChanged when
+	// nothing was acknowledged.
+	AcknowledgeAccountEvent(ctx context.Context, environmentID int32, eventID int64, revision int32, userID string, note *string) error
 	// SetAccountMonitoring also acknowledges open findings when disabling (they
 	// would otherwise stay red with no tab left to clear them from) and clears
 	// the baseline when enabling (so the next scrape seeds instead of

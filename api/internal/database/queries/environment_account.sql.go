@@ -34,7 +34,7 @@ func (q *Queries) AcknowledgeAllEnvironmentAccountEvents(ctx context.Context, ar
 const acknowledgeEnvironmentAccountEvent = `-- name: AcknowledgeEnvironmentAccountEvent :execrows
 UPDATE environment_account_event
 SET acknowledged_at = NOW(), acknowledged_by = $3, acknowledge_note = $4
-WHERE id = $1 AND environment_id = $2 AND acknowledged_at IS NULL
+WHERE id = $1 AND environment_id = $2 AND acknowledged_at IS NULL AND revision = $5
 `
 
 type AcknowledgeEnvironmentAccountEventParams struct {
@@ -42,16 +42,19 @@ type AcknowledgeEnvironmentAccountEventParams struct {
 	EnvironmentID   int32   `json:"environment_id"`
 	AcknowledgedBy  *string `json:"acknowledged_by"`
 	AcknowledgeNote *string `json:"acknowledge_note"`
+	Revision        int32   `json:"revision"`
 }
 
-// Returns zero rows when the event is already acknowledged, which the handler
-// turns into a 409 rather than silently succeeding twice.
+// Returns zero rows when the event is already acknowledged or has been
+// refreshed since the reviewer saw it. The caller reads the row back to tell
+// those apart, because they need different answers.
 func (q *Queries) AcknowledgeEnvironmentAccountEvent(ctx context.Context, arg AcknowledgeEnvironmentAccountEventParams) (int64, error) {
 	result, err := q.db.Exec(ctx, acknowledgeEnvironmentAccountEvent,
 		arg.ID,
 		arg.EnvironmentID,
 		arg.AcknowledgedBy,
 		arg.AcknowledgeNote,
+		arg.Revision,
 	)
 	if err != nil {
 		return 0, err

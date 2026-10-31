@@ -47,16 +47,22 @@ func (h *Handler) AcknowledgeEnvironmentAccountEvent(ctx context.Context, input 
 	}
 
 	environmentID := int32(input.EnvironmentID)
-	err = h.monitoring.AcknowledgeAccountEvent(ctx, user.ID, environmentID, input.EventID, input.Body.Note)
+	err = h.monitoring.AcknowledgeAccountEvent(ctx, user.ID, environmentID,
+		input.EventID, int32(input.Body.Revision), input.Body.Note)
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
 		return nil, huma.Error404NotFound("environment not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
 		return nil, huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, monitoring.ErrAccountEventNotFound):
-		// Also covers an event that someone else already reviewed: a repeated
-		// submit must not read as a second, independent review.
-		return nil, huma.Error404NotFound("account event not found or already acknowledged")
+		return nil, huma.Error404NotFound("account event not found")
+	case errors.Is(err, monitoring.ErrAccountEventAlreadyAcknowledged):
+		// A repeated submit must not read as a second, independent review.
+		return nil, huma.Error409Conflict("account event already acknowledged")
+	case errors.Is(err, monitoring.ErrAccountEventChanged):
+		// The finding moved on after the page was rendered. The reviewer has to
+		// see what it says now before closing it.
+		return nil, huma.Error409Conflict("account event changed since it was read")
 	case err != nil:
 		slog.ErrorContext(ctx, "failed to acknowledge account event",
 			"environmentID", environmentID, "eventID", input.EventID, "error", err)

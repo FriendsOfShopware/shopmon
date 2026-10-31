@@ -42,6 +42,7 @@ const adminFinding = {
   adminUrl: "https://shop.example.com/admin#/sw/users/permissions/user/detail/abc",
   detectedAt: "2026-10-29T07:00:00Z",
   checkId: "account.user.abc.new_admin_user",
+  revision: 3,
   account: {
     active: true,
     admin: true,
@@ -89,7 +90,11 @@ describe("DetailAccounts", () => {
     document.body.innerHTML = "";
     routeParams.environmentId = "7";
     getEnvironmentAccounts.mockResolvedValue(response());
-    acknowledgeEnvironmentAccountEvent.mockResolvedValue({ data: undefined, error: undefined });
+    acknowledgeEnvironmentAccountEvent.mockResolvedValue({
+      data: undefined,
+      error: undefined,
+      response: new Response(null, { status: 204 }),
+    });
   });
 
   it("renders a finding with its masked label and a deep link into Shopware", async () => {
@@ -133,7 +138,7 @@ describe("DetailAccounts", () => {
 
     expect(acknowledgeEnvironmentAccountEvent).toHaveBeenCalledWith({
       path: { environmentId: 7, eventId: 42 },
-      body: { note: undefined },
+      body: { note: undefined, revision: 3 },
     });
     expect(environment.value?.openAccountFindings).toBe(0);
   });
@@ -504,5 +509,33 @@ describe("DetailAccounts", () => {
 
     expect(wrapper.text()).toContain("New administrator account");
     expect(wrapper.text()).not.toContain("lost administrator rights");
+  });
+
+  // A scrape can refresh the finding with a worse state between the page
+  // rendering and the click. Closing it on the older view would bury a change
+  // nobody has read, so the backend rejects it and the reviewer is sent back.
+  it("reloads and explains when the finding changed under the reviewer", async () => {
+    getEnvironmentAccounts.mockResolvedValue(response({ openFindings: [adminFinding] }));
+    acknowledgeEnvironmentAccountEvent.mockResolvedValue({
+      data: undefined,
+      error: { message: "account event changed since it was read" },
+      response: new Response(null, { status: 409 }),
+    });
+
+    const wrapper = await mountComponent();
+    await wrapper
+      .findAll("button")
+      .find((b) => b.text() === "Looks right")
+      ?.trigger("click");
+    await flushPromises();
+    bodyButton("Confirm")?.click();
+    await flushPromises();
+
+    expect(alerts.error).toHaveBeenCalledWith(
+      "The finding changed while you were looking at it — please review the current state",
+    );
+    // Reloaded, so the reviewer sees the current state instead of the stale one.
+    expect(getEnvironmentAccounts).toHaveBeenCalledTimes(2);
+    expect(bodyButton("Confirm")).toBeFalsy();
   });
 });

@@ -130,7 +130,8 @@ func registerEnvironments(api huma.API, h *Handler) {
 		Summary:       "Acknowledge an account monitoring finding",
 		Tags:          []string{"Environments"},
 		DefaultStatus: http.StatusNoContent,
-		Errors:        []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound},
+		Errors: []int{http.StatusUnauthorized, http.StatusForbidden,
+			http.StatusNotFound, http.StatusConflict},
 	}, h.AcknowledgeEnvironmentAccountEvent)
 
 	huma.Register(api, huma.Operation{

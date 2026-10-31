@@ -451,13 +451,21 @@ async function submitAcknowledge() {
 
   submitting.value = true;
   try {
-    requireMutation(
-      await acknowledgeEnvironmentAccountEvent({
-        path: { environmentId: environmentId(), eventId: finding.id },
-        body: { note: note.value.trim() || undefined },
-      }),
-      t("accounts.acknowledgeFailed"),
-    );
+    const result = await acknowledgeEnvironmentAccountEvent({
+      path: { environmentId: environmentId(), eventId: finding.id },
+      // The revision pins the state shown on screen. A scrape can refresh the
+      // finding with a worse one in the meantime, and the backend rejects a
+      // confirmation of the older view rather than closing it unread.
+      body: { note: note.value.trim() || undefined, revision: finding.revision },
+    });
+    if (result.response?.status === 409) {
+      acknowledgeOpen.value = false;
+      pending.value = null;
+      await load();
+      error(t("accounts.acknowledgeStale"));
+      return;
+    }
+    requireMutation(result, t("accounts.acknowledgeFailed"));
     acknowledgeOpen.value = false;
     pending.value = null;
     await load();

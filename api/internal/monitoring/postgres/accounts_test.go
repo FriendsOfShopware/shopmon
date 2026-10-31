@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
 )
 
@@ -105,4 +106,41 @@ func TestSetAccountMonitoringAcknowledgesOpenFindingsOnDisable(t *testing.T) {
 		 WHERE environment_id = $1 AND change = 'new_admin_user'`, envID).Scan(&by))
 	require.NotNil(t, by)
 	assert.Equal(t, "user-1", *by, "who switched it off is recorded")
+}
+
+// Confirming has to name the state the reviewer saw. A scrape refreshing the
+// finding in between must make the acknowledgement fail rather than close a
+// finding describing something nobody read.
+func TestAcknowledgeAccountEventGuardsOnRevision(t *testing.T) {
+	repo, pool, envID := setupAccountRepo(t)
+	ctx := context.Background()
+
+	var id int64
+	require.NoError(t, pool.QueryRow(ctx, `
+		INSERT INTO environment_account_event (environment_id, account_type, account_id, label, change, level)
+		VALUES ($1,'acl_role','r1','Editor','role_privileges_grown','yellow') RETURNING id`, envID).Scan(&id))
+
+	// A scrape refreshes it with a worse state after the page was rendered.
+	_, err := pool.Exec(ctx,
+		`UPDATE environment_account_event SET revision = 2 WHERE id = $1`, id)
+	require.NoError(t, err)
+
+	err = repo.AcknowledgeAccountEvent(ctx, envID, id, 1, "user-1", nil)
+	assert.ErrorIs(t, err, monitoring.ErrAccountEventChanged)
+
+	var open bool
+	require.NoError(t, pool.QueryRow(ctx,
+		`SELECT acknowledged_at IS NULL FROM environment_account_event WHERE id = $1`, id).Scan(&open))
+	assert.True(t, open, "the finding stays open until the newer state is reviewed")
+
+	// Confirming the state that is actually there succeeds.
+	require.NoError(t, repo.AcknowledgeAccountEvent(ctx, envID, id, 2, "user-1", nil))
+
+	// And a second submit is a conflict, not a silent success.
+	assert.ErrorIs(t, repo.AcknowledgeAccountEvent(ctx, envID, id, 2, "user-1", nil),
+		monitoring.ErrAccountEventAlreadyAcknowledged)
+
+	// An unknown event is a plain not-found.
+	assert.ErrorIs(t, repo.AcknowledgeAccountEvent(ctx, envID, 999999, 1, "user-1", nil),
+		monitoring.ErrAccountEventNotFound)
 }
