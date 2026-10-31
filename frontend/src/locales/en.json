@@ -1631,7 +1631,7 @@
       "never": "never",
       "gone": "no longer exists"
     },
-    "viewAll": "All accounts",
+    "viewAll": "Open account monitoring",
     "pendingReview": "{count} account change(s) need review",
     "loadFailed": "The accounts could not be loaded"
   }

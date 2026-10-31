@@ -1631,7 +1631,7 @@
       "never": "nie",
       "gone": "existiert nicht mehr"
     },
-    "viewAll": "Alle Konten",
+    "viewAll": "Kontoüberwachung öffnen",
     "pendingReview": "{count} Kontoänderung(en) zu prüfen",
     "loadFailed": "Die Konten konnten nicht geladen werden"
   }
