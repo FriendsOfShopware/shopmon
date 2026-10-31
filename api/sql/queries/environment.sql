@@ -301,3 +301,8 @@ WHERE m.organization_id = @organization_id
 -- generic PATCH, so a caller that omits the flag would silently switch the
 -- security feature off.
 UPDATE environment SET account_monitoring_enabled = $1 WHERE id = $2;
+
+-- name: GetEnvironmentAccountMonitoring :one
+-- Read inside the same transaction as a toggle, so the decision whether this is
+-- a real transition cannot be made on a stale value.
+SELECT account_monitoring_enabled FROM environment WHERE id = $1 FOR UPDATE;

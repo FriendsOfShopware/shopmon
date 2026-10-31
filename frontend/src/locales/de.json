@@ -163,12 +163,13 @@
       "passwordRecoveryOpened": "Für {label} ist eine Passwortzurücksetzung offen",
       "adminRevoked": "{label} hat die Administratorrechte verloren",
       "rolesRemoved": "{label} wurden {count} Rechterolle(n) entzogen",
-      "rolePrivilegesShrunk": "Rechterolle {label} hat Berechtigungen verloren ({from} auf {to})",
+      "rolePrivilegesShrunk": "Rechterolle {label} gewährt jetzt andere Berechtigungen ({from} auf {to}), betrifft {holders} Konto/Konten",
       "accessKeysRemoved": "{label} hat API-Zugangsdaten verloren ({from} auf {to})",
       "deactivated": "{label} wurde deaktiviert",
       "deleted": "{label} wurde gelöscht",
       "passwordChanged": "{label} hat das Passwort geändert",
-      "passwordRecoveryClosed": "Die offene Passwortzurücksetzung für {label} wurde erledigt"
+      "passwordRecoveryClosed": "Die offene Passwortzurücksetzung für {label} wurde erledigt",
+      "rolePrivilegesChanged": "Rechterolle {label} gewährt jetzt andere Berechtigungen ({to} insgesamt), betrifft {holders} Konto/Konten"
     }
   },
   "common": {
@@ -1630,6 +1631,7 @@
       "gone": "existiert nicht mehr"
     },
     "viewAll": "Alle Konten",
-    "pendingReview": "{count} Kontoänderung(en) zu prüfen"
+    "pendingReview": "{count} Kontoänderung(en) zu prüfen",
+    "loadFailed": "Die Konten konnten nicht geladen werden"
   }
 }

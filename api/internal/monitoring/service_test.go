@@ -45,8 +45,6 @@ type stubRepository struct {
 	accountMonitoringCalls       int
 	accountMonitoringErr         error
 
-	lockCalls              int
-	lockTaken              bool
 	deleteEnvironmentCalls int
 	deleteEnvironmentErr   error
 	deploymentIDs          []int32
@@ -139,11 +137,6 @@ func (r *stubRepository) SetAccountMonitoring(_ context.Context, environmentID i
 	r.accountMonitoringEnabled = enabled
 	r.accountMonitoringCalls++
 	return r.accountMonitoringErr
-}
-
-func (r *stubRepository) TryLock(context.Context, string, time.Duration) bool {
-	r.lockCalls++
-	return !r.lockTaken
 }
 
 type stubAuthorizer struct {

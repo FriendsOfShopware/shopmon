@@ -13,13 +13,15 @@ vi.mock("@/api/generated", () => ({
     acknowledgeEnvironmentAccountEvent(...args),
 }));
 
+const routeParams = { environmentId: "7" };
 vi.mock("vue-router", () => ({
-  useRoute: () => ({ params: { environmentId: "7" } }),
+  useRoute: () => ({ params: routeParams }),
 }));
 
 const environment = ref<Record<string, unknown> | null>({ id: 7, openAccountFindings: 1 });
+const loadEnvironment = vi.fn();
 vi.mock("@/composables/useEnvironmentDetail", () => ({
-  useEnvironmentDetail: () => ({ environment }),
+  useEnvironmentDetail: () => ({ environment, loadEnvironment }),
 }));
 
 const alerts = { info: vi.fn(), error: vi.fn() };
@@ -83,6 +85,7 @@ describe("DetailAccounts", () => {
     vi.resetAllMocks();
     environment.value = { id: 7, openAccountFindings: 1 };
     document.body.innerHTML = "";
+    routeParams.environmentId = "7";
     getEnvironmentAccounts.mockResolvedValue(response());
     acknowledgeEnvironmentAccountEvent.mockResolvedValue({ data: undefined, error: undefined });
   });
@@ -337,5 +340,57 @@ describe("DetailAccounts", () => {
     expect(wrapper.html()).not.toContain("divide-y");
     // One row per finding, hint and history entry, each with its own border.
     expect(wrapper.findAll(".rounded-xl.border").length).toBeGreaterThanOrEqual(3);
+  });
+
+  // The generated client reports failures through `error` rather than throwing,
+  // so a catch block alone would let a failed request render as an empty tab.
+  it("shows a failure state when the request errors", async () => {
+    getEnvironmentAccounts.mockResolvedValue({
+      data: undefined,
+      error: { message: "boom" },
+    });
+
+    const wrapper = await mountComponent();
+
+    expect(wrapper.text()).toContain("The accounts could not be loaded");
+    expect(wrapper.text()).toContain("Retry");
+    expect(alerts.error).toHaveBeenCalled();
+  });
+
+  // The layout reuses this page across environments; a slower request for the
+  // previous one must not replace the current findings or the badge count.
+  it("discards a response that arrived after the environment changed", async () => {
+    let release: (v: unknown) => void = () => {};
+    getEnvironmentAccounts.mockImplementationOnce(
+      () => new Promise((resolve) => (release = resolve)),
+    );
+
+    const wrapper = mount(DetailAccounts, { attachTo: document.body });
+    // The reader moves on before the first response lands.
+    routeParams.environmentId = "8";
+    release(response({ openFindings: [adminFinding], accountCount: 99 }));
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("New administrator account");
+    expect(environment.value?.openAccountFindings).toBe(1);
+  });
+
+  // Confirming queues a scrape that recomputes the status, so the shared
+  // environment has to be reloaded or the header keeps its stale colour.
+  it("reloads the shared environment after confirming", async () => {
+    getEnvironmentAccounts
+      .mockResolvedValueOnce(response({ openFindings: [adminFinding] }))
+      .mockResolvedValueOnce(response({ openFindings: [] }));
+
+    const wrapper = await mountComponent();
+    await wrapper
+      .findAll("button")
+      .find((b) => b.text() === "Looks right")
+      ?.trigger("click");
+    await flushPromises();
+    bodyButton("Confirm")?.click();
+    await flushPromises();
+
+    expect(loadEnvironment).toHaveBeenCalledWith(true);
   });
 });

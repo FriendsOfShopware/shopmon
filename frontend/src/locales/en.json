@@ -163,12 +163,13 @@
       "passwordRecoveryOpened": "A password reset is pending for {label}",
       "adminRevoked": "{label} lost administrator rights",
       "rolesRemoved": "{label} lost {count} permission role(s)",
-      "rolePrivilegesShrunk": "Permission role {label} lost privileges ({from} to {to})",
+      "rolePrivilegesShrunk": "Permission role {label} now grants different privileges ({from} to {to}), affecting {holders} account(s)",
       "accessKeysRemoved": "{label} lost API access keys ({from} to {to})",
       "deactivated": "{label} was deactivated",
       "deleted": "{label} was deleted",
       "passwordChanged": "{label} changed their password",
-      "passwordRecoveryClosed": "The pending password reset for {label} was resolved"
+      "passwordRecoveryClosed": "The pending password reset for {label} was resolved",
+      "rolePrivilegesChanged": "Permission role {label} now grants different privileges ({to} total), affecting {holders} account(s)"
     }
   },
   "common": {
@@ -1630,6 +1631,7 @@
       "gone": "no longer exists"
     },
     "viewAll": "All accounts",
-    "pendingReview": "{count} account change(s) need review"
+    "pendingReview": "{count} account change(s) need review",
+    "loadFailed": "The accounts could not be loaded"
   }
 }

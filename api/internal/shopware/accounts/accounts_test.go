@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 )
@@ -162,7 +163,7 @@ func TestParseRejectsOversizedPayload(t *testing.T) {
 	}
 }
 
-func TestParseCapsEntryCount(t *testing.T) {
+func TestParseRejectsOversizedLists(t *testing.T) {
 	var b strings.Builder
 	b.WriteString(`{"users":[`)
 	for i := 0; i < maxEntries+10; i++ {
@@ -170,18 +171,32 @@ func TestParseCapsEntryCount(t *testing.T) {
 			b.WriteByte(',')
 		}
 		b.WriteString(`{"id":"user-`)
-		b.WriteString(strings.Repeat("0", 4))
 		b.WriteString(itoa(i))
 		b.WriteString(`","maskedEmail":"a***@b***.de"}`)
 	}
 	b.WriteString(`]}`)
 
-	snap, err := Parse([]byte(b.String()))
-	if err != nil {
-		t.Fatalf("Parse: %v", err)
+	// Trimming would leave the remaining accounts unwatched, which is
+	// indistinguishable from them not existing -- and they would be reported
+	// as deleted. Refusing keeps the stored baseline.
+	if _, err := Parse([]byte(b.String())); err == nil {
+		t.Fatal("expected an oversized list to be rejected rather than trimmed")
 	}
-	if len(snap.Accounts) != maxEntries {
-		t.Fatalf("accounts = %d, want the list capped at %d", len(snap.Accounts), maxEntries)
+}
+
+// A shop always has at least one administrator, so an absent user list is a
+// truncated response. Accepting it would prune every stored user.
+func TestParseRejectsResponseWithoutUsers(t *testing.T) {
+	cases := map[string]string{
+		"no users key": `{"integrations":[{"id":"69ba0db6351d47369ea35d6873cd115a","label":"x"}]}`,
+		"empty users":  `{"users":[],"aclRoles":[{"id":"d11b7bdac63e4ff688a353ee0e3db49b","name":"r"}]}`,
+	}
+	for name, raw := range cases {
+		t.Run(name, func(t *testing.T) {
+			if _, err := Parse([]byte(raw)); err == nil {
+				t.Fatal("expected an error")
+			}
+		})
 	}
 }
 
@@ -205,7 +220,16 @@ func TestMaskLabel(t *testing.T) {
 		in   string
 		want string
 	}{
-		{name: "already masked passes through", kind: KindUser, in: "l***@e***.com", want: "l***@e***.com"},
+		{name: "already masked stays masked", kind: KindUser, in: "l***@e***.com", want: "l***@e***.com"},
+		{
+			// A single wildcard must not buy trust: the local part here is the
+			// person's full name.
+			name: "partially masked address is re-masked",
+			kind: KindUser,
+			in:   "lisa.mueller@e***.com",
+			want: "l***@e***.com",
+		},
+		{name: "masked local part only", kind: KindUser, in: "l***@vierpunkt.de", want: "l***@v***.de"},
 		{name: "plaintext address is masked", kind: KindUser, in: "lisa.mueller@example.com", want: "l***@e***.com"},
 		{name: "subdomain is masked too", kind: KindUser, in: "bob@mail.example.com", want: "b***@m***.e***.com"},
 		{name: "non address keeps one character", kind: KindUser, in: "administrator", want: "a***"},
@@ -288,7 +312,9 @@ func TestNormalizeRoleIDsIsOrderIndependent(t *testing.T) {
 // A soft-deleted integration is dropped at parse time, so it is pruned from the
 // baseline once and yields exactly one deletion event instead of one per scrape.
 func TestParseDropsSoftDeletedEntries(t *testing.T) {
-	raw := `{"integrations":[
+	raw := `{"users":[
+	  {"id":"cee011c787fb441d8751cffe0a591eb1","maskedEmail":"a***@e***.de"}
+	],"integrations":[
 	  {"id":"b3e4487748bf449b9b34287dc6877082","label":"gone","deletedAt":"2026-01-02T03:04:05+00:00"},
 	  {"id":"69ba0db6351d47369ea35d6873cd115a","label":"here"}
 	],"aclRoles":[
@@ -298,18 +324,33 @@ func TestParseDropsSoftDeletedEntries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse: %v", err)
 	}
-	if len(snap.Accounts) != 1 || snap.Accounts[0].Label != "here" {
-		t.Fatalf("accounts = %+v, want only the live integration", snap.Accounts)
+	var labels []string
+	for _, a := range snap.Accounts {
+		labels = append(labels, a.Label)
+	}
+	if len(snap.Accounts) != 2 {
+		t.Fatalf("accounts = %v, want the user and the live integration only", labels)
+	}
+	for _, a := range snap.Accounts {
+		if a.Label == "gone" {
+			t.Fatalf("a soft-deleted entry survived: %v", labels)
+		}
 	}
 }
 
 func TestParseNormalizesTimestampsToUTC(t *testing.T) {
-	raw := `{"integrations":[{"id":"69ba0db6351d47369ea35d6873cd115a","label":"x","lastUsageAt":"2026-10-29T09:00:00+02:00"}]}`
+	raw := `{"users":[{"id":"cee011c787fb441d8751cffe0a591eb1","maskedEmail":"a***@e***.de"}],` +
+		`"integrations":[{"id":"69ba0db6351d47369ea35d6873cd115a","label":"x","lastUsageAt":"2026-10-29T09:00:00+02:00"}]}`
 	snap, err := Parse([]byte(raw))
 	if err != nil {
 		t.Fatalf("Parse: %v", err)
 	}
-	got := snap.Accounts[0].LastUsageAt
+	var got *time.Time
+	for _, a := range snap.Accounts {
+		if a.Kind == KindIntegration {
+			got = a.LastUsageAt
+		}
+	}
 	if got == nil || got.Format("2006-01-02T15:04:05Z07:00") != "2026-10-29T07:00:00Z" {
 		t.Fatalf("lastUsageAt = %v, want the UTC equivalent", got)
 	}

@@ -66,22 +66,26 @@ func TestAcknowledgeAccountEventRequiresMembership(t *testing.T) {
 	}
 }
 
-// Clearing several findings in a row is one user action, not a reason to hit
-// the shop once per click.
-func TestAcknowledgeAccountEventThrottlesRefresh(t *testing.T) {
+// A throttle would drop later confirmations rather than coalescing them: a
+// confirmation arriving after a queued scrape has already read the open
+// findings would queue nothing, and the status would stay red until the next
+// hourly run. Every confirmation therefore queues its own refresh.
+func TestAcknowledgeAccountEventRefreshesForEveryConfirmation(t *testing.T) {
 	repository := &stubRepository{
 		environment:       Environment{ID: 7, OrganizationID: "org-1"},
 		acknowledgeResult: true,
-		lockTaken:         true,
 	}
 	jobs := &stubJobDispatcher{}
 	service := accountService(repository, jobs, true)
 
-	if err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, 42, nil); err != nil {
-		t.Fatalf("AcknowledgeAccountEvent: %v", err)
+	for _, id := range []int64{1, 2, 3} {
+		if err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, id, nil); err != nil {
+			t.Fatalf("AcknowledgeAccountEvent(%d): %v", id, err)
+		}
 	}
-	if len(jobs.scrapeIDs) != 0 {
-		t.Errorf("scrapeIDs = %v, want the refresh suppressed while the lock is held", jobs.scrapeIDs)
+
+	if len(jobs.scrapeIDs) != 3 {
+		t.Errorf("scrapeIDs = %v, want one refresh per confirmation", jobs.scrapeIDs)
 	}
 }
 

@@ -430,3 +430,144 @@ func TestNotifyAccountChangesMarksOnSuccess(t *testing.T) {
 		`SELECT COUNT(*) FROM user_notification WHERE user_id = 'watcher'`).Scan(&inbox))
 	assert.Equal(t, 1, inbox, "an already notified finding must not be sent again")
 }
+
+// Nothing serialises scrapes of one environment: the hourly run and a manual
+// refresh can overlap, diff the same baseline and reach for the same event.
+// Recording it twice would show the finding twice and keep the environment red
+// until each copy was acknowledged separately.
+func TestPersistAccountsRecordsOneOpenEventPerChange(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	overlapping := diffedResult([]accounts.Account{first}, []accounts.Account{first, second})
+
+	// Both runs see the pre-change baseline, exactly as two concurrent scrapes
+	// would.
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, overlapping))
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, overlapping))
+
+	assert.Len(t, eventRows(t, pool, env.ID), 1, "the same change must be recorded once")
+
+	open, err := h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Len(t, open, 1, "one finding to acknowledge, not two")
+}
+
+// Acknowledging closes the finding, so the same change happening again later is
+// a new event rather than being swallowed by the guard above.
+func TestPersistAccountsRecordsRecurrenceAfterAcknowledgement(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	before := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	before.Admin = false
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(before)))
+
+	granted := before
+	granted.Admin = true
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{before}, []accounts.Account{granted})))
+
+	open, err := h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, open, 1)
+
+	rows, err := h.queries.AcknowledgeEnvironmentAccountEvent(ctx, queries.AcknowledgeEnvironmentAccountEventParams{
+		ID:            open[0].ID,
+		EnvironmentID: env.ID,
+	})
+	require.NoError(t, err)
+	require.EqualValues(t, 1, rows)
+
+	// Rights revoked, then granted again.
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{granted}, []accounts.Account{before})))
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{before}, []accounts.Account{granted})))
+
+	open, err = h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, open, 1, "the recurrence opens a fresh finding")
+
+	var granteds int
+	for _, e := range eventRows(t, pool, env.ID) {
+		if e.Change == string(accounts.ChangeAdminGranted) {
+			granteds++
+		}
+	}
+	assert.Equal(t, 2, granteds, "both grants stay in the history")
+}
+
+// An unreadable findings table says nothing about whether the findings were
+// resolved. Treating it as "none" would prune the stored account checks and
+// mail out a recovery for findings that are still open.
+func TestOpenAccountChecksReportsUnevaluatedOnReadFailure(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{first}, []accounts.Account{first, second})))
+
+	checks, unevaluated := h.openAccountChecks(ctx, env)
+	require.False(t, unevaluated)
+	require.Len(t, checks, 1)
+
+	// Break the read the way a migration mishap or a permissions problem would.
+	_, err := pool.Exec(ctx, `ALTER TABLE environment_account_event RENAME TO environment_account_event_moved`)
+	require.NoError(t, err)
+	defer func() {
+		_, err := pool.Exec(context.Background(),
+			`ALTER TABLE environment_account_event_moved RENAME TO environment_account_event`)
+		require.NoError(t, err)
+	}()
+
+	checks, unevaluated = h.openAccountChecks(ctx, env)
+	assert.True(t, unevaluated, "a failed read must be reported, not silently become zero findings")
+	assert.Empty(t, checks)
+
+	// fetchAccounts must pass the flag on so the scrape carries the stored
+	// checks forward.
+	res := h.fetchAccounts(ctx, env, nil, nil)
+	assert.True(t, res.unevaluated)
+}
+
+// accountsUnavailable has to name the group precisely, or carryOverChecks will
+// either miss the account checks or claim checks belonging to another source.
+func TestAccountsUnavailableOwnsOnlyAccountChecks(t *testing.T) {
+	u := accountsUnavailable()
+	require.Len(t, u, 1)
+
+	assert.True(t, u[0].Owns(checker.SourceAccounts, "account.user.abc.new_admin_user"))
+	assert.False(t, u[0].Owns(checker.SourceSecurity, "security.CVE-2026-1"))
+	assert.False(t, u[0].Owns(checker.SourceFroshTools, "frosh.cacheWarning"))
+}
+
+// A transient subscriber lookup failure must not mark the events notified: that
+// would drop these alerts permanently instead of retrying next scrape.
+func TestNotifyAccountChangesKeepsEventsWhenSubscriberLookupFails(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+	subscribe(t, pool, env.ID)
+	seedOneFinding(t, h, env.ID)
+	require.Equal(t, 1, unnotifiedCount(t, h, env.ID))
+
+	_, err := pool.Exec(ctx, `ALTER TABLE notification_preference RENAME TO notification_preference_moved`)
+	require.NoError(t, err)
+	defer func() {
+		_, err := pool.Exec(context.Background(),
+			`ALTER TABLE notification_preference_moved RENAME TO notification_preference`)
+		require.NoError(t, err)
+	}()
+
+	h.notifyAccountChanges(ctx, env)
+
+	assert.Equal(t, 1, unnotifiedCount(t, h, env.ID),
+		"a lookup failure must leave the alert pending, not consume it")
+}

@@ -150,10 +150,10 @@ func TestDiffChangeMatrix(t *testing.T) {
 			want:     []want{{ChangeRolePrivilegesGrown, LevelYellow}},
 		},
 		{
-			name:     "a held role changing privileges without growing is still yellow",
+			name:     "a held role changing privileges without growing is reported",
 			baseline: []Account{role(roleID, 10, "h1"), user(idA, withRoles(roleID))},
 			current:  []Account{role(roleID, 10, "h2"), user(idA, withRoles(roleID))},
-			want:     []want{{ChangeRolePrivilegesGrown, LevelYellow}},
+			want:     []want{{ChangeRolePrivilegesChanged, LevelYellow}},
 		},
 		{
 			name:     "an unassigned role gaining privileges cannot widen access",
@@ -162,10 +162,25 @@ func TestDiffChangeMatrix(t *testing.T) {
 			want:     []want{{ChangeRolePrivilegesGrown, LevelInfo}},
 		},
 		{
-			name:     "a role losing privileges is only informational",
+			// The endpoint exposes only a count and a hash, so a shrinking set
+			// does not prove the role merely lost rights: it can shed five
+			// read permissions and gain order:delete in the same edit.
+			name:     "a held role losing privileges is still reported",
 			baseline: []Account{role(roleID, 20, "h2"), user(idA, withRoles(roleID))},
 			current:  []Account{role(roleID, 10, "h1"), user(idA, withRoles(roleID))},
+			want:     []want{{ChangeRolePrivilegesShrunk, LevelYellow}},
+		},
+		{
+			name:     "an unassigned role losing privileges grants nothing",
+			baseline: []Account{role(roleID, 20, "h2")},
+			current:  []Account{role(roleID, 10, "h1")},
 			want:     []want{{ChangeRolePrivilegesShrunk, LevelInfo}},
+		},
+		{
+			name:     "an unassigned role changing privileges grants nothing",
+			baseline: []Account{role(roleID, 10, "h1")},
+			current:  []Account{role(roleID, 10, "h2")},
+			want:     []want{{ChangeRolePrivilegesChanged, LevelInfo}},
 		},
 		{
 			name:     "new api keys are yellow",
@@ -297,6 +312,7 @@ func TestEveryChangeKindHasALevel(t *testing.T) {
 		ChangeNewUser, ChangeNewIntegration, ChangeRolesAdded, ChangeRolePrivilegesGrown,
 		ChangeAccessKeysAdded, ChangeReactivated, ChangePasswordRecoveryOpened,
 		ChangeAdminRevoked, ChangeRolesRemoved, ChangeRolePrivilegesShrunk,
+		ChangeRolePrivilegesChanged,
 		ChangeAccessKeysRemoved, ChangeDeactivated, ChangeDeleted,
 		ChangeNewManagedIntegration, ChangeNewACLRole, ChangePasswordChanged,
 		ChangePasswordRecoveryClosed,

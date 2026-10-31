@@ -246,7 +246,7 @@ func (h *Service) dispatchScrapeIssues(ctx context.Context, env queries.GetAllEn
 		},
 		Reasons: issueReasons(issues),
 		Link:    environmentLink(env.ID),
-	}, h.environmentRecipients(ctx, env))
+	}, recipientsOrNone(h.environmentRecipients(ctx, env)))
 
 	if result.Delivery() {
 		h.markIssuesNotified(ctx, env.ID, issues)
@@ -271,7 +271,7 @@ func (h *Service) dispatchScrapePaused(ctx context.Context, env queries.GetAllEn
 		},
 		Reasons: issueReasons(issues),
 		Link:    environmentLink(env.ID),
-	}, h.environmentRecipients(ctx, env))
+	}, recipientsOrNone(h.environmentRecipients(ctx, env)))
 
 	if result.Delivery() {
 		h.markIssuesNotified(ctx, env.ID, issues)
@@ -295,5 +295,12 @@ func (h *Service) dispatchScrapeRecovered(ctx context.Context, env queries.GetAl
 			"name": environmentDisplayName(env.Name, env.ShopName),
 		},
 		Link: environmentLink(env.ID),
-	}, h.environmentRecipients(ctx, env))
+	}, recipientsOrNone(h.environmentRecipients(ctx, env)))
+}
+
+// recipientsOrNone drops a subscriber lookup error for the dispatch-only paths:
+// they persist no "was notified" marker, so a failed lookup costs one round of
+// notifications and the next scrape tries again.
+func recipientsOrNone(recipients []notify.Recipient, _ error) []notify.Recipient {
+	return recipients
 }

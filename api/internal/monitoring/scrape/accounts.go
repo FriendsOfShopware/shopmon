@@ -42,6 +42,10 @@ type accountResult struct {
 	accounts    []accounts.Account
 	changes     []accounts.Change
 	checks      []checker.Check
+	// unevaluated is set when the open findings could not be read. The scrape
+	// must then keep the account checks it already has: an unreadable table
+	// says nothing about whether the findings were resolved.
+	unevaluated bool
 	generatedAt pgtype.Timestamp
 	err         string
 	// fetchErr is the typed upstream error behind a failed fetch, kept so the
@@ -65,7 +69,8 @@ func (h *Service) fetchAccounts(ctx context.Context, env queries.GetAllEnvironme
 	ctx, span := tracer.Start(ctx, "environment.scrape.accounts")
 	defer span.End()
 
-	res := accountResult{checks: h.openAccountChecks(ctx, env)}
+	res := accountResult{}
+	res.checks, res.unevaluated = h.openAccountChecks(ctx, env)
 
 	if !hasActiveFroshTools(extensions) || client == nil {
 		return res
@@ -151,12 +156,17 @@ func (h *Service) fetchAccounts(ctx context.Context, env queries.GetAllEnvironme
 // openAccountChecks rebuilds the checks for findings that are still awaiting
 // review. They come from the database rather than from this run, so a shop
 // that stops answering cannot resolve a finding nobody acknowledged.
-func (h *Service) openAccountChecks(ctx context.Context, env queries.GetAllEnvironmentsRow) []checker.Check {
+//
+// The second return value reports that the findings could not be read at all.
+// Treating that as "no findings" would prune the stored account checks and mail
+// out a recovery for findings that are still open — the exact failure this
+// whole design exists to prevent.
+func (h *Service) openAccountChecks(ctx context.Context, env queries.GetAllEnvironmentsRow) ([]checker.Check, bool) {
 	open, err := h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to load open account findings",
+		slog.WarnContext(ctx, "failed to load open account findings, keeping the stored checks",
 			"environmentId", env.ID, "error", err)
-		return nil
+		return nil, true
 	}
 
 	out := make([]checker.Check, 0, len(open))
@@ -168,7 +178,16 @@ func (h *Service) openAccountChecks(ctx context.Context, env queries.GetAllEnvir
 		out = append(out, accountCheck(env.Url, accounts.Kind(e.AccountType), e.AccountID, e.Label,
 			accounts.ChangeKind(e.Change), accounts.Level(e.Level), params, ptr.Deref(e.AdminPath)))
 	}
-	return out
+	return out, false
+}
+
+// accountsUnavailable names the check group to carry forward when this run
+// could not evaluate it. It is the same mechanism the live-data checkers use.
+func accountsUnavailable() []checker.UnavailableSource {
+	return []checker.UnavailableSource{{
+		Source:   checker.SourceAccounts,
+		IDPrefix: accounts.CheckIDPrefix,
+	}}
 }
 
 // accountChecks turns the changes detected in this run into checks. Only
@@ -380,7 +399,12 @@ func (h *Service) notifyAccountChanges(ctx context.Context, env queries.GetAllEn
 		return
 	}
 
-	recipients := h.environmentRecipients(ctx, env)
+	recipients, err := h.environmentRecipients(ctx, env)
+	if err != nil {
+		// Leave the events pending: the next scrape retries. Marking them now
+		// would lose these alerts permanently over a transient lookup failure.
+		return
+	}
 	if len(recipients) == 0 {
 		// Nobody subscribes, so there is nothing to retry either. Marking the
 		// events keeps them from being reconsidered every hour.

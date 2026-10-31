@@ -144,6 +144,9 @@ const insertEnvironmentAccountEvent = `-- name: InsertEnvironmentAccountEvent :e
 INSERT INTO environment_account_event (
   environment_id, account_type, account_id, label, change, level, params, admin_path
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (environment_id, account_type, account_id, change)
+  WHERE acknowledged_at IS NULL
+  DO NOTHING
 `
 
 type InsertEnvironmentAccountEventParams struct {
@@ -157,6 +160,10 @@ type InsertEnvironmentAccountEventParams struct {
 	AdminPath     *string         `json:"admin_path"`
 }
 
+// DO NOTHING makes recording idempotent: two overlapping scrapes of one
+// environment diff the same baseline and reach for the same event, and the
+// reviewer must not have to acknowledge the same finding twice. The index
+// predicate has to be repeated for Postgres to infer the partial index.
 func (q *Queries) InsertEnvironmentAccountEvent(ctx context.Context, arg InsertEnvironmentAccountEventParams) error {
 	_, err := q.db.Exec(ctx, insertEnvironmentAccountEvent,
 		arg.EnvironmentID,

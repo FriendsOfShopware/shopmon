@@ -4,6 +4,16 @@
       {{ $t("common.loading") }}
     </div>
 
+    <div
+      v-else-if="loadFailed"
+      class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="text-sm font-medium">{{ $t("accounts.loadFailed") }}</div>
+        <Button variant="outline" size="sm" @click="load">{{ $t("common.retry") }}</Button>
+      </div>
+    </div>
+
     <template v-else-if="data">
       <!-- Summary bar, mirroring the checks tab -->
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -299,7 +309,7 @@ import {
   type AccountFinding,
   type EnvironmentAccounts,
 } from "@/api/generated";
-import { requireMutation } from "@/helpers/apiError";
+import { apiErrorMessage, requireMutation } from "@/helpers/apiError";
 import { formatDate, formatDateTime } from "@/helpers/formatter";
 import { translateAccountChange, translateAccountHint } from "@/helpers/i18n";
 import { useAlert } from "@/composables/useAlert";
@@ -331,7 +341,7 @@ import IconShieldCheck from "~icons/fa6-solid/shield-halved";
 const route = useRoute();
 const { t } = useI18n();
 const { info, error } = useAlert();
-const { environment } = useEnvironmentDetail();
+const { environment, loadEnvironment } = useEnvironmentDetail();
 
 const data = ref<EnvironmentAccounts | null>(null);
 const loading = ref(true);
@@ -340,6 +350,7 @@ const acknowledgeOpen = ref(false);
 const pending = ref<AccountFinding | null>(null);
 const note = ref("");
 const historyFilter = ref<"all" | "findings" | "info">("all");
+const loadFailed = ref(false);
 
 const filters = [
   { label: t("common.all"), value: "all" as const },
@@ -372,17 +383,36 @@ const filteredEvents = computed(() => {
 });
 
 async function load() {
+  const requestedId = environmentId();
   loading.value = true;
+  loadFailed.value = false;
   try {
-    const { data: result } = await getEnvironmentAccounts({
-      path: { environmentId: environmentId() },
+    // The generated client reports failures through `error` and does not
+    // throw, so ignoring that field would leave a blank tab on a server or
+    // network error.
+    const { data: result, error: apiError } = await getEnvironmentAccounts({
+      path: { environmentId: requestedId },
     });
+
+    // The layout reuses this page across environments, so a slower request for
+    // the previous one can land last. Dropping late responses keeps it from
+    // replacing the current findings -- and from copying a stale count into
+    // the badge.
+    if (requestedId !== environmentId()) return;
+
+    if (apiError) {
+      loadFailed.value = true;
+      error(apiErrorMessage(apiError, t("accounts.loadFailed")));
+      return;
+    }
+
     data.value = result ?? null;
     syncBadge();
   } catch (err) {
+    loadFailed.value = true;
     error(err instanceof Error ? err.message : String(err));
   } finally {
-    loading.value = false;
+    if (requestedId === environmentId()) loading.value = false;
   }
 }
 
@@ -407,9 +437,11 @@ async function submitAcknowledge() {
     );
     acknowledgeOpen.value = false;
     pending.value = null;
-    // The environment status is recomputed by the refresh the backend queues,
-    // so the colour follows a moment later rather than immediately.
     await load();
+    // The backend queues a scrape to recompute the status; reload the shared
+    // environment so the header and the tab badge follow it instead of keeping
+    // the stale colour for the rest of the visit.
+    await loadEnvironment(true);
     info(t("accounts.acknowledged"));
   } catch (err) {
     error(err instanceof Error ? err.message : t("accounts.acknowledgeFailed"));

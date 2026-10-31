@@ -122,7 +122,7 @@
   "check.account.passwordRecoveryOpened": "Für {label} ist eine Passwortzurücksetzung offen",
   "check.account.adminRevoked": "{label} hat die Administratorrechte verloren",
   "check.account.rolesRemoved": "{label} wurden {count} Rechterolle(n) entzogen",
-  "check.account.rolePrivilegesShrunk": "Rechterolle {label} hat Berechtigungen verloren ({from} auf {to})",
+  "check.account.rolePrivilegesShrunk": "Rechterolle {label} gewährt jetzt andere Berechtigungen ({from} auf {to}), betrifft {holders} Konto/Konten",
   "check.account.accessKeysRemoved": "{label} hat API-Zugangsdaten verloren ({from} auf {to})",
   "check.account.deactivated": "{label} wurde deaktiviert",
   "check.account.deleted": "{label} wurde gelöscht",
@@ -134,5 +134,6 @@
   "notification.accountChanged.message": "{count} Kontoänderungen warten auf Ihre Prüfung",
   "notification.accountChanged.messageOne": "1 Kontoänderung wartet auf Ihre Prüfung",
   "email.accountChanged.subject": "{count} Kontoänderungen in {name} erfordern eine Prüfung",
-  "email.accountChanged.subjectOne": "Eine Kontoänderung in {name} erfordert eine Prüfung"
+  "email.accountChanged.subjectOne": "Eine Kontoänderung in {name} erfordert eine Prüfung",
+  "check.account.rolePrivilegesChanged": "Rechterolle {label} gewährt jetzt andere Berechtigungen ({to} insgesamt), betrifft {holders} Konto/Konten"
 }

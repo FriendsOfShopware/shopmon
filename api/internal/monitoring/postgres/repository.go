@@ -5,14 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strconv"
-	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -312,9 +309,14 @@ func (r *Repository) AcknowledgeAccountEvent(ctx context.Context, environmentID 
 //
 // Disabling also acknowledges the open findings: the scrape stops emitting
 // their checks, but leaving the rows open would keep them in the history as
-// unreviewed forever with no tab left to clear them from. Enabling clears the
-// baseline so the next scrape seeds again — otherwise everything that changed
-// while monitoring was off would arrive at once as new findings.
+// unreviewed forever with no tab left to clear them from. Re-enabling clears
+// the baseline so the next scrape seeds again — otherwise everything that
+// changed while monitoring was off would arrive at once as new findings.
+//
+// Both only happen on an actual transition. Resetting the baseline on every
+// save would be dangerous: saving an unchanged form would fold an
+// administrator added since the last scrape into the new baseline, and that
+// account would never be reported.
 func (r *Repository) SetAccountMonitoring(ctx context.Context, environmentID int32, enabled bool, userID string) error {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -323,6 +325,17 @@ func (r *Repository) SetAccountMonitoring(ctx context.Context, environmentID int
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	q := r.queries.WithTx(tx)
+
+	// Read the current value in the same transaction, so a concurrent save
+	// cannot make this decide on a stale state.
+	previous, err := q.GetEnvironmentAccountMonitoring(ctx, environmentID)
+	if err != nil {
+		return fmt.Errorf("get account monitoring: %w", err)
+	}
+	if previous == enabled {
+		return nil
+	}
+
 	if err := q.UpdateEnvironmentAccountMonitoring(ctx, queries.UpdateEnvironmentAccountMonitoringParams{
 		AccountMonitoringEnabled: enabled,
 		ID:                       environmentID,
@@ -349,21 +362,4 @@ func (r *Repository) SetAccountMonitoring(ctx context.Context, environmentID int
 		return fmt.Errorf("commit transaction: %w", err)
 	}
 	return nil
-}
-
-// TryLock reports whether this caller obtained the named lock. An error is
-// treated as "not acquired": the lock only throttles a convenience refresh,
-// and skipping it costs at most a delayed status update.
-func (r *Repository) TryLock(ctx context.Context, key string, ttl time.Duration) bool {
-	_, err := r.queries.AcquireLockIfFree(ctx, queries.AcquireLockIfFreeParams{
-		Key:     key,
-		Expires: pgtype.Timestamp{Time: time.Now().Add(ttl), Valid: true},
-	})
-	if err == nil {
-		return true
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		slog.WarnContext(ctx, "failed to acquire lock", "key", key, "error", err)
-	}
-	return false
 }

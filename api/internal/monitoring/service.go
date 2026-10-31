@@ -102,8 +102,6 @@ type Repository interface {
 	// the baseline when enabling (so the next scrape seeds instead of
 	// reporting everything that changed while it was off).
 	SetAccountMonitoring(ctx context.Context, environmentID int32, enabled bool, userID string) error
-	// TryLock reports whether this caller obtained the named lock.
-	TryLock(ctx context.Context, key string, ttl time.Duration) bool
 }
 
 type MembershipAuthorizer interface {

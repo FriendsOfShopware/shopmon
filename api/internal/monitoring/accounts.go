@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
-	"time"
 )
 
 var (
@@ -20,12 +18,6 @@ var (
 
 // maxAcknowledgeNoteLen bounds the reviewer's note before it is stored.
 const maxAcknowledgeNoteLen = 500
-
-// accountRescrapeLock throttles the refresh triggered by acknowledging. The
-// environment status is only ever written by a scrape, so clearing a finding
-// means running one — but acknowledging five findings in a row must not hit
-// the shop five times.
-const accountRescrapeLock = time.Minute
 
 // AcknowledgeAccountEvent records that a reviewer accepted an account change
 // and refreshes the environment so the finding stops colouring its status.
@@ -64,14 +56,19 @@ func (s *Service) SetAccountMonitoring(ctx context.Context, userID string, envir
 }
 
 // refreshAfterAcknowledge queues a scrape so the environment status is
-// recomputed now rather than at the next hourly run. A failure here is not
-// fatal: the scheduled scrape corrects the status either way, it just takes
-// longer.
+// recomputed now rather than at the next hourly run.
+//
+// Deliberately unthrottled. A throttle looks attractive -- acknowledging
+// several findings in a row then hits the shop once instead of five times --
+// but it drops the later requests rather than coalescing them: a confirmation
+// arriving after a scrape has already read the open findings would queue
+// nothing, and the status would stay red until the next hourly run. Correct
+// status beats saving a handful of requests on a rare human action.
+//
+// A failure here is not fatal: the scheduled scrape corrects the status either
+// way, it just takes longer.
 func (s *Service) refreshAfterAcknowledge(ctx context.Context, environmentID int32) {
 	if s.jobs == nil {
-		return
-	}
-	if !s.repository.TryLock(ctx, "account_ack_rescrape_"+strconv.Itoa(int(environmentID)), accountRescrapeLock) {
 		return
 	}
 	if err := s.jobs.DispatchEnvironmentScrape(ctx, environmentID); err != nil {

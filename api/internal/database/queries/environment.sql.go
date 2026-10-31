@@ -232,6 +232,19 @@ func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsR
 	return items, nil
 }
 
+const getEnvironmentAccountMonitoring = `-- name: GetEnvironmentAccountMonitoring :one
+SELECT account_monitoring_enabled FROM environment WHERE id = $1 FOR UPDATE
+`
+
+// Read inside the same transaction as a toggle, so the decision whether this is
+// a real transition cannot be made on a stale value.
+func (q *Queries) GetEnvironmentAccountMonitoring(ctx context.Context, id int32) (bool, error) {
+	row := q.db.QueryRow(ctx, getEnvironmentAccountMonitoring, id)
+	var account_monitoring_enabled bool
+	err := row.Scan(&account_monitoring_enabled)
+	return account_monitoring_enabled, err
+}
+
 const getEnvironmentByID = `-- name: GetEnvironmentByID :one
 SELECT e.id, e.organization_id, e.shop_id, e.name, e.status, e.url, e.favicon, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version, e.last_scraped_at, e.last_scraped_error, e.ignores, e.environment_image, e.last_changelog, e.active_deployment_id, e.connection_issue_count, e.sitespeed_enabled, e.sitespeed_urls, e.environment_token, e.task_grace_minutes, e.account_monitoring_enabled, e.created_at, o.name AS organization_name, s.name AS shop_name, s.description AS shop_description
 FROM environment e

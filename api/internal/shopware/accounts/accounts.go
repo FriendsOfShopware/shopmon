@@ -203,6 +203,21 @@ func Parse(raw []byte) (*Snapshot, error) {
 		return nil, fmt.Errorf("parse accounts: %w", err)
 	}
 
+	// A Shopware shop always has at least one administrator. An absent or empty
+	// user list is a truncated or filtered response, and accepting it would
+	// prune every stored user from the baseline — after which the next
+	// successful run reports each of them as brand new.
+	if len(doc.Users) == 0 {
+		return nil, fmt.Errorf("parse accounts: response contained no users")
+	}
+
+	// Silently keeping the first N would leave the rest unwatched, which is
+	// indistinguishable from "those accounts do not exist" and would report
+	// them as deleted. Refusing keeps the previous baseline instead.
+	if err := checkLimits(doc); err != nil {
+		return nil, err
+	}
+
 	snap := &Snapshot{}
 	if ts, ok := parseTime(&doc.GeneratedAt); ok {
 		snap.GeneratedAt, snap.HasGenerated = *ts, true
@@ -210,7 +225,7 @@ func Parse(raw []byte) (*Snapshot, error) {
 
 	out := make([]Account, 0, len(doc.Users)+len(doc.Integrations)+len(doc.AclRoles))
 
-	for _, u := range capSlice(doc.Users) {
+	for _, u := range doc.Users {
 		id := normalizeID(u.ID)
 		if id == "" {
 			continue
@@ -238,7 +253,7 @@ func Parse(raw []byte) (*Snapshot, error) {
 		})
 	}
 
-	for _, i := range capSlice(doc.Integrations) {
+	for _, i := range doc.Integrations {
 		id := normalizeID(i.ID)
 		if id == "" {
 			continue
@@ -275,7 +290,7 @@ func Parse(raw []byte) (*Snapshot, error) {
 		})
 	}
 
-	for _, r := range capSlice(doc.AclRoles) {
+	for _, r := range doc.AclRoles {
 		id := normalizeID(r.ID)
 		if id == "" {
 			continue
@@ -307,12 +322,21 @@ func Parse(raw []byte) (*Snapshot, error) {
 	return snap, nil
 }
 
-// capSlice bounds a shop-supplied list before it is iterated.
-func capSlice[T any](in []T) []T {
-	if len(in) > maxEntries {
-		return in[:maxEntries]
+// checkLimits refuses an implausibly large response rather than trimming it.
+func checkLimits(doc wire) error {
+	for _, l := range []struct {
+		name string
+		n    int
+	}{
+		{"users", len(doc.Users)},
+		{"integrations", len(doc.Integrations)},
+		{"aclRoles", len(doc.AclRoles)},
+	} {
+		if l.n > maxEntries {
+			return fmt.Errorf("parse accounts: %s list too large (%d entries, limit %d)", l.name, l.n, maxEntries)
+		}
 	}
-	return in
+	return nil
 }
 
 // clampCount keeps a shop-supplied counter inside int32 and non-negative, so a
@@ -362,7 +386,10 @@ func normalizeRoleIDs(in []string) ([]string, string) {
 	}
 	seen := make(map[string]bool, len(in))
 	out := make([]string, 0, len(in))
-	for _, raw := range capSlice(in) {
+	if len(in) > maxEntries {
+		in = in[:maxEntries]
+	}
+	for _, raw := range in {
 		id := normalizeID(raw)
 		if id == "" || seen[id] {
 			continue
@@ -378,10 +405,6 @@ func normalizeRoleIDs(in []string) ([]string, string) {
 	return out, hex.EncodeToString(sum[:])
 }
 
-// maskedPattern reports whether a label already looks masked: it contains a '*'
-// run. FroshTools masks before sending, so this is the common case.
-func looksMasked(s string) bool { return strings.Contains(s, "*") }
-
 // MaskLabel bounds and, for user accounts, masks the label before it is stored.
 //
 // FroshTools already masks user emails, but Shopmon must not depend on that:
@@ -389,6 +412,13 @@ func looksMasked(s string) bool { return strings.Contains(s, "*") }
 // and persisting other people's email addresses is exactly what this feature
 // avoids. Integration and role names are not personal data and pass through
 // unmasked.
+//
+// User labels are masked unconditionally rather than only when they look
+// unmasked. Accepting anything that merely contains a '*' would let a partially
+// masked value such as "lisa.mueller@e***.com" through with the person's full
+// name intact -- into the baseline, the events and the notification text.
+// Re-masking an already-masked value is idempotent, so there is nothing to gain
+// from trusting the input.
 func MaskLabel(kind Kind, raw string) string {
 	s := sanitize.Meta(raw)
 	if s == "" {
@@ -397,19 +427,21 @@ func MaskLabel(kind Kind, raw string) string {
 	if utf8.RuneCountInString(s) > maxLabelLen {
 		s = string([]rune(s)[:maxLabelLen])
 	}
-	if kind != KindUser || looksMasked(s) {
+	if kind != KindUser {
 		return s
 	}
 	return maskEmail(s)
 }
 
-// maskEmail reduces an address to its first local character and first domain
-// character per dot-separated segment: "lisa@vier.de" -> "l***@v***.de".
+// maskEmail reduces an address to its first local character and the first
+// character of each domain segment: "lisa@vier.de" -> "l***@v***.de". Applying
+// it to an already masked value yields the same string, which is what makes
+// masking unconditionally safe.
 func maskEmail(s string) string {
 	at := strings.LastIndex(s, "@")
 	if at <= 0 || at == len(s)-1 {
 		// Not an address — keep only the first character rather than guessing.
-		return firstRune(s) + "***"
+		return maskSegment(s)
 	}
 	local, domain := s[:at], s[at+1:]
 	parts := strings.Split(domain, ".")
@@ -418,9 +450,19 @@ func maskEmail(s string) string {
 		if i == len(parts)-1 || p == "" {
 			continue
 		}
-		parts[i] = firstRune(p) + "***"
+		parts[i] = maskSegment(p)
 	}
-	return firstRune(local) + "***@" + strings.Join(parts, ".")
+	return maskSegment(local) + "@" + strings.Join(parts, ".")
+}
+
+// maskSegment keeps the first character and replaces the rest with a fixed
+// run, so the original length is not leaked either.
+func maskSegment(s string) string {
+	first := firstRune(s)
+	if first == "" {
+		return ""
+	}
+	return first + "***"
 }
 
 func firstRune(s string) string {

@@ -122,7 +122,7 @@
   "check.account.passwordRecoveryOpened": "A password reset is pending for {label}",
   "check.account.adminRevoked": "{label} lost administrator rights",
   "check.account.rolesRemoved": "{label} lost {count} permission role(s)",
-  "check.account.rolePrivilegesShrunk": "Permission role {label} lost privileges ({from} to {to})",
+  "check.account.rolePrivilegesShrunk": "Permission role {label} now grants different privileges ({from} to {to}), affecting {holders} account(s)",
   "check.account.accessKeysRemoved": "{label} lost API access keys ({from} to {to})",
   "check.account.deactivated": "{label} was deactivated",
   "check.account.deleted": "{label} was deleted",
@@ -134,5 +134,6 @@
   "notification.accountChanged.message": "{count} account changes need your review",
   "notification.accountChanged.messageOne": "1 account change needs your review",
   "email.accountChanged.subject": "{count} account changes on {name} need review",
-  "email.accountChanged.subjectOne": "An account change on {name} needs review"
+  "email.accountChanged.subjectOne": "An account change on {name} needs review",
+  "check.account.rolePrivilegesChanged": "Permission role {label} now grants different privileges ({to} total), affecting {holders} account(s)"
 }

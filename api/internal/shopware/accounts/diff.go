@@ -32,10 +32,14 @@ const (
 	ChangeAdminGranted        ChangeKind = "admin_granted"
 
 	// Yellow: access was created or widened, but not to full admin.
-	ChangeNewUser                ChangeKind = "new_user"
-	ChangeNewIntegration         ChangeKind = "new_integration"
-	ChangeRolesAdded             ChangeKind = "roles_added"
-	ChangeRolePrivilegesGrown    ChangeKind = "role_privileges_grown"
+	ChangeNewUser             ChangeKind = "new_user"
+	ChangeNewIntegration      ChangeKind = "new_integration"
+	ChangeRolesAdded          ChangeKind = "roles_added"
+	ChangeRolePrivilegesGrown ChangeKind = "role_privileges_grown"
+	// ChangeRolePrivilegesChanged covers an edit that left the count untouched
+	// but altered the set. The endpoint exposes no privilege list, so this is
+	// as specific as it can get.
+	ChangeRolePrivilegesChanged  ChangeKind = "role_privileges_changed"
 	ChangeAccessKeysAdded        ChangeKind = "access_keys_added"
 	ChangeReactivated            ChangeKind = "reactivated"
 	ChangePasswordRecoveryOpened ChangeKind = "password_recovery_opened"
@@ -63,13 +67,14 @@ var levels = map[ChangeKind]Level{
 	ChangeNewIntegration:         LevelYellow,
 	ChangeRolesAdded:             LevelYellow,
 	ChangeRolePrivilegesGrown:    LevelYellow,
+	ChangeRolePrivilegesChanged:  LevelYellow,
 	ChangeAccessKeysAdded:        LevelYellow,
 	ChangeReactivated:            LevelYellow,
 	ChangePasswordRecoveryOpened: LevelYellow,
 
 	ChangeAdminRevoked:           LevelInfo,
 	ChangeRolesRemoved:           LevelInfo,
-	ChangeRolePrivilegesShrunk:   LevelInfo,
+	ChangeRolePrivilegesShrunk:   LevelYellow,
 	ChangeAccessKeysRemoved:      LevelInfo,
 	ChangeDeactivated:            LevelInfo,
 	ChangeDeleted:                LevelInfo,
@@ -229,25 +234,42 @@ func compare(old, acc Account, assigned map[string]int) []Change {
 
 // rolePrivilegeChanges rates a change to an ACL role's privilege set.
 //
-// A changed hash at an unchanged count still means the role grants something
-// different than before, which is the case a count comparison alone would
-// miss. Growth on a role nobody is assigned to is downgraded to info: it
-// cannot widen anyone's access, and app updates rewrite such roles routinely.
+// The endpoint reports only a count and a hash, never the privileges
+// themselves, so a shrinking count does NOT prove that the role merely lost
+// rights: it can shed five read permissions and gain order:delete in the same
+// edit, ending up smaller and far more powerful. Any changed hash on a role
+// somebody actually holds is therefore reported as a finding, with the count
+// movement carried in the params so a reviewer can see which way it went.
+//
+// A role nobody is assigned to grants nothing, so a change there cannot widen
+// access and stays informational -- app updates rewrite such roles routinely.
 func rolePrivilegeChanges(old, acc Account, assigned map[string]int) []Change {
 	if old.PrivilegeCount == acc.PrivilegeCount && old.PrivilegesHash == acc.PrivilegesHash {
 		return nil
 	}
 
-	params := map[string]any{"from": old.PrivilegeCount, "to": acc.PrivilegeCount}
-	if acc.PrivilegeCount < old.PrivilegeCount {
-		return []Change{change(acc, ChangeRolePrivilegesShrunk, params)}
+	holders := assigned[acc.ID]
+	params := map[string]any{
+		"from":    old.PrivilegeCount,
+		"to":      acc.PrivilegeCount,
+		"holders": holders,
 	}
 
-	holders := assigned[acc.ID]
-	params["holders"] = holders
-	c := change(acc, ChangeRolePrivilegesGrown, params)
+	kind := ChangeRolePrivilegesChanged
+	switch {
+	case acc.PrivilegeCount > old.PrivilegeCount:
+		kind = ChangeRolePrivilegesGrown
+	case acc.PrivilegeCount < old.PrivilegeCount:
+		kind = ChangeRolePrivilegesShrunk
+	}
+
+	c := change(acc, kind, params)
 	if holders == 0 {
 		c.Level = LevelInfo
+	} else {
+		// Shrinking is only informational when nobody holds the role; for a
+		// held role the set changed and the endpoint cannot prove it is safe.
+		c.Level = LevelYellow
 	}
 	return []Change{c}
 }

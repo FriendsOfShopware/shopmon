@@ -61,8 +61,6 @@ CREATE TABLE "environment_account_state" (
 
 -- Append-only history. Findings are the rows with level <> 'info'; they stay
 -- open -- and keep escalating the environment status -- until acknowledged.
--- No UNIQUE constraint needed: the diff runs against the baseline, which is
--- advanced in the same transaction, so every change is detected exactly once.
 CREATE TABLE "environment_account_event" (
   "id"               bigserial PRIMARY KEY NOT NULL,
   "environment_id"   integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
@@ -90,3 +88,16 @@ CREATE INDEX "idx_environment_account_event_open"
 CREATE INDEX "idx_environment_account_event_unnotified"
   ON "environment_account_event" ("environment_id")
   WHERE "notified_at" IS NULL AND "level" <> 'info';
+-- Guards the invariant "one open finding per account and change" against
+-- concurrent scrapes. Nothing serialises scrapes of one environment -- the
+-- hourly run and a manual refresh can overlap, both diff the same baseline and
+-- both try to record the same change. Without this the finding would appear
+-- twice and the environment would stay red until each copy was acknowledged
+-- separately.
+--
+-- Partial by design: once a finding is acknowledged it stops blocking, so a
+-- change that genuinely happens again is recorded again.
+CREATE UNIQUE INDEX "idx_environment_account_event_one_open"
+  ON "environment_account_event" ("environment_id", "account_type", "account_id", "change")
+  WHERE "acknowledged_at" IS NULL;
+
