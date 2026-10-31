@@ -31,6 +31,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- @vue-ignore id and hidden fall through ListboxGroup to the DOM -->
   <ListboxGroup
     v-bind="delegatedProps"
     :id="id"

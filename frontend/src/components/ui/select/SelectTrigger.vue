@@ -7,7 +7,13 @@ import { SelectIcon, SelectTrigger, useForwardProps } from "reka-ui";
 import { cn } from "@/lib/utils";
 
 const props = withDefaults(
-  defineProps<SelectTriggerProps & { class?: HTMLAttributes["class"]; size?: "sm" | "default" }>(),
+  defineProps<
+    SelectTriggerProps &
+      /* @vue-ignore */ Omit<HTMLAttributes, "class"> & {
+        class?: HTMLAttributes["class"];
+        size?: "sm" | "default";
+      }
+  >(),
   { size: "default" },
 );
 

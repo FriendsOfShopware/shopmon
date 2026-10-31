@@ -625,7 +625,7 @@ function createChart(config: ChartConfig) {
         y: { beginAtZero: true, title: { display: true, text: config.yAxisLabel } },
       },
     },
-  });
+  }) as Chart;
 }
 
 function createAllCharts() {

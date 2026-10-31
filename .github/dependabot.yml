@@ -13,8 +13,8 @@ updates:
     labels:
       - "dependencies"
     ignore:
-      # TypeScript 7 has no JavaScript programmatic API, so vue-tsc cannot
-      # typecheck Vue SFCs against it. Stay on the 6.x line.
+      # Vue's compiler and openapi-ts import the classic TypeScript API.
+      # Typechecking uses the typescript-7 alias (7.1 content mappers).
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
 

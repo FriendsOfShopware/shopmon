@@ -11,7 +11,7 @@ defineProps<{
 }>();
 
 const attrs = useAttrs();
-const modelValue = defineModel<string>();
+const modelValue = defineModel<string>({ default: "" });
 const visible = ref(false);
 </script>
 
