@@ -49,6 +49,18 @@ const (
 	// in bursts (Shopware publishes several advisories at once), and one email
 	// per advisory would mean a handful of messages in the same minute.
 	EventAdvisoryDetected EventType = "advisory_detected"
+	// EventScrapeIssue fires when an environment's background refresh fails
+	// fully or partially for an owner-fixable or persistent reason (missing
+	// integration privileges, rejected credentials, unreachable shop, …).
+	// Batched per scrape: one event carries every newly notifiable issue as
+	// Reasons, mirroring EventAdvisoryDetected.
+	EventScrapeIssue EventType = "scrape_issue"
+	// EventScrapeRecovered fires when a previously notified scrape issue
+	// resolves on a later successful refresh.
+	EventScrapeRecovered EventType = "scrape_recovered"
+	// EventScrapePaused fires when repeated total refresh failures demote an
+	// environment from hourly to daily retries.
+	EventScrapePaused EventType = "scrape_paused"
 )
 
 // Link is a frontend route reference attached to a notification.

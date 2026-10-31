@@ -794,6 +794,7 @@ export type EnvironmentDetail = {
     phpVersion?: string;
     queues: Array<Queue>;
     scheduledTasks: Array<ScheduledTask>;
+    scrapeIssues: Array<EnvironmentScrapeIssue>;
     shopDescription: string | null;
     shopId: number | null;
     shopName: string | null;
@@ -819,6 +820,18 @@ export type EnvironmentExtension = {
     ratingAverage?: number;
     storeLink?: string;
     version: string;
+};
+
+export type EnvironmentScrapeIssue = {
+    dataset: string;
+    firstSeenAt: string;
+    key: string;
+    kind: string;
+    lastSeenAt: string;
+    messageKey: string;
+    params?: {
+        [key: string]: unknown;
+    };
 };
 
 export type ErrorResponse = {

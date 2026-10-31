@@ -1,5 +1,10 @@
 import { i18n } from "@/i18n";
-import type { EnvironmentCheck, Notification, StatusReason } from "@/api/generated";
+import type {
+  EnvironmentCheck,
+  EnvironmentScrapeIssue,
+  Notification,
+  StatusReason,
+} from "@/api/generated";
 
 type Params = Record<string, unknown>;
 
@@ -67,6 +72,11 @@ function renderKeyed(
 /** Renders an environment check message in the viewer's locale. */
 export function translateCheckMessage(check: EnvironmentCheck): string {
   return renderKeyed(check.messageKey, (check.params ?? {}) as Params, check.message ?? "");
+}
+
+/** Renders a background-refresh (scrape) issue in the viewer's locale. */
+export function translateScrapeIssue(issue: EnvironmentScrapeIssue): string {
+  return renderKeyed(issue.messageKey, (issue.params ?? {}) as Params, issue.messageKey);
 }
 
 /** Renders a status-transition reason (a changed check) in the viewer's locale. */

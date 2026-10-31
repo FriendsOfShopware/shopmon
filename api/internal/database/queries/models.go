@@ -244,6 +244,19 @@ type EnvironmentScheduledTask struct {
 	NextExecutionTime *string `json:"next_execution_time"`
 }
 
+type EnvironmentScrapeIssue struct {
+	EnvironmentID    int32            `json:"environment_id"`
+	IssueKey         string           `json:"issue_key"`
+	Kind             string           `json:"kind"`
+	Dataset          string           `json:"dataset"`
+	MessageKey       string           `json:"message_key"`
+	Params           json.RawMessage  `json:"params"`
+	ConsecutiveCount int32            `json:"consecutive_count"`
+	FirstSeenAt      pgtype.Timestamp `json:"first_seen_at"`
+	LastSeenAt       pgtype.Timestamp `json:"last_seen_at"`
+	NotifiedAt       pgtype.Timestamp `json:"notified_at"`
+}
+
 type EnvironmentSitespeed struct {
 	ID                     int32            `json:"id"`
 	EnvironmentID          *int32           `json:"environment_id"`

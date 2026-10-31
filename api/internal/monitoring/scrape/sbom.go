@@ -34,6 +34,10 @@ type sbomResult struct {
 	serialNumber string
 	generatedAt  pgtype.Timestamp
 	err          string
+	// fetchErr is the typed upstream error behind a failed SBOM fetch (nil for
+	// local failures like an unreadable advisory catalog), kept so the scrape
+	// can classify it for the owner instead of only logging err.
+	fetchErr error
 }
 
 // fetchSbom pulls the CycloneDX SBOM from FroshTools and matches it against the
@@ -53,15 +57,14 @@ func (h *Service) fetchSbom(ctx context.Context, env queries.GetAllEnvironmentsR
 	doc, err := sbom.Fetch(ctx, client)
 	if err != nil {
 		if unsupported, ok := errors.AsType[*sbom.ErrUnsupported](err); ok {
-			// Expected for FroshTools releases without the SBOM route, or when
-			// the integration lacks the frosh_tools:read ACL.
+			// Expected for FroshTools releases without the SBOM route.
 			slog.DebugContext(ctx, "sbom endpoint unavailable",
 				"environmentId", env.ID, "reason", unsupported.Reason)
 			return sbomResult{supported: false}
 		}
 		slog.WarnContext(ctx, "failed to fetch sbom", "environmentId", env.ID, "error", err)
 		span.RecordError(err)
-		return sbomResult{supported: true, err: err.Error()}
+		return sbomResult{supported: true, err: err.Error(), fetchErr: err}
 	}
 
 	packages := doc.Packages()

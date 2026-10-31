@@ -24,6 +24,7 @@ const (
 	OutcomeError          = "error"
 	OutcomeAuthError      = "auth_error"
 	OutcomeDataFetchError = "data_fetch_error"
+	OutcomePartialError   = "partial_error"
 	OutcomeRateLimited    = "rate_limited"
 	OutcomeSkipped        = "skipped"
 	OutcomeUnknown        = "unknown"
@@ -81,7 +82,7 @@ func Register() {
 }
 
 // RecordScrapeOutcome increments shopmon.scrape.outcome.
-// Allowed outcomes: ok, error, auth_error, data_fetch_error.
+// Allowed outcomes: ok, error, auth_error, data_fetch_error, partial_error.
 func RecordScrapeOutcome(ctx context.Context, outcome string) {
 	add(ctx, scrapeCounter(), "outcome", NormalizeScrapeOutcome(outcome))
 }
@@ -120,7 +121,7 @@ func RecordNotifyDelivery(ctx context.Context, outcome, channel string) {
 // NormalizeScrapeOutcome maps arbitrary strings onto the scrape outcome enum.
 func NormalizeScrapeOutcome(outcome string) string {
 	switch outcome {
-	case OutcomeOK, OutcomeError, OutcomeAuthError, OutcomeDataFetchError:
+	case OutcomeOK, OutcomeError, OutcomeAuthError, OutcomeDataFetchError, OutcomePartialError:
 		return outcome
 	default:
 		return OutcomeUnknown
