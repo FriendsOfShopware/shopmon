@@ -459,4 +459,18 @@ describe("DetailAccounts", () => {
 
     expect(bodyButton("Confirm")).toBeFalsy();
   });
+
+  // A successful response can still report an unsupported endpoint or a failed
+  // read; without carrying the state the overview card keeps claiming ok.
+  it("carries the monitoring state back to the shared environment", async () => {
+    getEnvironmentAccounts.mockResolvedValue(response({ supported: false }));
+    await mountComponent();
+    expect(environment.value?.accountMonitoringState).toBe("unsupported");
+  });
+
+  it("reports an error state back to the shared environment", async () => {
+    getEnvironmentAccounts.mockResolvedValue(response({ lastError: "missing frosh_tools:read" }));
+    await mountComponent();
+    expect(environment.value?.accountMonitoringState).toBe("error");
+  });
 });

@@ -469,7 +469,20 @@ function syncBadge() {
     ...environment.value,
     openAccountFindings: data.value.openFindings.length,
     accountMonitoringEnabled: data.value.enabled,
+    // The monitoring state travels too. A successful response can still report
+    // an unsupported endpoint or a failed read, and without this the overview
+    // card would keep its stale "ok" and claim an all-clear.
+    accountMonitoringState: monitoringState(data.value),
   };
+}
+
+/** Mirrors the backend's state derivation for the locally refreshed copy. */
+function monitoringState(d: EnvironmentAccounts): string {
+  if (!d.enabled) return "off";
+  if (!d.supported) return "unsupported";
+  if (d.lastError) return "error";
+  if (!d.baselineAt) return "pending";
+  return "ok";
 }
 
 watch(
