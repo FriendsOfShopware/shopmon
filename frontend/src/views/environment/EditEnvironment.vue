@@ -384,7 +384,10 @@ async function loadEnvironment() {
   const { data } = await getEnvironment({
     path: { environmentId },
   });
-  environment.value = data ?? null;
+  // Only replace on success. A failed reload after a saved setting would
+  // otherwise null this out, hiding the whole editor behind its v-if while the
+  // success message is still on screen.
+  if (data) environment.value = data;
 
   if (environment.value?.organizationId) {
     const { data: shopsData } = await getAccountShops();

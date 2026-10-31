@@ -374,4 +374,24 @@ describe("EditEnvironment", () => {
     expect(mockError).toHaveBeenCalledWith("failed to save account monitoring");
     expect(mockSuccess).not.toHaveBeenCalled();
   });
+
+  // A failed reload after a saved setting used to null the environment out,
+  // hiding the editor behind its v-if while the success message was still up.
+  it("keeps the loaded environment when a reload returns no data", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Account monitoring");
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "gone" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Account monitoring");
+  });
 });
