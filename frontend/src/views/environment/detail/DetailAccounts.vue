@@ -386,8 +386,15 @@ const filteredEvents = computed(() => {
   return events;
 });
 
+// Monotonic request counter. Comparing the environment id alone misses two
+// loads for the *same* environment -- this view reloads after a confirmation
+// while the route watcher may fire too -- where the older response can still
+// land last and overwrite the newer one.
+let loadSequence = 0;
+
 async function load() {
   const requestedId = environmentId();
+  const sequence = ++loadSequence;
   loading.value = true;
   loadFailed.value = false;
   try {
@@ -398,11 +405,10 @@ async function load() {
       path: { environmentId: requestedId },
     });
 
-    // The layout reuses this page across environments, so a slower request for
-    // the previous one can land last. Dropping late responses keeps it from
-    // replacing the current findings -- and from copying a stale count into
-    // the badge.
-    if (requestedId !== environmentId()) return;
+    // The layout reuses this page across environments, so a slower request can
+    // land last. Dropping superseded responses keeps one from replacing the
+    // current findings -- and from copying a stale count into the badge.
+    if (sequence !== loadSequence || requestedId !== environmentId()) return;
 
     if (apiError) {
       loadFailed.value = true;
@@ -416,7 +422,7 @@ async function load() {
     loadFailed.value = true;
     error(err instanceof Error ? err.message : String(err));
   } finally {
-    if (requestedId === environmentId()) loading.value = false;
+    if (sequence === loadSequence) loading.value = false;
   }
 }
 

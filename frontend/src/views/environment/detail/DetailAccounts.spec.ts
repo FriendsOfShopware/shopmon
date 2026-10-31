@@ -414,4 +414,26 @@ describe("DetailAccounts", () => {
 
     expect(wrapper.text()).not.toContain("New administrator account");
   });
+
+  // Two loads for the same environment also race: this view reloads after a
+  // confirmation while the route watcher may fire as well.
+  it("discards a superseded response for the same environment", async () => {
+    let releaseFirst: (v: unknown) => void = () => {};
+    getEnvironmentAccounts
+      .mockImplementationOnce(() => new Promise((resolve) => (releaseFirst = resolve)))
+      .mockResolvedValueOnce(response({ openFindings: [], accountCount: 2 }));
+
+    const wrapper = mount(DetailAccounts, { attachTo: document.body });
+    // A second load starts and finishes before the first one answers.
+    const vm = wrapper.vm as unknown as { load: () => Promise<void> };
+    expect(typeof vm.load).toBe("function");
+    await vm.load();
+    releaseFirst(response({ openFindings: [adminFinding], accountCount: 99 }));
+    await flushPromises();
+
+    // Both loads really happened; the stale one simply lost.
+    expect(getEnvironmentAccounts).toHaveBeenCalledTimes(2);
+    expect(wrapper.text()).not.toContain("New administrator account");
+    expect(environment.value?.openAccountFindings).toBe(0);
+  });
 });
