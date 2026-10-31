@@ -163,14 +163,19 @@ func newAccountChange(acc Account) Change {
 		}
 		return change(acc, ChangeNewUser, nil)
 	case KindIntegration:
-		// An app-managed integration appears because an app was installed,
-		// which Shopmon already reports as an extension change. Alerting again
-		// would make every app install look like a security event.
+		// Administrator rights are reported whoever created the integration.
+		// An app that registers itself with full admin is exactly the case
+		// worth looking at, and "an app did it" is not evidence that it is
+		// meant to be.
+		if acc.Admin {
+			return change(acc, ChangeNewAdminIntegration, map[string]any{"appName": acc.AppName})
+		}
+		// Without admin rights, an app-managed integration appears because an
+		// app was installed -- which Shopmon already reports as an extension
+		// change. Alerting again would make every app install look like a
+		// security event.
 		if acc.ManagedByApp {
 			return change(acc, ChangeNewManagedIntegration, map[string]any{"appName": acc.AppName})
-		}
-		if acc.Admin {
-			return change(acc, ChangeNewAdminIntegration, nil)
 		}
 		return change(acc, ChangeNewIntegration, nil)
 	default:

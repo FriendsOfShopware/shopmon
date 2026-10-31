@@ -96,9 +96,17 @@ func TestDiffChangeMatrix(t *testing.T) {
 			want:     []want{{ChangeNewIntegration, LevelYellow}},
 		},
 		{
-			name:     "app managed integration is only informational",
+			// "An app did it" is not evidence that full admin rights are
+			// meant to be there.
+			name:     "app managed integration with admin rights is still red",
 			baseline: []Account{},
 			current:  []Account{integration(idA, admin, managedByApp)},
+			want:     []want{{ChangeNewAdminIntegration, LevelRed}},
+		},
+		{
+			name:     "app managed integration without admin is informational",
+			baseline: []Account{},
+			current:  []Account{integration(idA, managedByApp)},
 			want:     []want{{ChangeNewManagedIntegration, LevelInfo}},
 		},
 		{
