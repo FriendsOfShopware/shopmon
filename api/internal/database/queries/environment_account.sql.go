@@ -347,10 +347,16 @@ func (q *Queries) ListOpenEnvironmentAccountEvents(ctx context.Context, environm
 
 const listUnnotifiedEnvironmentAccountEvents = `-- name: ListUnnotifiedEnvironmentAccountEvents :many
 SELECT id, environment_id, account_type, account_id, label, change, level, params, admin_path, detected_at, notified_at, acknowledged_at, acknowledged_by, acknowledge_note FROM environment_account_event
-WHERE environment_id = $1 AND notified_at IS NULL AND level <> 'info'
+WHERE environment_id = $1
+  AND notified_at IS NULL
+  AND acknowledged_at IS NULL
+  AND level <> 'info'
 ORDER BY detected_at, id
 `
 
+// Acknowledged events are excluded: a failed alert leaves its events pending
+// for the next scrape, and in between a reviewer may well have confirmed one.
+// Alerting about a finding somebody already reviewed is pure noise.
 func (q *Queries) ListUnnotifiedEnvironmentAccountEvents(ctx context.Context, environmentID int32) ([]EnvironmentAccountEvent, error) {
 	rows, err := q.db.Query(ctx, listUnnotifiedEnvironmentAccountEvents, environmentID)
 	if err != nil {

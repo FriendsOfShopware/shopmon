@@ -118,8 +118,14 @@ WHERE environment_id = $1 AND acknowledged_at IS NULL AND level <> 'info'
 ORDER BY detected_at, id;
 
 -- name: ListUnnotifiedEnvironmentAccountEvents :many
+-- Acknowledged events are excluded: a failed alert leaves its events pending
+-- for the next scrape, and in between a reviewer may well have confirmed one.
+-- Alerting about a finding somebody already reviewed is pure noise.
 SELECT * FROM environment_account_event
-WHERE environment_id = $1 AND notified_at IS NULL AND level <> 'info'
+WHERE environment_id = $1
+  AND notified_at IS NULL
+  AND acknowledged_at IS NULL
+  AND level <> 'info'
 ORDER BY detected_at, id;
 
 -- name: MarkEnvironmentAccountEventsNotified :exec

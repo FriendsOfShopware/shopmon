@@ -685,3 +685,27 @@ func (f snapshotFetcher) Get(context.Context, string) ([]byte, error) {
 func froshToolsExtensions() []extensionEntry {
 	return []extensionEntry{{Name: froshToolsExtension, Active: true, Installed: true}}
 }
+
+// A failed alert leaves its events pending for the next scrape. If a reviewer
+// confirms one in the meantime, re-alerting about it is pure noise.
+func TestNotifyAccountChangesSkipsAcknowledgedEvents(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+	subscribe(t, pool, env.ID)
+	seedOneFinding(t, h, env.ID)
+
+	pending, err := h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, pending, 1)
+
+	rows, err := h.queries.AcknowledgeEnvironmentAccountEvent(ctx, queries.AcknowledgeEnvironmentAccountEventParams{
+		ID:            pending[0].ID,
+		EnvironmentID: env.ID,
+	})
+	require.NoError(t, err)
+	require.EqualValues(t, 1, rows)
+
+	pending, err = h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Empty(t, pending, "a confirmed finding is not worth alerting about")
+}
