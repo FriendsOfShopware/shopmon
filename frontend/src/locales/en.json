@@ -33,6 +33,12 @@
     "scrapePaused": {
       "title": "Environment: {name} refresh slowed down",
       "message": "Refreshing keeps failing, so Shopmon now retries once a day instead of hourly until the shop can be reached again. Use the manual refresh after fixing the problem. Details:"
+    },
+    "accountChanged": {
+      "title": "Environment: {name} has security-relevant account changes",
+      "titleOne": "Environment: {name} has a security-relevant account change",
+      "message": "{count} account changes need your review",
+      "messageOne": "1 account change needs your review"
     }
   },
   "scrapeIssue": {
@@ -141,6 +147,29 @@
       "cacheWarning": "Cache is using filesystem adapter",
       "puppeteerGood": "Puppeteer/Chrome is available",
       "puppeteerWarning": "Puppeteer/Chrome is not available"
+    },
+    "account": {
+      "newAdminUser": "New administrator account {label} was created",
+      "newUser": "New user account {label} was created",
+      "newAdminIntegration": "New integration {label} with administrator rights was created",
+      "newIntegration": "New integration {label} was created",
+      "newManagedIntegration": "App {appName} registered the integration {label}",
+      "newAclRole": "New permission role {label} with {count} privileges was created",
+      "adminGranted": "{label} was granted administrator rights",
+      "rolesAdded": "{label} was assigned {count} additional permission role(s)",
+      "rolePrivilegesGrown": "Permission role {label} was granted more privileges ({from} to {to}), affecting {holders} account(s)",
+      "accessKeysAdded": "{label} gained API access keys ({from} to {to})",
+      "reactivated": "{label} was reactivated",
+      "passwordRecoveryOpened": "A password reset is pending for {label}",
+      "adminRevoked": "{label} lost administrator rights",
+      "rolesRemoved": "{label} lost {count} permission role(s)",
+      "rolePrivilegesShrunk": "Permission role {label} now grants different privileges ({from} to {to}), affecting {holders} account(s)",
+      "accessKeysRemoved": "{label} lost API access keys ({from} to {to})",
+      "deactivated": "{label} was deactivated",
+      "deleted": "{label} was deleted",
+      "passwordChanged": "{label} changed their password",
+      "passwordRecoveryClosed": "The pending password reset for {label} was resolved",
+      "rolePrivilegesChanged": "Permission role {label} now grants different privileges ({to} total), affecting {holders} account(s)"
     }
   },
   "common": {
@@ -262,7 +291,8 @@
     "navigation": "Navigation",
     "shops": "Shops",
     "onThisPage": "On this page",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "accounts": "Accounts"
   },
   "advisories": {
     "title": "Security Advisories",
@@ -622,7 +652,8 @@
       "scrape_issue": "Refresh problems (permissions, connection)",
       "scrape_recovered": "Refresh working again",
       "scrape_paused": "Refresh slowed down after repeated failures",
-      "advisory_detected": "New security advisories"
+      "advisory_detected": "New security advisories",
+      "account_changed": "Account changes"
     },
     "watchedEnvironments": "Watched environments",
     "otherEnvironments": "Other",
@@ -726,7 +757,14 @@
     "refreshQueued": "Your environment will refresh soon!",
     "cacheCleared": "Your environment cache was cleared successfully",
     "subscribed": "You have subscribed to notifications for this environment",
-    "unsubscribed": "You have unsubscribed from notifications for this environment"
+    "unsubscribed": "You have unsubscribed from notifications for this environment",
+    "accountMonitoring": "Account monitoring",
+    "accountMonitoringDesc": "Watches the shop's administrators, integrations and permission roles. A new administrator, newly granted admin rights or a widened permission role is reported as a finding that colours the environment status until you confirm it. To compare against, Shopmon keeps a baseline of the accounts that currently exist: one row per user, integration and permission role, holding the masked identifier the shop itself provides for users, the assigned role ids and the privilege counts. No account directory is shown in the interface — only changes, and accounts that stand out.",
+    "accountMonitoringEnabled": "Report account changes",
+    "accountMonitoringHint": "Switching this off confirms all open findings. Switching it back on records the current state first, so changes made in the meantime are not reported as new.",
+    "accountMonitoringRequires": "Requires the FroshTools plugin in the shop. Without it, monitoring stays idle instead of failing.",
+    "accountMonitoringSaved": "Account monitoring updated",
+    "reloadFailed": "The environment could not be reloaded"
   },
   "shop": {
     "newShop": "New Shop",
@@ -1530,5 +1568,78 @@
   "command": {
     "title": "Command Palette",
     "description": "Search for a command to run..."
+  },
+  "accounts": {
+    "title": "Account monitoring",
+    "openFindings": "Needs review",
+    "history": "Change history",
+    "posture": {
+      "unusedAdminIntegration": "Administrator integration has not been used in a long time",
+      "userWithApiKeys": "User account has its own API access keys",
+      "passwordRecoveryPending": "Password reset is still pending"
+    },
+    "noFindings": "Nothing needs review",
+    "noHistory": "No account changes recorded yet",
+    "baselinePending": "Not initialised yet",
+    "baselinePendingHint": "The first scrape only records the current state. Changes are reported from the next scrape onwards.",
+    "notSupported": "FroshTools is too old",
+    "notSupportedHint": "This shop's FroshTools does not serve the account endpoint yet. Update the plugin to enable account monitoring.",
+    "disabled": "Account monitoring is switched off",
+    "disabledHint": "Switch it on to be told when administrators, integrations or permission roles change.",
+    "lastSynced": "Last checked {time}",
+    "error": "The last check failed",
+    "acknowledge": "Looks right",
+    "acknowledgeTitle": "Confirm this change",
+    "acknowledgeBody": "Confirming records that you reviewed this change and removes it from the environment status. It stays in the history.",
+    "acknowledgeNote": "Note (optional)",
+    "acknowledgeNotePlaceholder": "e.g. new colleague in the support team",
+    "acknowledgeSubmit": "Confirm",
+    "acknowledgedBy": "Confirmed by {name}",
+    "acknowledgedAt": "Confirmed {time}",
+    "openInShopware": "Open in Shopware",
+    "detected": "Detected {time}",
+    "kind": {
+      "user": "User",
+      "integration": "Integration",
+      "acl_role": "Permission role"
+    },
+    "postureTitle": "Hints",
+    "acknowledgeFailed": "Could not confirm the change. Please try again.",
+    "criticalFindings": "Critical",
+    "warningFindings": "Warnings",
+    "monitored": "Monitored accounts",
+    "filterFindings": "Needs review",
+    "filterInfo": "Informational",
+    "toSettings": "Open settings",
+    "acknowledged": "Change confirmed — the environment status follows with the queued refresh",
+    "facts": {
+      "kind": "Type",
+      "account": "Account",
+      "detected": "Detected",
+      "change": "Change",
+      "count": "Count",
+      "holders": "Affected accounts",
+      "app": "App",
+      "privileges": "Privileges",
+      "admin": "Administrator",
+      "state": "State",
+      "roles": "Permission roles",
+      "apiKeys": "API keys",
+      "passwordReset": "Password reset",
+      "pending": "pending",
+      "lastUsed": "Last used",
+      "created": "Created in the shop",
+      "never": "never",
+      "gone": "no longer exists"
+    },
+    "viewAll": "Open account monitoring",
+    "pendingReview": "{count} account change(s) need review",
+    "loadFailed": "The accounts could not be loaded",
+    "state": {
+      "pending": "Not initialised yet — the first scrape only records the current state",
+      "unsupported": "FroshTools in this shop does not serve the account endpoint yet",
+      "error": "The last account check failed"
+    },
+    "acknowledgeStale": "The finding changed while you were looking at it — please review the current state"
   }
 }

@@ -288,3 +288,99 @@ func (r *Repository) IsEnvironmentSubscribed(ctx context.Context, userID string,
 	}
 	return subscribed, nil
 }
+
+// AcknowledgeAccountEvent marks one account finding as reviewed. It reports
+// false when no open row matched: either the event belongs to a different
+// environment, or someone already reviewed it.
+func (r *Repository) AcknowledgeAccountEvent(ctx context.Context, environmentID int32, eventID int64, revision int32, userID string, note *string) error {
+	rows, err := r.queries.AcknowledgeEnvironmentAccountEvent(ctx, queries.AcknowledgeEnvironmentAccountEventParams{
+		ID:              eventID,
+		EnvironmentID:   environmentID,
+		AcknowledgedBy:  &userID,
+		AcknowledgeNote: note,
+		Revision:        revision,
+	})
+	if err != nil {
+		return fmt.Errorf("acknowledge account event: %w", err)
+	}
+	if rows > 0 {
+		return nil
+	}
+
+	// Nothing matched. Read the row back to say which of the three reasons it
+	// was: the reviewer needs to know whether to look again or whether somebody
+	// else already handled it.
+	row, err := r.queries.GetEnvironmentAccountEvent(ctx, queries.GetEnvironmentAccountEventParams{
+		ID:            eventID,
+		EnvironmentID: environmentID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return monitoring.ErrAccountEventNotFound
+		}
+		return fmt.Errorf("read account event after failed acknowledgement: %w", err)
+	}
+	if row.AcknowledgedAt.Valid {
+		return monitoring.ErrAccountEventAlreadyAcknowledged
+	}
+	return monitoring.ErrAccountEventChanged
+}
+
+// SetAccountMonitoring flips the per-environment switch.
+//
+// Disabling also acknowledges the open findings: the scrape stops emitting
+// their checks, but leaving the rows open would keep them in the history as
+// unreviewed forever with no tab left to clear them from. Re-enabling clears
+// the baseline so the next scrape seeds again — otherwise everything that
+// changed while monitoring was off would arrive at once as new findings.
+//
+// Both only happen on an actual transition. Resetting the baseline on every
+// save would be dangerous: saving an unchanged form would fold an
+// administrator added since the last scrape into the new baseline, and that
+// account would never be reported.
+func (r *Repository) SetAccountMonitoring(ctx context.Context, environmentID int32, enabled bool, userID string) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := r.queries.WithTx(tx)
+
+	// Read the current value in the same transaction, so a concurrent save
+	// cannot make this decide on a stale state.
+	previous, err := q.GetEnvironmentAccountMonitoring(ctx, environmentID)
+	if err != nil {
+		return fmt.Errorf("get account monitoring: %w", err)
+	}
+	if previous == enabled {
+		return nil
+	}
+
+	if err := q.UpdateEnvironmentAccountMonitoring(ctx, queries.UpdateEnvironmentAccountMonitoringParams{
+		AccountMonitoringEnabled: enabled,
+		ID:                       environmentID,
+	}); err != nil {
+		return fmt.Errorf("update account monitoring: %w", err)
+	}
+
+	if enabled {
+		if err := q.ResetEnvironmentAccountBaseline(ctx, environmentID); err != nil {
+			return fmt.Errorf("reset account baseline: %w", err)
+		}
+	} else {
+		note := "account monitoring disabled"
+		if err := q.AcknowledgeAllEnvironmentAccountEvents(ctx, queries.AcknowledgeAllEnvironmentAccountEventsParams{
+			EnvironmentID:   environmentID,
+			AcknowledgedBy:  &userID,
+			AcknowledgeNote: &note,
+		}); err != nil {
+			return fmt.Errorf("acknowledge open account findings: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
+}

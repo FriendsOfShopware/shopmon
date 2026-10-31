@@ -24,15 +24,20 @@ func environmentLink(envID int32) notify.Link {
 }
 
 // environmentRecipients resolves the subscribers of an environment into notify
-// recipients. It returns nil (and logs) on error so callers can simply skip.
-func (h *Service) environmentRecipients(ctx context.Context, env queries.GetAllEnvironmentsRow) []notify.Recipient {
+// recipients.
+//
+// The error is returned rather than folded into an empty list: a caller that
+// records "these recipients were told" must be able to tell a lookup failure
+// from a genuinely unsubscribed environment. Marking on failure would drop the
+// alert permanently. Callers that only dispatch may ignore it.
+func (h *Service) environmentRecipients(ctx context.Context, env queries.GetAllEnvironmentsRow) ([]notify.Recipient, error) {
 	subscribers, err := h.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
 		OrganizationID: env.OrganizationID,
 		EnvironmentID:  strconv.Itoa(int(env.ID)),
 	})
 	if err != nil {
 		slog.Warn("failed to get notification subscribers", "environmentId", env.ID, "error", err)
-		return nil
+		return nil, fmt.Errorf("get notification subscribers: %w", err)
 	}
 
 	recipients := make([]notify.Recipient, 0, len(subscribers))
@@ -44,7 +49,7 @@ func (h *Service) environmentRecipients(ctx context.Context, env queries.GetAllE
 			Locale: u.Locale,
 		})
 	}
-	return recipients
+	return recipients, nil
 }
 
 func environmentDisplayName(name string, shopName *string) string {
@@ -115,7 +120,8 @@ func (h *Service) handleStatusTransition(ctx context.Context, env queries.GetAll
 		ev.MessageKey = "notification.statusRecovered.message"
 	}
 
-	h.notifier.Dispatch(ctx, ev, h.environmentRecipients(ctx, env))
+	recipients, _ := h.environmentRecipients(ctx, env)
+	h.notifier.Dispatch(ctx, ev, recipients)
 
 	return &statusTransition{oldStatus: oldStatus, newStatus: newStatus, reasons: reasons}
 }

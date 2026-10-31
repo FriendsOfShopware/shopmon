@@ -35,6 +35,7 @@ const mockEnvironment = {
   clientSecret: "",
   sitespeedEnabled: false,
   sitespeedUrls: [],
+  accountMonitoringEnabled: true,
 };
 
 const mockShops = [
@@ -60,6 +61,7 @@ vi.mock("@/api/generated", async (importOriginal) => ({
   updateEnvironment: vi.fn(),
   deleteEnvironment: vi.fn(),
   updateSitespeedSettings: vi.fn(),
+  updateAccountMonitoringSettings: vi.fn(),
 }));
 
 const { mockError, mockSuccess, mockFetchShops, mockFetchEnvironments } = vi.hoisted(() => ({
@@ -90,6 +92,7 @@ import {
   updateEnvironment,
   deleteEnvironment,
   updateSitespeedSettings,
+  updateAccountMonitoringSettings,
 } from "@/api/generated";
 
 describe("EditEnvironment", () => {
@@ -329,5 +332,177 @@ describe("EditEnvironment", () => {
     expect(vm.sitespeedUrls).toEqual(["  ", ""]);
     expect(vm.isSitespeedSubmitting).toBe(false);
     wrapper.unmount();
+  });
+
+  // The switch belongs here rather than on the accounts tab: it is an
+  // environment setting, and this is where there is room to explain what
+  // switching it off actually does.
+  it("displays the account monitoring section", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Account monitoring");
+    expect(wrapper.text()).toContain("Report account changes");
+  });
+
+  it("saves the account monitoring switch", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(updateAccountMonitoringSettings).toHaveBeenCalledWith({
+      path: { environmentId: 1 },
+      body: { enabled: true },
+    });
+    expect(mockSuccess).toHaveBeenCalled();
+  });
+
+  it("does not show success when the account monitoring switch fails to save", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({
+      data: undefined,
+      error: { message: "failed to save account monitoring" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(mockError).toHaveBeenCalledWith("failed to save account monitoring");
+    expect(mockSuccess).not.toHaveBeenCalled();
+  });
+
+  // A failed reload after a saved setting used to null the environment out,
+  // hiding the editor behind its v-if while the success message was still up.
+  it("keeps the loaded environment when a reload returns no data", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Account monitoring");
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "gone" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Account monitoring");
+  });
+
+  // Keeping the stale object must not repopulate the form from it: the control
+  // would snap back to the value that was just replaced, and saving again would
+  // submit the opposite of what the screen shows.
+  it("does not restore the saved switch from a stale environment", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    // The loaded environment has monitoring on; turn it off and save.
+    const toggle = wrapper.findAllComponents({ name: "Switch" }).at(-1);
+    expect(toggle).toBeTruthy();
+    await toggle!.setValue(false);
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "gone" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(updateAccountMonitoringSettings).toHaveBeenCalledWith({
+      path: { environmentId: 1 },
+      body: { enabled: false },
+    });
+
+    // Saving again must submit the same thing, not its opposite.
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(updateAccountMonitoringSettings).toHaveBeenLastCalledWith({
+      path: { environmentId: 1 },
+      body: { enabled: false },
+    });
+  });
+
+  // Failing quietly left the reader editing a form that no longer reflects the
+  // server, with a success message from the save still on screen.
+  it("reports a failed reload instead of failing quietly", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "upstream exploded" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(mockError).toHaveBeenCalledWith("upstream exploded");
+    // useAlert holds one alert, so announcing success here would wipe the
+    // explanation and tell the reader a save worked while the form no longer
+    // reflects the server.
+    expect(mockSuccess).not.toHaveBeenCalled();
+    // A transient failure keeps the editor, so the reader does not lose context.
+    expect(wrapper.text()).toContain("Account monitoring");
+  });
+
+  it("announces the save once the screen has caught up", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(mockSuccess).toHaveBeenCalled();
+    expect(mockError).not.toHaveBeenCalled();
+  });
+
+  it("does not announce a saved sitespeed setting when the reload fails", async () => {
+    vi.mocked(updateSitespeedSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "upstream exploded" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+
+    await wrapper.findAll("form")[1]!.trigger("submit");
+    await flushPromises();
+
+    expect(mockError).toHaveBeenCalledWith("upstream exploded");
+    expect(mockSuccess).not.toHaveBeenCalled();
+  });
+
+  // Gone or no longer permitted is final: keeping the editor open would invite
+  // edits that can never be saved.
+  it.each([404, 403])("closes the editor when the environment is gone (%i)", async (status) => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "not found" },
+      response: new Response(null, { status }),
+    } as never);
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("Account monitoring");
   });
 });

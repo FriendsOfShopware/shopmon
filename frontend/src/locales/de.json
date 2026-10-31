@@ -33,6 +33,12 @@
     "scrapePaused": {
       "title": "Umgebung: {name} Aktualisierung verlangsamt",
       "message": "Die Aktualisierung schlägt weiterhin fehl. Shopmon versucht es daher nur noch einmal täglich statt stündlich, bis der Shop wieder erreichbar ist. Nutze nach der Behebung die manuelle Aktualisierung. Details:"
+    },
+    "accountChanged": {
+      "title": "Umgebung: {name} hat sicherheitsrelevante Kontoänderungen",
+      "titleOne": "Umgebung: {name} hat eine sicherheitsrelevante Kontoänderung",
+      "message": "{count} Kontoänderungen warten auf Ihre Prüfung",
+      "messageOne": "1 Kontoänderung wartet auf Ihre Prüfung"
     }
   },
   "scrapeIssue": {
@@ -141,6 +147,29 @@
       "cacheWarning": "Cache verwendet den Dateisystem-Adapter",
       "puppeteerGood": "Puppeteer/Chrome ist verfügbar",
       "puppeteerWarning": "Puppeteer/Chrome ist nicht verfügbar"
+    },
+    "account": {
+      "newAdminUser": "Neues Administrator-Konto {label} wurde angelegt",
+      "newUser": "Neues Benutzerkonto {label} wurde angelegt",
+      "newAdminIntegration": "Neue Integration {label} mit Administratorrechten wurde angelegt",
+      "newIntegration": "Neue Integration {label} wurde angelegt",
+      "newManagedIntegration": "App {appName} hat die Integration {label} registriert",
+      "newAclRole": "Neue Rechterolle {label} mit {count} Berechtigungen wurde angelegt",
+      "adminGranted": "{label} hat Administratorrechte erhalten",
+      "rolesAdded": "{label} wurden {count} zusätzliche Rechterolle(n) zugewiesen",
+      "rolePrivilegesGrown": "Rechterolle {label} hat mehr Berechtigungen erhalten ({from} auf {to}), betrifft {holders} Konto/Konten",
+      "accessKeysAdded": "{label} hat API-Zugangsdaten erhalten ({from} auf {to})",
+      "reactivated": "{label} wurde wieder aktiviert",
+      "passwordRecoveryOpened": "Für {label} ist eine Passwortzurücksetzung offen",
+      "adminRevoked": "{label} hat die Administratorrechte verloren",
+      "rolesRemoved": "{label} wurden {count} Rechterolle(n) entzogen",
+      "rolePrivilegesShrunk": "Rechterolle {label} gewährt jetzt andere Berechtigungen ({from} auf {to}), betrifft {holders} Konto/Konten",
+      "accessKeysRemoved": "{label} hat API-Zugangsdaten verloren ({from} auf {to})",
+      "deactivated": "{label} wurde deaktiviert",
+      "deleted": "{label} wurde gelöscht",
+      "passwordChanged": "{label} hat das Passwort geändert",
+      "passwordRecoveryClosed": "Die offene Passwortzurücksetzung für {label} wurde erledigt",
+      "rolePrivilegesChanged": "Rechterolle {label} gewährt jetzt andere Berechtigungen ({to} insgesamt), betrifft {holders} Konto/Konten"
     }
   },
   "common": {
@@ -262,7 +291,8 @@
     "navigation": "Navigation",
     "shops": "Shops",
     "onThisPage": "Auf dieser Seite",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "accounts": "Konten"
   },
   "advisories": {
     "title": "Sicherheitsmeldungen",
@@ -622,7 +652,8 @@
       "scrape_issue": "Aktualisierungsprobleme (Berechtigungen, Verbindung)",
       "scrape_recovered": "Aktualisierung funktioniert wieder",
       "scrape_paused": "Aktualisierung nach wiederholten Fehlern verlangsamt",
-      "advisory_detected": "Neue Sicherheitsmeldungen"
+      "advisory_detected": "Neue Sicherheitsmeldungen",
+      "account_changed": "Kontoänderungen"
     },
     "watchedEnvironments": "Beobachtete Umgebungen",
     "otherEnvironments": "Sonstige",
@@ -726,7 +757,14 @@
     "refreshQueued": "Ihre Umgebung wird in Kürze aktualisiert!",
     "cacheCleared": "Der Cache Ihrer Umgebung wurde erfolgreich geleert",
     "subscribed": "Sie haben Benachrichtigungen für diese Umgebung abonniert",
-    "unsubscribed": "Sie haben Benachrichtigungen für diese Umgebung abbestellt"
+    "unsubscribed": "Sie haben Benachrichtigungen für diese Umgebung abbestellt",
+    "accountMonitoring": "Kontoüberwachung",
+    "accountMonitoringDesc": "Überwacht Administratoren, Integrationen und Rechterollen des Shops. Ein neuer Administrator, nachträglich vergebene Adminrechte oder eine erweiterte Rechterolle werden als Finding gemeldet und färben den Status der Umgebung, bis Sie es bestätigen. Zum Vergleich hält Shopmon einen Ausgangsstand der aktuell existierenden Konten: je eine Zeile pro Benutzer, Integration und Rechterolle, mit der maskierten Kennung, die der Shop für Benutzer selbst liefert, den zugewiesenen Rollen-IDs und den Berechtigungszahlen. In der Oberfläche wird kein Kontenverzeichnis angezeigt — nur Änderungen und auffällige Konten.",
+    "accountMonitoringEnabled": "Kontoänderungen melden",
+    "accountMonitoringHint": "Beim Ausschalten werden alle offenen Findings bestätigt. Beim Wiedereinschalten wird zuerst der aktuelle Stand erfasst, damit zwischenzeitliche Änderungen nicht als neu gemeldet werden.",
+    "accountMonitoringRequires": "Setzt das FroshTools-Plugin im Shop voraus. Ohne das Plugin bleibt die Überwachung untätig statt zu scheitern.",
+    "accountMonitoringSaved": "Kontoüberwachung aktualisiert",
+    "reloadFailed": "Die Umgebung konnte nicht neu geladen werden"
   },
   "shop": {
     "newShop": "Neues Shop",
@@ -1530,5 +1568,78 @@
   "command": {
     "title": "Befehlspalette",
     "description": "Nach einem auszuführenden Befehl suchen..."
+  },
+  "accounts": {
+    "title": "Kontoüberwachung",
+    "openFindings": "Zu prüfen",
+    "history": "Änderungsverlauf",
+    "posture": {
+      "unusedAdminIntegration": "Administrator-Integration wurde lange nicht benutzt",
+      "userWithApiKeys": "Benutzerkonto hat eigene API-Zugangsdaten",
+      "passwordRecoveryPending": "Passwortzurücksetzung ist noch offen"
+    },
+    "noFindings": "Nichts zu prüfen",
+    "noHistory": "Noch keine Kontoänderungen erfasst",
+    "baselinePending": "Noch nicht initialisiert",
+    "baselinePendingHint": "Der erste Scrape erfasst nur den aktuellen Stand. Ab dem nächsten Scrape werden Änderungen gemeldet.",
+    "notSupported": "FroshTools ist zu alt",
+    "notSupportedHint": "Das FroshTools dieses Shops kennt den Konten-Endpunkt noch nicht. Aktualisieren Sie das Plugin, um die Kontoüberwachung zu nutzen.",
+    "disabled": "Kontoüberwachung ist ausgeschaltet",
+    "disabledHint": "Schalten Sie sie ein, um über Änderungen an Administratoren, Integrationen und Rechterollen informiert zu werden.",
+    "lastSynced": "Zuletzt geprüft {time}",
+    "error": "Die letzte Prüfung ist fehlgeschlagen",
+    "acknowledge": "Passt so",
+    "acknowledgeTitle": "Änderung bestätigen",
+    "acknowledgeBody": "Mit der Bestätigung halten Sie fest, dass Sie diese Änderung geprüft haben. Sie beeinflusst dann den Status nicht mehr, bleibt aber im Verlauf stehen.",
+    "acknowledgeNote": "Notiz (optional)",
+    "acknowledgeNotePlaceholder": "z. B. neue Kollegin im Support",
+    "acknowledgeSubmit": "Bestätigen",
+    "acknowledgedBy": "Bestätigt von {name}",
+    "acknowledgedAt": "Bestätigt {time}",
+    "openInShopware": "In Shopware öffnen",
+    "detected": "Erkannt {time}",
+    "kind": {
+      "user": "Benutzer",
+      "integration": "Integration",
+      "acl_role": "Rechterolle"
+    },
+    "postureTitle": "Hinweise",
+    "acknowledgeFailed": "Die Änderung konnte nicht bestätigt werden. Bitte erneut versuchen.",
+    "criticalFindings": "Kritisch",
+    "warningFindings": "Warnungen",
+    "monitored": "Überwachte Konten",
+    "filterFindings": "Zu prüfen",
+    "filterInfo": "Informativ",
+    "toSettings": "Einstellungen öffnen",
+    "acknowledged": "Änderung bestätigt — der Status der Umgebung folgt mit dem angestoßenen Abgleich",
+    "facts": {
+      "kind": "Typ",
+      "account": "Konto",
+      "detected": "Erkannt",
+      "change": "Änderung",
+      "count": "Anzahl",
+      "holders": "Betroffene Konten",
+      "app": "App",
+      "privileges": "Berechtigungen",
+      "admin": "Administrator",
+      "state": "Zustand",
+      "roles": "Rechterollen",
+      "apiKeys": "API-Schlüssel",
+      "passwordReset": "Passwortzurücksetzung",
+      "pending": "offen",
+      "lastUsed": "Zuletzt benutzt",
+      "created": "Im Shop angelegt",
+      "never": "nie",
+      "gone": "existiert nicht mehr"
+    },
+    "viewAll": "Kontoüberwachung öffnen",
+    "pendingReview": "{count} Kontoänderung(en) zu prüfen",
+    "loadFailed": "Die Konten konnten nicht geladen werden",
+    "state": {
+      "pending": "Noch nicht initialisiert — der erste Scrape erfasst nur den aktuellen Stand",
+      "unsupported": "FroshTools in diesem Shop kennt den Konten-Endpunkt noch nicht",
+      "error": "Die letzte Kontenprüfung ist fehlgeschlagen"
+    },
+    "acknowledgeStale": "Das Finding hat sich währenddessen geändert — bitte den aktuellen Stand prüfen"
   }
 }

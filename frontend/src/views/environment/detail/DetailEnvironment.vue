@@ -248,6 +248,13 @@
           </div>
         </div>
       </CardSection>
+
+      <!-- Account monitoring -->
+      <AccountMonitoringCard
+        :state="accountState"
+        :open-findings="openAccountFindings"
+        :to="accountsRoute"
+      />
     </div>
 
     <!-- ═══════ BOTTOM: Environment info ═══════ -->
@@ -352,6 +359,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import StatusIcon from "@/components/StatusIcon.vue";
 import CardSection from "@/components/CardSection.vue";
+import AccountMonitoringCard from "@/components/accounts/AccountMonitoringCard.vue";
 
 import IconShieldHalved from "~icons/fa6-solid/shield-halved";
 import IconListCheck from "~icons/fa6-solid/list-check";
@@ -389,6 +397,13 @@ const changelogRoute = computed(() => ({
   name: "account.environments.detail.changelog",
   params: routeParams.value,
 }));
+const accountsRoute = computed(() => ({
+  name: "account.environments.detail.accounts",
+  params: routeParams.value,
+}));
+
+const openAccountFindings = computed(() => environment.value?.openAccountFindings ?? 0);
+const accountState = computed(() => environment.value?.accountMonitoringState ?? "pending");
 
 // Status styling
 const statusBg = computed(() => {

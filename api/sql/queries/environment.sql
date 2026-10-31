@@ -118,7 +118,7 @@ UPDATE environment SET sitespeed_enabled = $1, sitespeed_urls = $2 WHERE id = $3
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
-       e.task_grace_minutes,
+       e.task_grace_minutes, e.account_monitoring_enabled,
        s.name AS shop_name
 FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id;
@@ -127,7 +127,7 @@ LEFT JOIN shop s ON s.id = e.shop_id;
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
-       e.task_grace_minutes,
+       e.task_grace_minutes, e.account_monitoring_enabled,
        s.name AS shop_name
 FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id
@@ -295,3 +295,14 @@ WHERE m.organization_id = @organization_id
   AND np.scope_id = @environment_id::text
   AND np.channel = ''
   AND np.enabled = true;
+
+-- name: UpdateEnvironmentAccountMonitoring :exec
+-- Kept out of UpdateEnvironment: that statement writes the whole row from a
+-- generic PATCH, so a caller that omits the flag would silently switch the
+-- security feature off.
+UPDATE environment SET account_monitoring_enabled = $1 WHERE id = $2;
+
+-- name: GetEnvironmentAccountMonitoring :one
+-- Read inside the same transaction as a toggle, so the decision whether this is
+-- a real transition cannot be made on a stale value.
+SELECT account_monitoring_enabled FROM environment WHERE id = $1 FOR UPDATE;

@@ -49,6 +49,14 @@ const (
 	// in bursts (Shopware publishes several advisories at once), and one email
 	// per advisory would mean a handful of messages in the same minute.
 	EventAdvisoryDetected EventType = "advisory_detected"
+	// EventAccountChanged fires when a shop's admin users, integrations or
+	// permission roles changed in a way that warrants review. Batched per
+	// environment: one password reset and three new roles in the same hour are
+	// one message, not four. It exists alongside the status notification
+	// because a shop that is already degraded produces no status transition —
+	// and a new administrator on an already-red shop is precisely the case
+	// that must not stay silent.
+	EventAccountChanged EventType = "account_changed"
 	// EventScrapeIssue fires when an environment's background refresh fails
 	// fully or partially for an owner-fixable or persistent reason (missing
 	// integration privileges, rejected credentials, unreachable shop, …).
