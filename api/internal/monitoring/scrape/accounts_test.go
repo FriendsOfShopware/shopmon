@@ -765,3 +765,28 @@ func TestPersistAccountsRefreshesAnUnreviewedFinding(t *testing.T) {
 	assert.Empty(t, pending, "an identical re-detection must not re-alert")
 	assert.Len(t, eventRows(t, pool, env.ID), 1)
 }
+
+// Switching monitoring off acknowledges the findings that exist at that moment.
+// A scrape already in flight must not write new unacknowledged ones afterwards:
+// the next scrape no longer emits their checks, so they would sit there with
+// nothing to clear them.
+func TestPersistAccountsSkipsEventsWhenMonitoringWasDisabledMidScrape(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+
+	// The toggle lands while the scrape is between fetch and persist.
+	_, err := pool.Exec(ctx,
+		`UPDATE environment SET account_monitoring_enabled = false WHERE id = $1`, env.ID)
+	require.NoError(t, err)
+
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{first}, []accounts.Account{first, second})))
+
+	assert.Empty(t, eventRows(t, pool, env.ID), "no stranded finding")
+	// The baseline still advances, so re-enabling later does not replay it.
+	assert.Len(t, accountRows(t, h, env.ID), 2)
+}

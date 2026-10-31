@@ -345,9 +345,20 @@ func persistAccounts(ctx context.Context, q *queries.Queries, environmentID int3
 		return fmt.Errorf("delete stale environment accounts: %w", err)
 	}
 
+	// Monitoring may have been switched off while this scrape was fetching. The
+	// toggle acknowledges the findings that existed at that moment, so writing
+	// new unacknowledged ones here would strand them: the next scrape no longer
+	// emits their checks, leaving a finding nobody can clear. Re-read the flag
+	// inside this transaction rather than trusting the value the scrape started
+	// with.
+	stillEnabled, err := q.GetEnvironmentAccountMonitoring(ctx, environmentID)
+	if err != nil {
+		return fmt.Errorf("re-read account monitoring flag: %w", err)
+	}
+
 	// On the seeding run the diff is meaningless (everything is "new"), so the
 	// changes are deliberately dropped rather than stored.
-	if !res.baselineRun {
+	if !res.baselineRun && stillEnabled {
 		for _, c := range res.changes {
 			params := []byte("{}")
 			if len(c.Params) > 0 {
