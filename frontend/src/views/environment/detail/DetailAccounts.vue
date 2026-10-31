@@ -377,7 +377,11 @@ const counts = computed(() => {
 
 const filteredEvents = computed(() => {
   const events = data.value?.events ?? [];
-  if (historyFilter.value === "findings") return events.filter((e) => e.level !== "info");
+  // "Needs review" has to mean the same thing as the list above it: an
+  // acknowledged finding is history, not something still waiting.
+  if (historyFilter.value === "findings") {
+    return events.filter((e) => e.level !== "info" && !e.acknowledgedAt);
+  }
   if (historyFilter.value === "info") return events.filter((e) => e.level === "info");
   return events;
 });

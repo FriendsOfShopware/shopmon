@@ -393,4 +393,25 @@ describe("DetailAccounts", () => {
 
     expect(loadEnvironment).toHaveBeenCalledWith(true);
   });
+
+  // "Needs review" has to mean the same thing as the list above it.
+  it("keeps acknowledged entries out of the needs-review filter", async () => {
+    const acknowledged = {
+      ...adminFinding,
+      id: 3,
+      acknowledgedAt: "2026-10-30T07:00:00Z",
+      acknowledgedBy: "Owner",
+    };
+    getEnvironmentAccounts.mockResolvedValue(response({ events: [acknowledged] }));
+
+    const wrapper = await mountComponent();
+    expect(wrapper.text()).toContain("New administrator account");
+
+    await wrapper
+      .findAll("button")
+      .find((b) => b.text() === "Needs review")
+      ?.trigger("click");
+
+    expect(wrapper.text()).not.toContain("New administrator account");
+  });
 });
