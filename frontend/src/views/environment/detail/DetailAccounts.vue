@@ -306,6 +306,7 @@ import { useI18n } from "vue-i18n";
 import {
   acknowledgeEnvironmentAccountEvent,
   getEnvironmentAccounts,
+  type AccountEvent,
   type AccountFinding,
   type EnvironmentAccounts,
 } from "@/api/generated";
@@ -377,13 +378,25 @@ const counts = computed(() => {
 
 const filteredEvents = computed(() => {
   const events = data.value?.events ?? [];
+  if (historyFilter.value === "info") return events.filter((e) => e.level === "info");
+  if (historyFilter.value !== "findings") return events;
+
   // "Needs review" has to mean the same thing as the list above it: an
   // acknowledged finding is history, not something still waiting.
-  if (historyFilter.value === "findings") {
-    return events.filter((e) => e.level !== "info" && !e.acknowledgedAt);
-  }
-  if (historyFilter.value === "info") return events.filter((e) => e.level === "info");
-  return events;
+  //
+  // The history comes back capped at the newest hundred events while open
+  // findings are returned in full, so a finding older than that cap is listed
+  // above and would otherwise be missing here -- leaving the filter empty while
+  // the page plainly says something needs review.
+  const seen = new Set(events.map((e) => e.id));
+  const missing: AccountEvent[] = (data.value?.openFindings ?? [])
+    .filter((f) => !seen.has(f.id))
+    // An open finding carries no acknowledgement fields by definition, so the
+    // history shape is just the finding without its check id.
+    .map(({ checkId: _checkId, ...rest }) => rest);
+  return [...events.filter((e) => e.level !== "info" && !e.acknowledgedAt), ...missing].sort(
+    (a, b) => b.detectedAt.localeCompare(a.detectedAt),
+  );
 });
 
 // Monotonic request counter. Comparing the environment id alone misses two

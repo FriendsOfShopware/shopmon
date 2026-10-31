@@ -473,4 +473,36 @@ describe("DetailAccounts", () => {
     await mountComponent();
     expect(environment.value?.accountMonitoringState).toBe("error");
   });
+
+  // The history is capped at the newest hundred events while open findings come
+  // back in full, so a finding older than that cap would leave the filter empty
+  // while the page plainly says something needs review.
+  it("includes open findings older than the history cap in needs-review", async () => {
+    getEnvironmentAccounts.mockResolvedValue(
+      response({
+        openFindings: [{ ...adminFinding, id: 500 }],
+        events: [
+          {
+            id: 2,
+            level: "info",
+            kind: "user",
+            change: "admin_revoked",
+            label: "a***@e***.de",
+            messageKey: "check.account.adminRevoked",
+            params: { label: "a***@e***.de" },
+            detectedAt: "2026-10-28T07:00:00Z",
+          },
+        ],
+      }),
+    );
+
+    const wrapper = await mountComponent();
+    await wrapper
+      .findAll("button")
+      .find((b) => b.text() === "Needs review")
+      ?.trigger("click");
+
+    expect(wrapper.text()).toContain("New administrator account");
+    expect(wrapper.text()).not.toContain("lost administrator rights");
+  });
 });
