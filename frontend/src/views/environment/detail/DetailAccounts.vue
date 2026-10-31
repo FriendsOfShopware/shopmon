@@ -471,5 +471,17 @@ function syncBadge() {
   };
 }
 
-watch(() => route.params.environmentId, load, { immediate: true });
+watch(
+  () => route.params.environmentId,
+  () => {
+    // The layout reuses this component, so a half-finished acknowledgement must
+    // not survive the switch -- submitting it would send the previous
+    // environment's event id with the new environment's id.
+    acknowledgeOpen.value = false;
+    pending.value = null;
+    note.value = "";
+    return load();
+  },
+  { immediate: true },
+);
 </script>

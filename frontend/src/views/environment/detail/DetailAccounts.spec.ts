@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises, enableAutoUnmount } from "@vue/test-utils";
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 
 enableAutoUnmount(afterEach);
 
@@ -13,7 +13,9 @@ vi.mock("@/api/generated", () => ({
     acknowledgeEnvironmentAccountEvent(...args),
 }));
 
-const routeParams = { environmentId: "7" };
+// Reactive, so changing it drives the component's route watcher the way
+// navigating between environments does.
+const routeParams = reactive({ environmentId: "7" });
 vi.mock("vue-router", () => ({
   useRoute: () => ({ params: routeParams }),
 }));
@@ -372,7 +374,9 @@ describe("DetailAccounts", () => {
     await flushPromises();
 
     expect(wrapper.text()).not.toContain("New administrator account");
-    expect(environment.value?.openAccountFindings).toBe(1);
+    // The switch triggers a load for the new environment; what must not happen
+    // is the stale response's count landing in the shared badge.
+    expect(environment.value?.openAccountFindings).not.toBe(99);
   });
 
   // Confirming queues a scrape that recomputes the status, so the shared
@@ -435,5 +439,24 @@ describe("DetailAccounts", () => {
     expect(getEnvironmentAccounts).toHaveBeenCalledTimes(2);
     expect(wrapper.text()).not.toContain("New administrator account");
     expect(environment.value?.openAccountFindings).toBe(0);
+  });
+
+  // Submitting a left-over finding would send the previous environment's event
+  // id with the new environment's id.
+  it("drops a half-finished acknowledgement when the environment changes", async () => {
+    getEnvironmentAccounts.mockResolvedValue(response({ openFindings: [adminFinding] }));
+    const wrapper = await mountComponent();
+
+    await wrapper
+      .findAll("button")
+      .find((b) => b.text() === "Looks right")
+      ?.trigger("click");
+    await flushPromises();
+    expect(bodyButton("Confirm")).toBeTruthy();
+
+    routeParams.environmentId = "8";
+    await flushPromises();
+
+    expect(bodyButton("Confirm")).toBeFalsy();
   });
 });
