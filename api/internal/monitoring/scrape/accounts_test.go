@@ -709,3 +709,59 @@ func TestNotifyAccountChangesSkipsAcknowledgedEvents(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, pending, "a confirmed finding is not worth alerting about")
 }
+
+// The same change can genuinely happen twice before anyone reviews it. Keeping
+// the first row untouched would leave the open finding describing a state the
+// shop has already moved past, with no alert for the newer change.
+func TestPersistAccountsRefreshesAnUnreviewedFinding(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	const roleID = "cccccccccccccccccccccccccccccccc"
+	role := func(count int32, hash string) accounts.Account {
+		return accounts.Account{
+			Kind: accounts.KindACLRole, ID: roleID, Label: "Editor",
+			Active: true, PrivilegeCount: count, PrivilegesHash: hash,
+		}
+	}
+	holder := accounts.Account{
+		Kind: accounts.KindUser, ID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Label: "a***@e.de", Active: true,
+	}
+	holder.RoleIDs = []string{roleID}
+
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(role(10, "h1"), holder)))
+
+	// Grows once: a finding opens and is marked notified.
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{role(10, "h1"), holder}, []accounts.Account{role(20, "h2"), holder})))
+	pending, err := h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, pending, 1)
+	h.markAccountEventsNotified(ctx, env.ID, pending)
+
+	// Grows again before anyone reviewed it.
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{role(20, "h2"), holder}, []accounts.Account{role(30, "h3"), holder})))
+
+	open, err := h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, open, 1, "still one finding to review, not two")
+
+	var params map[string]any
+	require.NoError(t, json.Unmarshal(open[0].Params, &params))
+	assert.EqualValues(t, 30, params["to"], "the finding describes the current state, not the stale one")
+
+	pending, err = h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Len(t, pending, 1, "the newer growth is alerted again")
+
+	// An identical re-detection, as two overlapping scrapes produce, must stay
+	// a no-op so the same finding is not mailed twice.
+	h.markAccountEventsNotified(ctx, env.ID, pending)
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{role(20, "h2"), holder}, []accounts.Account{role(30, "h3"), holder})))
+	pending, err = h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Empty(t, pending, "an identical re-detection must not re-alert")
+	assert.Len(t, eventRows(t, pool, env.ID), 1)
+}

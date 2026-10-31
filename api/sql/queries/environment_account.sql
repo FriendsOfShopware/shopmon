@@ -108,7 +108,23 @@ INSERT INTO environment_account_event (
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (environment_id, account_type, account_id, change)
   WHERE acknowledged_at IS NULL AND level <> 'info'
-  DO NOTHING;
+  -- An unreviewed finding is refreshed rather than discarded. The same change
+  -- can genuinely happen twice before anyone reviews it -- a permission role
+  -- growing again, say -- and discarding the second one would leave the open
+  -- finding describing a state the shop has already moved past, with no alert
+  -- and no history for the newer change.
+  DO UPDATE SET
+    label = EXCLUDED.label,
+    level = EXCLUDED.level,
+    params = EXCLUDED.params,
+    admin_path = EXCLUDED.admin_path,
+    detected_at = NOW(),
+    -- Re-alert, because this is new information. Guarded by the WHERE below so
+    -- an identical re-detection from two overlapping scrapes stays a no-op and
+    -- cannot mail the same finding twice.
+    notified_at = NULL
+  WHERE environment_account_event.params IS DISTINCT FROM EXCLUDED.params
+     OR environment_account_event.level IS DISTINCT FROM EXCLUDED.level;
 
 -- name: ListOpenEnvironmentAccountEvents :many
 -- Findings that still need review. info rows are history only and never become
