@@ -446,8 +446,10 @@ func maskEmail(s string) string {
 	local, domain := s[:at], s[at+1:]
 	parts := strings.Split(domain, ".")
 	for i, p := range parts {
-		// The last label (tld) is not identifying and stays readable.
-		if i == len(parts)-1 || p == "" {
+		// The last label is a public suffix and carries no identity, so it
+		// stays readable -- unless it is the only label, in which case it is
+		// the organisation's own name ("jane@acmecorp") and must be masked.
+		if p == "" || (i == len(parts)-1 && len(parts) > 1) {
 			continue
 		}
 		parts[i] = maskSegment(p)

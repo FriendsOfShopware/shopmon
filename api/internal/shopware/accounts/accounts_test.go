@@ -233,6 +233,21 @@ func TestMaskLabel(t *testing.T) {
 		{name: "plaintext address is masked", kind: KindUser, in: "lisa.mueller@example.com", want: "l***@e***.com"},
 		{name: "subdomain is masked too", kind: KindUser, in: "bob@mail.example.com", want: "b***@m***.e***.com"},
 		{name: "non address keeps one character", kind: KindUser, in: "administrator", want: "a***"},
+		{
+			// A single-label domain has no public suffix, so the only label is
+			// the organisation's own name.
+			name: "single label domain is masked",
+			kind: KindUser,
+			in:   "jane@acmecorp",
+			want: "j***@a***",
+		},
+		{
+			// An asterisk anywhere must not buy trust either.
+			name: "asterisk in a plaintext local part",
+			kind: KindUser,
+			in:   "alice+*@example.com",
+			want: "a***@e***.com",
+		},
 		{name: "integration label passes through", kind: KindIntegration, in: "Shopmon Staging", want: "Shopmon Staging"},
 		{name: "role name passes through", kind: KindACLRole, in: "Editor", want: "Editor"},
 		{name: "empty stays empty", kind: KindUser, in: "", want: ""},
