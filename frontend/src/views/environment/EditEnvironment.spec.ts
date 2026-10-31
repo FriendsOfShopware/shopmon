@@ -35,6 +35,7 @@ const mockEnvironment = {
   clientSecret: "",
   sitespeedEnabled: false,
   sitespeedUrls: [],
+  accountMonitoringEnabled: true,
 };
 
 const mockShops = [
@@ -60,6 +61,7 @@ vi.mock("@/api/generated", async (importOriginal) => ({
   updateEnvironment: vi.fn(),
   deleteEnvironment: vi.fn(),
   updateSitespeedSettings: vi.fn(),
+  updateAccountMonitoringSettings: vi.fn(),
 }));
 
 const { mockError, mockSuccess, mockFetchShops, mockFetchEnvironments } = vi.hoisted(() => ({
@@ -90,6 +92,7 @@ import {
   updateEnvironment,
   deleteEnvironment,
   updateSitespeedSettings,
+  updateAccountMonitoringSettings,
 } from "@/api/generated";
 
 describe("EditEnvironment", () => {
@@ -329,5 +332,46 @@ describe("EditEnvironment", () => {
     expect(vm.sitespeedUrls).toEqual(["  ", ""]);
     expect(vm.isSitespeedSubmitting).toBe(false);
     wrapper.unmount();
+  });
+
+  // The switch belongs here rather than on the accounts tab: it is an
+  // environment setting, and this is where there is room to explain what
+  // switching it off actually does.
+  it("displays the account monitoring section", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Account monitoring");
+    expect(wrapper.text()).toContain("Report account changes");
+  });
+
+  it("saves the account monitoring switch", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(updateAccountMonitoringSettings).toHaveBeenCalledWith({
+      path: { environmentId: 1 },
+      body: { enabled: true },
+    });
+    expect(mockSuccess).toHaveBeenCalled();
+  });
+
+  it("does not show success when the account monitoring switch fails to save", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({
+      data: undefined,
+      error: { message: "failed to save account monitoring" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(mockError).toHaveBeenCalledWith("failed to save account monitoring");
+    expect(mockSuccess).not.toHaveBeenCalled();
   });
 });

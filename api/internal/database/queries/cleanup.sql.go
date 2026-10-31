@@ -28,6 +28,19 @@ func (q *Queries) CleanupExpiredSessions(ctx context.Context) error {
 	return err
 }
 
+const cleanupOldEnvironmentAccountEvents = `-- name: CleanupOldEnvironmentAccountEvents :exec
+DELETE FROM environment_account_event
+WHERE detected_at < NOW() - interval '180 days'
+  AND (level = 'info' OR acknowledged_at IS NOT NULL)
+`
+
+// Trims the account history. Open findings are never deleted: an unreviewed
+// security change must not disappear because it got old.
+func (q *Queries) CleanupOldEnvironmentAccountEvents(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, cleanupOldEnvironmentAccountEvents)
+	return err
+}
+
 const cleanupOldNotifications = `-- name: CleanupOldNotifications :exec
 DELETE FROM user_notification WHERE read = true AND created_at < NOW() - interval '90 days'
 `

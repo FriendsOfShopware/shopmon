@@ -111,8 +111,11 @@ type detailAggregate struct {
 	sitespeeds     []queries.EnvironmentSitespeed
 	changelogCount int32
 	deployCount    int32
-	lastDeployAt   pgtype.Timestamp
-	subscribed     bool
+	// openAccountFindings drives the account tab badge, so the detail page
+	// needs no second request to know whether anything is waiting.
+	openAccountFindings int32
+	lastDeployAt        pgtype.Timestamp
+	subscribed          bool
 }
 
 func (s *Service) loadAggregate(ctx context.Context, environmentID int32, language string) (detailAggregate, error) {
@@ -173,6 +176,14 @@ func (s *Service) loadAggregate(ctx context.Context, environmentID int32, langua
 			return fmt.Errorf("get environment sitespeeds: %w", err)
 		}
 		aggregate.sitespeeds = rows
+		return nil
+	})
+	group.Go(func() error {
+		count, err := s.queries.CountOpenEnvironmentAccountFindings(groupCtx, environmentID)
+		if err != nil {
+			return fmt.Errorf("count open account findings: %w", err)
+		}
+		aggregate.openAccountFindings = count
 		return nil
 	})
 	group.Go(func() error {
@@ -271,41 +282,43 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 	}
 
 	return api.EnvironmentDetail{
-		Id:                 int(environment.ID),
-		Name:               environment.Name,
-		Url:                environment.Url,
-		Favicon:            environment.Favicon,
-		Status:             environment.Status,
-		ShopwareVersion:    environment.ShopwareVersion,
-		PhpVersion:         environment.PhpVersion,
-		DatabaseVersion:       environment.DatabaseVersion,
-		LastScrapedAt:      database.TimePtr(environment.LastScrapedAt),
-		LastScrapedError:   environment.LastScrapedError,
-		OrganizationId:     environment.OrganizationID,
-		OrganizationName:   environment.OrganizationName,
-		ShopId:             shopIDPointer,
-		ShopName:           environment.ShopName,
-		ShopDescription:    environment.ShopDescription,
-		EnvironmentImage:   environment.EnvironmentImage,
-		EnvironmentToken:   environment.EnvironmentToken,
-		Ignores:            ignores,
-		CreatedAt:          database.Time(environment.CreatedAt),
-		SitespeedEnabled:   environment.SitespeedEnabled,
-		SitespeedDetailUrl: sitespeedDetailURL(s.config, environment.ID, environment.SitespeedEnabled),
-		SitespeedUrls:      sitespeedURLs,
-		TaskGraceMinutes:   int(environment.TaskGraceMinutes),
-		Extensions:         aggregate.extensions,
-		ScheduledTasks:     mapEnvironmentScheduledTasks(aggregate.tasks),
-		Queues:             mapEnvironmentQueues(aggregate.queues),
-		Cache:              mapEnvironmentCache(aggregate.cache),
-		Checks:             mapEnvironmentChecks(aggregate.checks),
-		ScrapeIssues:       mapEnvironmentScrapeIssues(aggregate.scrapeIssues),
-		Sitespeeds:         mapEnvironmentSitespeeds(aggregate.sitespeeds),
-		ChangelogsCount:    int(aggregate.changelogCount),
-		DeploymentsCount:   int(aggregate.deployCount),
-		LastDeploymentAt:   database.TimePtr(aggregate.lastDeployAt),
-		LastChangelog:      lastChangelog,
-		Subscribed:         aggregate.subscribed,
+		Id:                       int(environment.ID),
+		Name:                     environment.Name,
+		Url:                      environment.Url,
+		Favicon:                  environment.Favicon,
+		Status:                   environment.Status,
+		ShopwareVersion:          environment.ShopwareVersion,
+		PhpVersion:               environment.PhpVersion,
+		DatabaseVersion:          environment.DatabaseVersion,
+		LastScrapedAt:            database.TimePtr(environment.LastScrapedAt),
+		LastScrapedError:         environment.LastScrapedError,
+		OrganizationId:           environment.OrganizationID,
+		OrganizationName:         environment.OrganizationName,
+		ShopId:                   shopIDPointer,
+		ShopName:                 environment.ShopName,
+		ShopDescription:          environment.ShopDescription,
+		EnvironmentImage:         environment.EnvironmentImage,
+		EnvironmentToken:         environment.EnvironmentToken,
+		Ignores:                  ignores,
+		CreatedAt:                database.Time(environment.CreatedAt),
+		SitespeedEnabled:         environment.SitespeedEnabled,
+		AccountMonitoringEnabled: environment.AccountMonitoringEnabled,
+		OpenAccountFindings:      int(aggregate.openAccountFindings),
+		SitespeedDetailUrl:       sitespeedDetailURL(s.config, environment.ID, environment.SitespeedEnabled),
+		SitespeedUrls:            sitespeedURLs,
+		TaskGraceMinutes:         int(environment.TaskGraceMinutes),
+		Extensions:               aggregate.extensions,
+		ScheduledTasks:           mapEnvironmentScheduledTasks(aggregate.tasks),
+		Queues:                   mapEnvironmentQueues(aggregate.queues),
+		Cache:                    mapEnvironmentCache(aggregate.cache),
+		Checks:                   mapEnvironmentChecks(aggregate.checks),
+		ScrapeIssues:             mapEnvironmentScrapeIssues(aggregate.scrapeIssues),
+		Sitespeeds:               mapEnvironmentSitespeeds(aggregate.sitespeeds),
+		ChangelogsCount:          int(aggregate.changelogCount),
+		DeploymentsCount:         int(aggregate.deployCount),
+		LastDeploymentAt:         database.TimePtr(aggregate.lastDeployAt),
+		LastChangelog:            lastChangelog,
+		Subscribed:               aggregate.subscribed,
 	}, nil
 }
 

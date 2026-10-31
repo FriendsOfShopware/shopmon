@@ -236,6 +236,51 @@
       </CardContent>
     </Card>
 
+    <!-- Account monitoring -->
+    <Card>
+      <CardHeader class="px-4 pb-3 sm:px-6">
+        <CardTitle class="flex items-center gap-2 text-base">
+          <icon-fa6-solid:user-shield class="size-4 text-muted-foreground" />
+          {{ $t("environment.accountMonitoring") }}
+        </CardTitle>
+      </CardHeader>
+      <CardContent class="px-4 sm:px-6">
+        <p class="mb-4 text-sm text-muted-foreground">
+          {{ $t("environment.accountMonitoringDesc") }}
+        </p>
+
+        <form @submit.prevent="onAccountMonitoringSubmit" class="space-y-4">
+          <label class="flex cursor-pointer items-center gap-3">
+            <Switch v-model="accountMonitoringEnabled" />
+            <span class="text-sm font-medium">
+              {{ $t("environment.accountMonitoringEnabled") }}
+            </span>
+          </label>
+
+          <div class="space-y-2 rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground">
+            <p>{{ $t("environment.accountMonitoringHint") }}</p>
+            <p>{{ $t("environment.accountMonitoringRequires") }}</p>
+          </div>
+
+          <div class="flex justify-end">
+            <Button
+              :disabled="isAccountMonitoringSubmitting"
+              type="submit"
+              class="w-full whitespace-normal text-xs sm:w-auto sm:whitespace-nowrap sm:text-sm"
+            >
+              <icon-fa6-solid:floppy-disk
+                v-if="!isAccountMonitoringSubmitting"
+                class="mr-1.5 size-3.5"
+                aria-hidden="true"
+              />
+              <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
+              {{ $t("common.save") }}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+
     <!-- Danger zone -->
     <Card class="border-destructive/30">
       <CardHeader class="px-4 pb-3 sm:px-6">
@@ -287,6 +332,7 @@ import {
   type AccountShop,
   type EnvironmentDetail,
   updateEnvironment,
+  updateAccountMonitoringSettings,
   updateSitespeedSettings,
 } from "@/api/generated";
 import { useForm } from "vee-validate";
@@ -348,6 +394,7 @@ async function loadEnvironment() {
 
   if (environment.value) {
     sitespeedEnabled.value = environment.value.sitespeedEnabled ?? false;
+    accountMonitoringEnabled.value = environment.value.accountMonitoringEnabled ?? true;
     sitespeedUrls.value = environment.value.sitespeedUrls
       ? [...environment.value.sitespeedUrls]
       : [];
@@ -369,6 +416,8 @@ loadEnvironment();
 const showEnvironmentDeletionModal = ref(false);
 const sitespeedUrls = ref<string[]>([]);
 const sitespeedEnabled = ref(false);
+const accountMonitoringEnabled = ref(false);
+const isAccountMonitoringSubmitting = ref(false);
 const isSitespeedSubmitting = ref(false);
 
 const showPluginModal = ref(false);
@@ -467,6 +516,30 @@ function addSitespeedUrl() {
 
 function removeSitespeedUrl(index: number) {
   sitespeedUrls.value.splice(index, 1);
+}
+
+async function onAccountMonitoringSubmit() {
+  if (!environment.value) return;
+  try {
+    isAccountMonitoringSubmitting.value = true;
+
+    const { error: apiError } = await updateAccountMonitoringSettings({
+      path: { environmentId: environment.value.id },
+      body: { enabled: accountMonitoringEnabled.value },
+    });
+
+    if (apiError) {
+      error(apiErrorMessage(apiError, "Request failed. Please check the settings and try again."));
+      return;
+    }
+
+    await loadEnvironment();
+    success(t("environment.accountMonitoringSaved"));
+  } catch (e) {
+    error(e instanceof Error ? e.message : String(e));
+  } finally {
+    isAccountMonitoringSubmitting.value = false;
+  }
 }
 
 async function onSitespeedSubmit() {

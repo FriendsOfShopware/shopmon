@@ -32,6 +32,21 @@ type stubRepository struct {
 	updatedEnvironment     Environment
 	updateEnvironmentCalls int
 	updateEnvironmentErr   error
+
+	acknowledgedEvent       int64
+	acknowledgedBy          string
+	acknowledgedNote        *string
+	acknowledgedEnvironment int32
+	acknowledgeResult       bool
+	acknowledgeErr          error
+
+	accountMonitoringEnvironment int32
+	accountMonitoringEnabled     bool
+	accountMonitoringCalls       int
+	accountMonitoringErr         error
+
+	lockCalls              int
+	lockTaken              bool
 	deleteEnvironmentCalls int
 	deleteEnvironmentErr   error
 	deploymentIDs          []int32
@@ -109,6 +124,26 @@ func (r *stubRepository) UnsubscribeEnvironment(context.Context, string, int32) 
 
 func (r *stubRepository) IsEnvironmentSubscribed(context.Context, string, int32) (bool, error) {
 	return false, nil
+}
+
+func (r *stubRepository) AcknowledgeAccountEvent(_ context.Context, environmentID int32, eventID int64, userID string, note *string) (bool, error) {
+	r.acknowledgedEvent = eventID
+	r.acknowledgedBy = userID
+	r.acknowledgedNote = note
+	r.acknowledgedEnvironment = environmentID
+	return r.acknowledgeResult, r.acknowledgeErr
+}
+
+func (r *stubRepository) SetAccountMonitoring(_ context.Context, environmentID int32, enabled bool, _ string) error {
+	r.accountMonitoringEnvironment = environmentID
+	r.accountMonitoringEnabled = enabled
+	r.accountMonitoringCalls++
+	return r.accountMonitoringErr
+}
+
+func (r *stubRepository) TryLock(context.Context, string, time.Duration) bool {
+	r.lockCalls++
+	return !r.lockTaken
 }
 
 type stubAuthorizer struct {

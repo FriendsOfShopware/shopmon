@@ -1,0 +1,432 @@
+package scrape
+
+import (
+	"context"
+	"errors"
+	"strconv"
+	"testing"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	catalogsync "github.com/friendsofshopware/shopmon/api/internal/catalog/sync"
+	"github.com/friendsofshopware/shopmon/api/internal/config"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware/accounts"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
+	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
+)
+
+func adminUser(id, label string) accounts.Account {
+	return accounts.Account{
+		Kind: accounts.KindUser, ID: id, Label: label,
+		Active: true, Admin: true,
+		AdminPath: "/admin#/sw/users/permissions/user/detail/" + id,
+	}
+}
+
+func seededResult(acc ...accounts.Account) accountResult {
+	return accountResult{supported: true, fetched: true, baselineRun: true, accounts: acc}
+}
+
+func diffedResult(baseline, current []accounts.Account) accountResult {
+	return accountResult{
+		supported: true, fetched: true,
+		accounts: current,
+		changes:  accounts.Diff(baseline, current),
+	}
+}
+
+func accountRows(t *testing.T, h *Service, envID int32) []queries.EnvironmentAccount {
+	t.Helper()
+	rows, err := h.queries.ListEnvironmentAccounts(context.Background(), envID)
+	require.NoError(t, err)
+	return rows
+}
+
+func eventRows(t *testing.T, pool *pgxpool.Pool, envID int32) []struct {
+	Change string
+	Level  string
+	Label  string
+} {
+	t.Helper()
+	rows, err := pool.Query(context.Background(),
+		`SELECT change, level, label FROM environment_account_event WHERE environment_id = $1 ORDER BY id`, envID)
+	require.NoError(t, err)
+	defer rows.Close()
+
+	var out []struct {
+		Change string
+		Level  string
+		Label  string
+	}
+	for rows.Next() {
+		var e struct {
+			Change string
+			Level  string
+			Label  string
+		}
+		require.NoError(t, rows.Scan(&e.Change, &e.Level, &e.Label))
+		out = append(out, e)
+	}
+	require.NoError(t, rows.Err())
+	return out
+}
+
+// The very first run must stay silent. Without a baseline every account reads
+// as new, so alerting here would turn every existing shop red on rollout.
+func TestPersistAccountsSeedsBaselineWithoutEvents(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	res := seededResult(adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de"))
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, res))
+
+	assert.Len(t, accountRows(t, h, env.ID), 1, "baseline written")
+	assert.Empty(t, eventRows(t, pool, env.ID), "the seeding run must not report anything")
+
+	state, err := h.queries.GetEnvironmentAccountState(ctx, env.ID)
+	require.NoError(t, err)
+	assert.True(t, state.Supported)
+	assert.True(t, state.BaselineAt.Valid, "baseline_at marks the environment as initialised")
+	assert.EqualValues(t, 1, state.AccountCount)
+}
+
+func TestPersistAccountsReportsNewAdminOnSecondRun(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{first}, []accounts.Account{first, second})))
+
+	events := eventRows(t, pool, env.ID)
+	require.Len(t, events, 1)
+	assert.Equal(t, string(accounts.ChangeNewAdminUser), events[0].Change)
+	assert.Equal(t, string(accounts.LevelRed), events[0].Level)
+	assert.Equal(t, "b***@e***.de", events[0].Label, "the masked label travels with the finding")
+
+	assert.Len(t, accountRows(t, h, env.ID), 2, "baseline advanced")
+
+	open, err := h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Len(t, open, 1, "the finding stays open until someone acknowledges it")
+}
+
+// Informational history must never show up in the checks tab or escalate the
+// shop: a revoked permission is not something anyone has to confirm.
+func TestPersistAccountsKeepsInfoEventsOutOfFindings(t *testing.T) {
+	h, _, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	before := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(before)))
+
+	after := before
+	after.Admin = false
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{before}, []accounts.Account{after})))
+
+	open, err := h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Empty(t, open, "revoking admin is history, not a finding")
+
+	all, err := h.queries.ListEnvironmentAccountEvents(ctx, queries.ListEnvironmentAccountEventsParams{
+		EnvironmentID: env.ID, Limit: 100,
+	})
+	require.NoError(t, err)
+	require.Len(t, all, 1)
+	assert.Equal(t, string(accounts.ChangeAdminRevoked), all[0].Change)
+}
+
+// An unreachable endpoint says nothing about whether the accounts changed.
+// Dropping the baseline would make every account look new once it returns.
+func TestPersistAccountsUnsupportedKeepsBaseline(t *testing.T) {
+	h, _, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		seededResult(adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de"))))
+
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, accountResult{supported: false}))
+
+	assert.Len(t, accountRows(t, h, env.ID), 1, "baseline survives an unsupported run")
+	state, err := h.queries.GetEnvironmentAccountState(ctx, env.ID)
+	require.NoError(t, err)
+	assert.False(t, state.Supported)
+	assert.True(t, state.BaselineAt.Valid, "the environment stays initialised")
+}
+
+// A shop always has at least one administrator. An empty payload is a broken
+// response, and treating it as data would wipe the baseline and then report
+// every admin as new.
+func TestPersistAccountsEmptyPayloadKeepsBaseline(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		seededResult(adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de"))))
+
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, accountResult{
+		supported: true, fetched: false, err: errEmptyAccountPayload,
+	}))
+
+	assert.Len(t, accountRows(t, h, env.ID), 1, "baseline survives an empty payload")
+	assert.Empty(t, eventRows(t, pool, env.ID), "nothing was deleted, so nothing is reported")
+
+	state, err := h.queries.GetEnvironmentAccountState(ctx, env.ID)
+	require.NoError(t, err)
+	require.NotNil(t, state.LastError)
+	assert.Contains(t, *state.LastError, "no entries")
+}
+
+func TestPersistAccountsPrunesVanishedAccount(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	stays := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	goes := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(stays, goes)))
+
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{stays, goes}, []accounts.Account{stays})))
+
+	rows := accountRows(t, h, env.ID)
+	require.Len(t, rows, 1)
+	assert.Equal(t, stays.ID, rows[0].AccountID)
+
+	events := eventRows(t, pool, env.ID)
+	require.Len(t, events, 1)
+	assert.Equal(t, string(accounts.ChangeDeleted), events[0].Change)
+	assert.Equal(t, "b***@e***.de", events[0].Label, "the label outlives the account it describes")
+}
+
+// The hourly scrape must not rewrite unchanged rows, or every environment
+// produces WAL every hour for nothing.
+func TestPersistAccountsIdenticalRunRewritesNothing(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	acc := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(acc)))
+
+	before := snapshotRowVersions(t, pool)
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{acc}, []accounts.Account{acc})))
+	assert.Equal(t, before, snapshotRowVersions(t, pool), "unchanged accounts must not be rewritten")
+}
+
+// An open finding is derived from the database, so it has to survive a run in
+// which the shop could not be reached at all. Otherwise restarting FroshTools
+// would quietly clear a red finding nobody reviewed.
+func TestOpenAccountChecksSurviveAFailedFetch(t *testing.T) {
+	h, _, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{first}, []accounts.Account{first, second})))
+
+	// No client at all: the plugin was removed, or the route answered 404.
+	res := h.fetchAccounts(ctx, env, nil, nil)
+	require.Len(t, res.checks, 1, "the open finding is still reported")
+	assert.Equal(t, checker.StatusRed, res.checks[0].Level)
+	assert.Equal(t, checker.SourceAccounts, res.checks[0].Source)
+	assert.Equal(t,
+		"account.user.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.new_admin_user",
+		res.checks[0].ID)
+	assert.Equal(t,
+		"https://shop.example.com/admin#/sw/users/permissions/user/detail/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		res.checks[0].Link, "the deep link is absolute, the stored path is not")
+	assert.Equal(t, "b***@e***.de", res.checks[0].MessageParams["label"])
+}
+
+// Turning the feature off must not keep reporting findings nobody can reach a
+// UI to clear.
+func TestFetchAccountsDisabledReportsNothing(t *testing.T) {
+	h, _, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{first}, []accounts.Account{first, second})))
+
+	env.AccountMonitoringEnabled = false
+	res := h.fetchAccounts(ctx, env, nil, nil)
+	assert.Empty(t, res.checks)
+	assert.False(t, res.supported)
+}
+
+func TestAccountAdminURL(t *testing.T) {
+	assert.Equal(t, "https://shop.example.com/admin#/x", accountAdminURL("https://shop.example.com/", "/admin#/x"))
+	assert.Equal(t, "", accountAdminURL("https://shop.example.com", ""), "no path means no link")
+	assert.Equal(t, "", accountAdminURL("", "/admin#/x"))
+}
+
+func TestMarkAccountEventsNotified(t *testing.T) {
+	h, _, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{first}, []accounts.Account{first, second})))
+
+	pending, err := h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, pending, 1)
+
+	h.markAccountEventsNotified(ctx, env.ID, pending)
+
+	pending, err = h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Empty(t, pending, "a notified event is not reconsidered next hour")
+}
+
+// failingMailer makes every email delivery fail, so the dispatch reports a
+// failure the notifier has to react to.
+type failingMailer struct{ err error }
+
+func (m failingMailer) Send(context.Context, string, mail.Email) error { return m.err }
+func (failingMailer) BuildConfirmationEmail(string, string) mail.Email { return mail.Email{} }
+func (failingMailer) BuildPasswordResetEmail(string, string) mail.Email {
+	return mail.Email{}
+}
+func (failingMailer) BuildOrgInviteEmail(string, string, string, string) mail.Email {
+	return mail.Email{}
+}
+func (failingMailer) BuildStatusChangeEmail(string, string, string, string) mail.Email {
+	return mail.Email{}
+}
+func (failingMailer) BuildConnectionFailedEmail(string, string, string) mail.Email {
+	return mail.Email{}
+}
+func (failingMailer) BuildAlertEmail(string, string, string, string, *mail.AlertAction) mail.Email {
+	return mail.Email{}
+}
+func (failingMailer) ProductURL() string { return "https://shopmon.example.com" }
+
+// subscribe makes a user a notification recipient for an environment, which is
+// the only way notifyAccountChanges has anyone to tell.
+func subscribe(t *testing.T, pool *pgxpool.Pool, envID int32) {
+	t.Helper()
+	ctx := context.Background()
+	_, err := pool.Exec(ctx, `
+		INSERT INTO "user" (id, name, email, email_verified, created_at, updated_at)
+		VALUES ('watcher', 'Watcher', 'watcher@example.com', true, NOW(), NOW())
+		ON CONFLICT (id) DO NOTHING`)
+	require.NoError(t, err)
+	_, err = pool.Exec(ctx, `
+		INSERT INTO member (id, organization_id, user_id, role, created_at)
+		VALUES ('member-watcher', 'org-1', 'watcher', 'owner', NOW())
+		ON CONFLICT (id) DO NOTHING`)
+	require.NoError(t, err)
+	_, err = pool.Exec(ctx, `
+		INSERT INTO notification_preference (user_id, scope_type, scope_id, event_type, channel, enabled)
+		VALUES ('watcher', 'environment', $1, '', '', true)
+		ON CONFLICT DO NOTHING`, strconv.Itoa(int(envID)))
+	require.NoError(t, err)
+}
+
+func seedOneFinding(t *testing.T, h *Service, envID int32) {
+	t.Helper()
+	ctx := context.Background()
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, envID, seededResult(first)))
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, envID,
+		diffedResult([]accounts.Account{first}, []accounts.Account{first, second})))
+}
+
+func unnotifiedCount(t *testing.T, h *Service, envID int32) int {
+	t.Helper()
+	pending, err := h.queries.ListUnnotifiedEnvironmentAccountEvents(context.Background(), envID)
+	require.NoError(t, err)
+	return len(pending)
+}
+
+// A delivery failure must leave the event unnotified so the next scrape
+// retries. Marking regardless would drop the alert for good.
+func TestNotifyAccountChangesKeepsEventsForRetryOnFailure(t *testing.T) {
+	pool := testdb.Setup(t)
+	q := queries.New(pool)
+	cfg := &config.Config{}
+	h := NewService(pool, q, cfg, failingMailer{err: errors.New("smtp unreachable")},
+		catalogsync.NewService(pool, q, cfg), nil)
+
+	envID := seedEnvironment(t, pool, "Production", "6.5.0.0")
+	env := reloadEnv(t, h, envID)
+	subscribe(t, pool, envID)
+	seedOneFinding(t, h, envID)
+	require.Equal(t, 1, unnotifiedCount(t, h, envID))
+
+	h.notifyAccountChanges(context.Background(), env)
+
+	assert.Equal(t, 1, unnotifiedCount(t, h, envID),
+		"a failed delivery must leave the event pending for the next scrape")
+}
+
+// Informational history is not worth an email; only findings are.
+func TestNotifyAccountChangesIgnoresInfoEvents(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+	subscribe(t, pool, env.ID)
+
+	before := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(before)))
+	after := before
+	after.Admin = false
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{before}, []accounts.Account{after})))
+
+	assert.Equal(t, 0, unnotifiedCount(t, h, env.ID),
+		"revoking admin is history, not something to mail about")
+}
+
+// With monitoring switched off nothing is sent, and the pending events are not
+// silently consumed either.
+func TestNotifyAccountChangesSkippedWhenDisabled(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	subscribe(t, pool, env.ID)
+	seedOneFinding(t, h, env.ID)
+
+	env.AccountMonitoringEnabled = false
+	h.notifyAccountChanges(context.Background(), env)
+
+	assert.Equal(t, 1, unnotifiedCount(t, h, env.ID))
+}
+
+// The counterpart to the failure case: a dispatch that delivers marks the
+// event, so the next scrape does not alert about it again.
+func TestNotifyAccountChangesMarksOnSuccess(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	subscribe(t, pool, env.ID)
+	seedOneFinding(t, h, env.ID)
+	require.Equal(t, 1, unnotifiedCount(t, h, env.ID))
+
+	h.notifyAccountChanges(context.Background(), env)
+
+	assert.Equal(t, 0, unnotifiedCount(t, h, env.ID))
+
+	// And the recipient actually has something in their inbox.
+	var inbox int
+	require.NoError(t, pool.QueryRow(context.Background(),
+		`SELECT COUNT(*) FROM user_notification WHERE user_id = 'watcher'`).Scan(&inbox))
+	assert.Equal(t, 1, inbox)
+
+	// A second run has nothing left to send.
+	h.notifyAccountChanges(context.Background(), env)
+	require.NoError(t, pool.QueryRow(context.Background(),
+		`SELECT COUNT(*) FROM user_notification WHERE user_id = 'watcher'`).Scan(&inbox))
+	assert.Equal(t, 1, inbox, "an already notified finding must not be sent again")
+}

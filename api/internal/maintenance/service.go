@@ -45,6 +45,11 @@ func (s *Service) CleanupOldData(ctx context.Context) error {
 	if err := s.queries.CleanupExpiredBans(ctx); err != nil {
 		return fmt.Errorf("cleanup expired bans: %w", err)
 	}
+	// Trims the account change history. Open findings are never removed: an
+	// unreviewed security change must not disappear because it got old.
+	if err := s.queries.CleanupOldEnvironmentAccountEvents(ctx); err != nil {
+		return fmt.Errorf("cleanup old account events: %w", err)
+	}
 	// The store catalog itself (store_extension and its versions, changelogs and
 	// images) is retained even once no environment links it, so historical
 	// changelog data survives. Only the internal bookkeeping is pruned: sync
@@ -56,6 +61,6 @@ func (s *Service) CleanupOldData(ctx context.Context) error {
 	if err := s.queries.CleanupUnusedStoreExtensionCompatibility(ctx); err != nil {
 		return fmt.Errorf("cleanup unused store extension compatibility: %w", err)
 	}
-	slog.Info("cleaned up old data: sessions, notifications, sitespeed, bans, store bookkeeping")
+	slog.Info("cleaned up old data: sessions, notifications, sitespeed, bans, account history, store bookkeeping")
 	return nil
 }

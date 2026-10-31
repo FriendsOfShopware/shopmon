@@ -396,7 +396,7 @@ type AccountEnvironment struct {
 	Id               int        `json:"id"`
 	LastScrapedAt    *time.Time `json:"lastScrapedAt"`
 	LastScrapedError *string    `json:"lastScrapedError"`
-	DatabaseVersion     *string    `json:"databaseVersion,omitempty"`
+	DatabaseVersion  *string    `json:"databaseVersion,omitempty"`
 	Name             string     `json:"name"`
 	OrganizationId   string     `json:"organizationId"`
 	OrganizationName string     `json:"organizationName"`
@@ -640,7 +640,7 @@ type AdminEnvironmentDetail struct {
 	LastDeployment       *AdminEnvironmentDeployment `json:"lastDeployment,omitempty"`
 	LastScrapedAt        *time.Time                  `json:"lastScrapedAt,omitempty"`
 	LastScrapedError     *string                     `json:"lastScrapedError,omitempty"`
-	DatabaseVersion         *string                     `json:"databaseVersion,omitempty"`
+	DatabaseVersion      *string                     `json:"databaseVersion,omitempty"`
 	Name                 string                      `json:"name"`
 	OrganizationId       string                      `json:"organizationId"`
 	OrganizationName     string                      `json:"organizationName"`
@@ -709,7 +709,7 @@ type AdminOrganizationDetail struct {
 type AdminOrganizationEnvironment struct {
 	Id              int        `json:"id"`
 	LastScrapedAt   *time.Time `json:"lastScrapedAt,omitempty"`
-	DatabaseVersion    *string    `json:"databaseVersion,omitempty"`
+	DatabaseVersion *string    `json:"databaseVersion,omitempty"`
 	Name            string     `json:"name"`
 	PhpVersion      *string    `json:"phpVersion,omitempty"`
 	ShopId          int        `json:"shopId"`
@@ -1256,42 +1256,49 @@ type EnvironmentDetail struct {
 	Cache *CacheInfo `json:"cache"`
 
 	// ChangelogsCount Total number of recorded changelog entries. The entries themselves are paginated via GET /environments/{environmentId}/changelogs.
-	ChangelogsCount    int                    `json:"changelogsCount"`
-	Checks             []EnvironmentCheck     `json:"checks"`
-	CreatedAt          time.Time              `json:"createdAt"`
-	DeploymentsCount   int                    `json:"deploymentsCount"`
-	EnvironmentImage   *string                `json:"environmentImage"`
-	EnvironmentToken   string                 `json:"environmentToken"`
-	Extensions         []EnvironmentExtension `json:"extensions"`
-	Favicon            *string                `json:"favicon"`
-	Id                 int                    `json:"id"`
-	Ignores            *[]string              `json:"ignores"`
-	LastChangelog      *AccountChangelog      `json:"lastChangelog"`
-	LastDeploymentAt   *time.Time             `json:"lastDeploymentAt"`
-	LastScrapedAt      *time.Time             `json:"lastScrapedAt"`
-	LastScrapedError   *string                `json:"lastScrapedError"`
-	DatabaseVersion       *string                `json:"databaseVersion,omitempty"`
-	Name               string                 `json:"name"`
-	OrganizationId     string                 `json:"organizationId"`
-	OrganizationName   string                 `json:"organizationName"`
-	PhpVersion         *string                `json:"phpVersion,omitempty"`
-	Queues             []Queue                `json:"queues"`
-	ScheduledTasks     []ScheduledTask        `json:"scheduledTasks"`
+	ChangelogsCount  int                    `json:"changelogsCount"`
+	Checks           []EnvironmentCheck     `json:"checks"`
+	CreatedAt        time.Time              `json:"createdAt"`
+	DeploymentsCount int                    `json:"deploymentsCount"`
+	EnvironmentImage *string                `json:"environmentImage"`
+	EnvironmentToken string                 `json:"environmentToken"`
+	Extensions       []EnvironmentExtension `json:"extensions"`
+	Favicon          *string                `json:"favicon"`
+	Id               int                    `json:"id"`
+	Ignores          *[]string              `json:"ignores"`
+	LastChangelog    *AccountChangelog      `json:"lastChangelog"`
+	LastDeploymentAt *time.Time             `json:"lastDeploymentAt"`
+	LastScrapedAt    *time.Time             `json:"lastScrapedAt"`
+	LastScrapedError *string                `json:"lastScrapedError"`
+	DatabaseVersion  *string                `json:"databaseVersion,omitempty"`
+	Name             string                 `json:"name"`
+	OrganizationId   string                 `json:"organizationId"`
+	OrganizationName string                 `json:"organizationName"`
+	PhpVersion       *string                `json:"phpVersion,omitempty"`
+	Queues           []Queue                `json:"queues"`
+	ScheduledTasks   []ScheduledTask        `json:"scheduledTasks"`
 
 	// ScrapeIssues Current background-refresh problems (missing integration privileges, unreachable shop, …). Empty when the refresh is healthy.
-	ScrapeIssues []EnvironmentScrapeIssue `json:"scrapeIssues"`
-	ShopDescription    *string                `json:"shopDescription"`
-	ShopId             *int                   `json:"shopId"`
-	ShopName           *string                `json:"shopName"`
-	ShopwareVersion    string                 `json:"shopwareVersion"`
-	SitespeedDetailUrl *string                `json:"sitespeedDetailUrl"`
-	SitespeedEnabled   bool                   `json:"sitespeedEnabled"`
-	SitespeedUrls      *[]string              `json:"sitespeedUrls"`
-	Sitespeeds         []Sitespeed            `json:"sitespeeds"`
-	Status             string                 `json:"status"`
-	Subscribed         bool                   `json:"subscribed"`
-	Url                string                 `json:"url"`
-	TaskGraceMinutes   int                    `json:"taskGraceMinutes"`
+	ScrapeIssues       []EnvironmentScrapeIssue `json:"scrapeIssues"`
+	ShopDescription    *string                  `json:"shopDescription"`
+	ShopId             *int                     `json:"shopId"`
+	ShopName           *string                  `json:"shopName"`
+	ShopwareVersion    string                   `json:"shopwareVersion"`
+	SitespeedDetailUrl *string                  `json:"sitespeedDetailUrl"`
+	SitespeedEnabled   bool                     `json:"sitespeedEnabled"`
+
+	// OpenAccountFindings is the number of account changes awaiting review.
+	OpenAccountFindings int `json:"openAccountFindings"`
+
+	// AccountMonitoringEnabled is the per-environment opt-out for account
+	// monitoring.
+	AccountMonitoringEnabled bool        `json:"accountMonitoringEnabled"`
+	SitespeedUrls            *[]string   `json:"sitespeedUrls"`
+	Sitespeeds               []Sitespeed `json:"sitespeeds"`
+	Status                   string      `json:"status"`
+	Subscribed               bool        `json:"subscribed"`
+	Url                      string      `json:"url"`
+	TaskGraceMinutes         int         `json:"taskGraceMinutes"`
 }
 
 // EnvironmentExtension defines model for EnvironmentExtension.
@@ -1549,6 +1556,129 @@ type StatusEvent struct {
 	NewStatus string         `json:"newStatus"`
 	OldStatus string         `json:"oldStatus"`
 	Reasons   []StatusReason `json:"reasons"`
+}
+
+// EnvironmentAccounts is the account-monitoring view of one environment.
+//
+// It deliberately carries no directory of the shop's accounts: only the
+// changes that need review, the history of what changed, and posture hints
+// for accounts that stand out. Who else has access is not Shopmon's to show.
+type EnvironmentAccounts struct {
+	// Enabled is the per-environment opt-out. Monitoring is on by default.
+	Enabled bool `json:"enabled"`
+
+	// Supported is false when the shop's FroshTools does not serve the account
+	// endpoint yet. Existing findings stay visible regardless.
+	Supported bool `json:"supported"`
+
+	// BaselineAt is when the environment was first recorded. Until it is set,
+	// nothing is reported: without a prior state every account looks new.
+	BaselineAt   *time.Time `json:"baselineAt,omitempty"`
+	LastSyncedAt *time.Time `json:"lastSyncedAt,omitempty"`
+
+	// LastError explains why the last read failed, typically a missing
+	// frosh_tools:read permission on the integration.
+	LastError *string `json:"lastError,omitempty"`
+
+	// AccountCount is how many principals are monitored. A count is not a
+	// directory, and it makes "nothing changed" distinguishable from "nothing
+	// is being watched".
+	AccountCount int `json:"accountCount"`
+
+	OpenFindings []AccountFinding     `json:"openFindings"`
+	Events       []AccountEvent       `json:"events"`
+	PostureHints []AccountPostureHint `json:"postureHints"`
+}
+
+// AccountFinding is a change that still needs review. Its shape mirrors
+// StatusReason so the frontend renders both with the same helper.
+type AccountFinding struct {
+	Id         int64           `json:"id"`
+	Level      string          `json:"level"`
+	Kind       string          `json:"kind"`
+	Change     string          `json:"change"`
+	Label      string          `json:"label"`
+	MessageKey string          `json:"messageKey"`
+	Params     *map[string]any `json:"params,omitempty"`
+
+	// AdminUrl is composed server-side from the environment URL and the stored
+	// relative path, and is absent when the shop supplied nothing usable.
+	AdminUrl   *string   `json:"adminUrl,omitempty"`
+	DetectedAt time.Time `json:"detectedAt"`
+
+	// CheckId ties the finding to the check it raises on the checks tab.
+	CheckId string `json:"checkId"`
+
+	Account *AccountSnapshot `json:"account,omitempty"`
+}
+
+// AccountEvent is one entry of the immutable change history, acknowledged and
+// informational entries included.
+type AccountEvent struct {
+	Id              int64           `json:"id"`
+	Level           string          `json:"level"`
+	Kind            string          `json:"kind"`
+	Change          string          `json:"change"`
+	Label           string          `json:"label"`
+	MessageKey      string          `json:"messageKey"`
+	Params          *map[string]any `json:"params,omitempty"`
+	AdminUrl        *string         `json:"adminUrl,omitempty"`
+	DetectedAt      time.Time       `json:"detectedAt"`
+	AcknowledgedAt  *time.Time      `json:"acknowledgedAt,omitempty"`
+	AcknowledgedBy  *string         `json:"acknowledgedBy,omitempty"`
+	AcknowledgeNote *string         `json:"acknowledgeNote,omitempty"`
+
+	Account *AccountSnapshot `json:"account,omitempty"`
+}
+
+// AccountPostureHint rates an existing account rather than a change. Hints are
+// advisory: they never become a check and never affect the environment status.
+//
+// The supporting facts are sent as data, not as a rendered sentence: the text
+// is translated per viewer, so a server-built "never used" would show up in
+// English next to German surroundings.
+type AccountPostureHint struct {
+	Hint     string  `json:"hint"`
+	Kind     string  `json:"kind"`
+	Label    string  `json:"label"`
+	AdminUrl *string `json:"adminUrl,omitempty"`
+
+	LastUsageAt    *time.Time `json:"lastUsageAt,omitempty"`
+	CreatedAt      *time.Time `json:"createdAt,omitempty"`
+	AccessKeyCount *int       `json:"accessKeyCount,omitempty"`
+}
+
+// AccountSnapshot is the account's current state, attached to a finding so the
+// reviewer can judge it without leaving Shopmon. Absent when the account no
+// longer exists in the shop — the finding's label and params are then all that
+// is left of it, which is exactly why the label is stored on the event.
+type AccountSnapshot struct {
+	Active                  bool       `json:"active"`
+	Admin                   bool       `json:"admin"`
+	RoleCount               int        `json:"roleCount"`
+	AccessKeyCount          int        `json:"accessKeyCount"`
+	PrivilegeCount          int        `json:"privilegeCount"`
+	ManagedByApp            bool       `json:"managedByApp"`
+	AppName                 *string    `json:"appName,omitempty"`
+	PasswordRecoveryPending bool       `json:"passwordRecoveryPending"`
+	LastUsageAt             *time.Time `json:"lastUsageAt,omitempty"`
+	PasswordChangedAt       *time.Time `json:"passwordChangedAt,omitempty"`
+	CreatedAt               *time.Time `json:"createdAt,omitempty"`
+
+	// FirstSeenAt is when Shopmon first recorded this account, which is not the
+	// same as when the shop created it.
+	FirstSeenAt time.Time `json:"firstSeenAt"`
+}
+
+// AcknowledgeAccountEventRequest defines model for AcknowledgeAccountEventRequest.
+type AcknowledgeAccountEventRequest struct {
+	// Note is the reviewer's optional reason, kept as an audit trail.
+	Note *string `json:"note,omitempty" maxLength:"500"`
+}
+
+// UpdateAccountMonitoringRequest defines model for UpdateAccountMonitoringRequest.
+type UpdateAccountMonitoringRequest struct {
+	Enabled bool `json:"enabled"`
 }
 
 // StatusReason defines model for StatusReason.

@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -287,4 +290,80 @@ func (r *Repository) IsEnvironmentSubscribed(ctx context.Context, userID string,
 		return false, fmt.Errorf("check environment subscription: %w", err)
 	}
 	return subscribed, nil
+}
+
+// AcknowledgeAccountEvent marks one account finding as reviewed. It reports
+// false when no open row matched: either the event belongs to a different
+// environment, or someone already reviewed it.
+func (r *Repository) AcknowledgeAccountEvent(ctx context.Context, environmentID int32, eventID int64, userID string, note *string) (bool, error) {
+	rows, err := r.queries.AcknowledgeEnvironmentAccountEvent(ctx, queries.AcknowledgeEnvironmentAccountEventParams{
+		ID:              eventID,
+		EnvironmentID:   environmentID,
+		AcknowledgedBy:  &userID,
+		AcknowledgeNote: note,
+	})
+	if err != nil {
+		return false, fmt.Errorf("acknowledge account event: %w", err)
+	}
+	return rows > 0, nil
+}
+
+// SetAccountMonitoring flips the per-environment switch.
+//
+// Disabling also acknowledges the open findings: the scrape stops emitting
+// their checks, but leaving the rows open would keep them in the history as
+// unreviewed forever with no tab left to clear them from. Enabling clears the
+// baseline so the next scrape seeds again — otherwise everything that changed
+// while monitoring was off would arrive at once as new findings.
+func (r *Repository) SetAccountMonitoring(ctx context.Context, environmentID int32, enabled bool, userID string) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := r.queries.WithTx(tx)
+	if err := q.UpdateEnvironmentAccountMonitoring(ctx, queries.UpdateEnvironmentAccountMonitoringParams{
+		AccountMonitoringEnabled: enabled,
+		ID:                       environmentID,
+	}); err != nil {
+		return fmt.Errorf("update account monitoring: %w", err)
+	}
+
+	if enabled {
+		if err := q.ResetEnvironmentAccountBaseline(ctx, environmentID); err != nil {
+			return fmt.Errorf("reset account baseline: %w", err)
+		}
+	} else {
+		note := "account monitoring disabled"
+		if err := q.AcknowledgeAllEnvironmentAccountEvents(ctx, queries.AcknowledgeAllEnvironmentAccountEventsParams{
+			EnvironmentID:   environmentID,
+			AcknowledgedBy:  &userID,
+			AcknowledgeNote: &note,
+		}); err != nil {
+			return fmt.Errorf("acknowledge open account findings: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
+}
+
+// TryLock reports whether this caller obtained the named lock. An error is
+// treated as "not acquired": the lock only throttles a convenience refresh,
+// and skipping it costs at most a delayed status update.
+func (r *Repository) TryLock(ctx context.Context, key string, ttl time.Duration) bool {
+	_, err := r.queries.AcquireLockIfFree(ctx, queries.AcquireLockIfFreeParams{
+		Key:     key,
+		Expires: pgtype.Timestamp{Time: time.Now().Add(ttl), Valid: true},
+	})
+	if err == nil {
+		return true
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		slog.WarnContext(ctx, "failed to acquire lock", "key", key, "error", err)
+	}
+	return false
 }

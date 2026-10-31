@@ -248,6 +248,44 @@
           </div>
         </div>
       </CardSection>
+
+      <!-- Account monitoring -->
+      <CardSection :icon="IconUserShield" :title="$t('accounts.title')">
+        <template #action>
+          <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
+            <RouterLink :to="accountsRoute">
+              {{ $t("accounts.viewAll") }}
+              <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
+            </RouterLink>
+          </Button>
+        </template>
+
+        <div
+          v-if="!environment.accountMonitoringEnabled"
+          class="flex items-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground"
+        >
+          <icon-fa6-solid:circle-info class="size-4 shrink-0" />
+          {{ $t("accounts.disabled") }}
+        </div>
+        <div
+          v-else-if="openAccountFindings === 0"
+          class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+        >
+          <icon-fa6-solid:circle-check class="size-4 shrink-0" />
+          {{ $t("accounts.noFindings") }}
+        </div>
+        <RouterLink
+          v-else
+          :to="accountsRoute"
+          class="flex items-center gap-2.5 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm transition-colors hover:bg-destructive/10"
+        >
+          <icon-fa6-solid:user-shield class="size-4 shrink-0 text-destructive" />
+          <span class="min-w-0 flex-1">
+            {{ $t("accounts.pendingReview", { count: openAccountFindings }) }}
+          </span>
+          <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
+        </RouterLink>
+      </CardSection>
     </div>
 
     <!-- ═══════ BOTTOM: Environment info ═══════ -->
@@ -357,6 +395,7 @@ import IconShieldHalved from "~icons/fa6-solid/shield-halved";
 import IconListCheck from "~icons/fa6-solid/list-check";
 import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import IconClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
+import IconUserShield from "~icons/fa6-solid/user-shield";
 import IconPlug from "~icons/fa6-solid/plug";
 import IconCircleInfo from "~icons/fa6-solid/circle-info";
 
@@ -389,6 +428,12 @@ const changelogRoute = computed(() => ({
   name: "account.environments.detail.changelog",
   params: routeParams.value,
 }));
+const accountsRoute = computed(() => ({
+  name: "account.environments.detail.accounts",
+  params: routeParams.value,
+}));
+
+const openAccountFindings = computed(() => environment.value?.openAccountFindings ?? 0);
 
 // Status styling
 const statusBg = computed(() => {

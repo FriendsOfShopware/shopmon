@@ -164,31 +164,32 @@ const getAllEnvironments = `-- name: GetAllEnvironments :many
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
-       e.task_grace_minutes,
+       e.task_grace_minutes, e.account_monitoring_enabled,
        s.name AS shop_name
 FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id
 `
 
 type GetAllEnvironmentsRow struct {
-	ID                   int32            `json:"id"`
-	Name                 string           `json:"name"`
-	Url                  string           `json:"url"`
-	ClientID             string           `json:"client_id"`
-	ClientSecret         string           `json:"client_secret"`
-	ShopwareVersion      string           `json:"shopware_version"`
-	PhpVersion           *string          `json:"php_version"`
-	DatabaseVersion      *string          `json:"database_version"`
-	OrganizationID       string           `json:"organization_id"`
-	Ignores              json.RawMessage  `json:"ignores"`
-	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError     *string          `json:"last_scraped_error"`
-	ConnectionIssueCount int32            `json:"connection_issue_count"`
-	EnvironmentToken     string           `json:"environment_token"`
-	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
-	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
-	TaskGraceMinutes     int32            `json:"task_grace_minutes"`
-	ShopName             *string          `json:"shop_name"`
+	ID                       int32            `json:"id"`
+	Name                     string           `json:"name"`
+	Url                      string           `json:"url"`
+	ClientID                 string           `json:"client_id"`
+	ClientSecret             string           `json:"client_secret"`
+	ShopwareVersion          string           `json:"shopware_version"`
+	PhpVersion               *string          `json:"php_version"`
+	DatabaseVersion          *string          `json:"database_version"`
+	OrganizationID           string           `json:"organization_id"`
+	Ignores                  json.RawMessage  `json:"ignores"`
+	LastScrapedAt            pgtype.Timestamp `json:"last_scraped_at"`
+	LastScrapedError         *string          `json:"last_scraped_error"`
+	ConnectionIssueCount     int32            `json:"connection_issue_count"`
+	EnvironmentToken         string           `json:"environment_token"`
+	SitespeedEnabled         bool             `json:"sitespeed_enabled"`
+	SitespeedUrls            json.RawMessage  `json:"sitespeed_urls"`
+	TaskGraceMinutes         int32            `json:"task_grace_minutes"`
+	AccountMonitoringEnabled bool             `json:"account_monitoring_enabled"`
+	ShopName                 *string          `json:"shop_name"`
 }
 
 func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsRow, error) {
@@ -218,6 +219,7 @@ func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsR
 			&i.SitespeedEnabled,
 			&i.SitespeedUrls,
 			&i.TaskGraceMinutes,
+			&i.AccountMonitoringEnabled,
 			&i.ShopName,
 		); err != nil {
 			return nil, err
@@ -231,7 +233,7 @@ func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsR
 }
 
 const getEnvironmentByID = `-- name: GetEnvironmentByID :one
-SELECT e.id, e.organization_id, e.shop_id, e.name, e.status, e.url, e.favicon, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version, e.last_scraped_at, e.last_scraped_error, e.ignores, e.environment_image, e.last_changelog, e.active_deployment_id, e.connection_issue_count, e.sitespeed_enabled, e.sitespeed_urls, e.environment_token, e.task_grace_minutes, e.created_at, o.name AS organization_name, s.name AS shop_name, s.description AS shop_description
+SELECT e.id, e.organization_id, e.shop_id, e.name, e.status, e.url, e.favicon, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version, e.last_scraped_at, e.last_scraped_error, e.ignores, e.environment_image, e.last_changelog, e.active_deployment_id, e.connection_issue_count, e.sitespeed_enabled, e.sitespeed_urls, e.environment_token, e.task_grace_minutes, e.account_monitoring_enabled, e.created_at, o.name AS organization_name, s.name AS shop_name, s.description AS shop_description
 FROM environment e
 JOIN organization o ON o.id = e.organization_id
 LEFT JOIN shop s ON s.id = e.shop_id
@@ -239,33 +241,34 @@ WHERE e.id = $1
 `
 
 type GetEnvironmentByIDRow struct {
-	ID                   int32            `json:"id"`
-	OrganizationID       string           `json:"organization_id"`
-	ShopID               int32            `json:"shop_id"`
-	Name                 string           `json:"name"`
-	Status               string           `json:"status"`
-	Url                  string           `json:"url"`
-	Favicon              *string          `json:"favicon"`
-	ClientID             string           `json:"client_id"`
-	ClientSecret         string           `json:"client_secret"`
-	ShopwareVersion      string           `json:"shopware_version"`
-	PhpVersion           *string          `json:"php_version"`
-	DatabaseVersion      *string          `json:"database_version"`
-	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError     *string          `json:"last_scraped_error"`
-	Ignores              json.RawMessage  `json:"ignores"`
-	EnvironmentImage     *string          `json:"environment_image"`
-	LastChangelog        []byte           `json:"last_changelog"`
-	ActiveDeploymentID   *int32           `json:"active_deployment_id"`
-	ConnectionIssueCount int32            `json:"connection_issue_count"`
-	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
-	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
-	EnvironmentToken     string           `json:"environment_token"`
-	TaskGraceMinutes     int32            `json:"task_grace_minutes"`
-	CreatedAt            pgtype.Timestamp `json:"created_at"`
-	OrganizationName     string           `json:"organization_name"`
-	ShopName             *string          `json:"shop_name"`
-	ShopDescription      *string          `json:"shop_description"`
+	ID                       int32            `json:"id"`
+	OrganizationID           string           `json:"organization_id"`
+	ShopID                   int32            `json:"shop_id"`
+	Name                     string           `json:"name"`
+	Status                   string           `json:"status"`
+	Url                      string           `json:"url"`
+	Favicon                  *string          `json:"favicon"`
+	ClientID                 string           `json:"client_id"`
+	ClientSecret             string           `json:"client_secret"`
+	ShopwareVersion          string           `json:"shopware_version"`
+	PhpVersion               *string          `json:"php_version"`
+	DatabaseVersion          *string          `json:"database_version"`
+	LastScrapedAt            pgtype.Timestamp `json:"last_scraped_at"`
+	LastScrapedError         *string          `json:"last_scraped_error"`
+	Ignores                  json.RawMessage  `json:"ignores"`
+	EnvironmentImage         *string          `json:"environment_image"`
+	LastChangelog            []byte           `json:"last_changelog"`
+	ActiveDeploymentID       *int32           `json:"active_deployment_id"`
+	ConnectionIssueCount     int32            `json:"connection_issue_count"`
+	SitespeedEnabled         bool             `json:"sitespeed_enabled"`
+	SitespeedUrls            json.RawMessage  `json:"sitespeed_urls"`
+	EnvironmentToken         string           `json:"environment_token"`
+	TaskGraceMinutes         int32            `json:"task_grace_minutes"`
+	AccountMonitoringEnabled bool             `json:"account_monitoring_enabled"`
+	CreatedAt                pgtype.Timestamp `json:"created_at"`
+	OrganizationName         string           `json:"organization_name"`
+	ShopName                 *string          `json:"shop_name"`
+	ShopDescription          *string          `json:"shop_description"`
 }
 
 func (q *Queries) GetEnvironmentByID(ctx context.Context, id int32) (GetEnvironmentByIDRow, error) {
@@ -295,6 +298,7 @@ func (q *Queries) GetEnvironmentByID(ctx context.Context, id int32) (GetEnvironm
 		&i.SitespeedUrls,
 		&i.EnvironmentToken,
 		&i.TaskGraceMinutes,
+		&i.AccountMonitoringEnabled,
 		&i.CreatedAt,
 		&i.OrganizationName,
 		&i.ShopName,
@@ -461,7 +465,7 @@ const getEnvironmentForScrape = `-- name: GetEnvironmentForScrape :one
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version, e.php_version, e.database_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
-       e.task_grace_minutes,
+       e.task_grace_minutes, e.account_monitoring_enabled,
        s.name AS shop_name
 FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id
@@ -469,24 +473,25 @@ WHERE e.id = $1
 `
 
 type GetEnvironmentForScrapeRow struct {
-	ID                   int32            `json:"id"`
-	Name                 string           `json:"name"`
-	Url                  string           `json:"url"`
-	ClientID             string           `json:"client_id"`
-	ClientSecret         string           `json:"client_secret"`
-	ShopwareVersion      string           `json:"shopware_version"`
-	PhpVersion           *string          `json:"php_version"`
-	DatabaseVersion      *string          `json:"database_version"`
-	OrganizationID       string           `json:"organization_id"`
-	Ignores              json.RawMessage  `json:"ignores"`
-	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError     *string          `json:"last_scraped_error"`
-	ConnectionIssueCount int32            `json:"connection_issue_count"`
-	EnvironmentToken     string           `json:"environment_token"`
-	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
-	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
-	TaskGraceMinutes     int32            `json:"task_grace_minutes"`
-	ShopName             *string          `json:"shop_name"`
+	ID                       int32            `json:"id"`
+	Name                     string           `json:"name"`
+	Url                      string           `json:"url"`
+	ClientID                 string           `json:"client_id"`
+	ClientSecret             string           `json:"client_secret"`
+	ShopwareVersion          string           `json:"shopware_version"`
+	PhpVersion               *string          `json:"php_version"`
+	DatabaseVersion          *string          `json:"database_version"`
+	OrganizationID           string           `json:"organization_id"`
+	Ignores                  json.RawMessage  `json:"ignores"`
+	LastScrapedAt            pgtype.Timestamp `json:"last_scraped_at"`
+	LastScrapedError         *string          `json:"last_scraped_error"`
+	ConnectionIssueCount     int32            `json:"connection_issue_count"`
+	EnvironmentToken         string           `json:"environment_token"`
+	SitespeedEnabled         bool             `json:"sitespeed_enabled"`
+	SitespeedUrls            json.RawMessage  `json:"sitespeed_urls"`
+	TaskGraceMinutes         int32            `json:"task_grace_minutes"`
+	AccountMonitoringEnabled bool             `json:"account_monitoring_enabled"`
+	ShopName                 *string          `json:"shop_name"`
 }
 
 func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnvironmentForScrapeRow, error) {
@@ -510,6 +515,7 @@ func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnv
 		&i.SitespeedEnabled,
 		&i.SitespeedUrls,
 		&i.TaskGraceMinutes,
+		&i.AccountMonitoringEnabled,
 		&i.ShopName,
 	)
 	return i, err
@@ -1140,6 +1146,23 @@ func (q *Queries) UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentPa
 		arg.TaskGraceMinutes,
 		arg.ID,
 	)
+	return err
+}
+
+const updateEnvironmentAccountMonitoring = `-- name: UpdateEnvironmentAccountMonitoring :exec
+UPDATE environment SET account_monitoring_enabled = $1 WHERE id = $2
+`
+
+type UpdateEnvironmentAccountMonitoringParams struct {
+	AccountMonitoringEnabled bool  `json:"account_monitoring_enabled"`
+	ID                       int32 `json:"id"`
+}
+
+// Kept out of UpdateEnvironment: that statement writes the whole row from a
+// generic PATCH, so a caller that omits the flag would silently switch the
+// security feature off.
+func (q *Queries) UpdateEnvironmentAccountMonitoring(ctx context.Context, arg UpdateEnvironmentAccountMonitoringParams) error {
+	_, err := q.db.Exec(ctx, updateEnvironmentAccountMonitoring, arg.AccountMonitoringEnabled, arg.ID)
 	return err
 }
 

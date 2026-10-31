@@ -29,6 +29,7 @@ const (
 	datasetCacheInfo      = "cache_info"
 	datasetFroshTools     = "frosh_tools"
 	datasetSBOM           = "sbom"
+	datasetAccounts       = "accounts"
 )
 
 // transientNotifyThreshold is how many consecutive scrapes a transient

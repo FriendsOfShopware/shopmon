@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/friendsofshopware/shopmon/api/internal/shopware"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware/sanitize"
 )
 
 // Path is the FroshTools SBOM endpoint. It is served by newer FroshTools
@@ -189,7 +190,6 @@ var composerNameRe = regexp.MustCompile(`^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9](([
 const (
 	maxPackageNameLen = 190
 	maxVersionLen     = 100
-	maxMetaLen        = 512
 )
 
 func (c Component) composerName() string {
@@ -229,43 +229,14 @@ func validVersion(v string) bool {
 }
 
 // SanitizeMeta bounds optional shop-supplied metadata (type, purl, spec
-// version, serial number); anything unprintable or oversized is dropped rather
-// than stored.
-func SanitizeMeta(s string) string {
-	s = strings.TrimSpace(s)
-	if s == "" || len(s) > maxMetaLen || !utf8.ValidString(s) {
-		return ""
-	}
-	for _, r := range s {
-		if r < 0x20 || r == 0x7f {
-			return ""
-		}
-	}
-	return s
-}
+// version, serial number). Retained as a thin alias so existing callers keep
+// working; the rules live in the shared sanitize package.
+func SanitizeMeta(s string) string { return sanitize.Meta(s) }
 
 // SanitizeError bounds error text that may embed a shop's response body before
-// it lands in a user-visible column: invalid UTF-8 and control characters are
-// stripped (a NUL would abort the whole Postgres transaction), and the result
-// is truncated on a rune boundary.
-func SanitizeError(s string) string {
-	const maxErrLen = 500
-	s = strings.ToValidUTF8(s, "�")
-	s = strings.Map(func(r rune) rune {
-		if r < 0x20 || r == 0x7f {
-			return ' '
-		}
-		return r
-	}, s)
-	if len(s) > maxErrLen {
-		cut := maxErrLen
-		for cut > 0 && !utf8.RuneStart(s[cut]) {
-			cut--
-		}
-		s = s[:cut] + "…"
-	}
-	return strings.TrimSpace(s)
-}
+// it lands in a user-visible column. Retained as a thin alias; see the shared
+// sanitize package.
+func SanitizeError(s string) string { return sanitize.Error(s) }
 
 // isMissingRoute reports whether the shop answered 404, which is how a
 // FroshTools release predating the SBOM endpoint replies. Deliberately not 403:

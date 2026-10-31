@@ -411,6 +411,10 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	// are absorbed by fetchSbom and never fail the scrape.
 	sbomRes := h.fetchSbom(ctx, env, client, extensions)
 
+	// Accounts are read for the same reason and under the same rules as the
+	// SBOM: FroshTools-only endpoint, every failure non-fatal.
+	accountRes := h.fetchAccounts(ctx, env, client, extensions)
+
 	checkerInput := checker.Input{
 		Extensions: checkerExtensions,
 		Config: checker.ShopConfig{
@@ -485,6 +489,12 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		}
 	}
 
+	// Account findings are appended rather than produced by a checker: they
+	// come from stored events, so they survive a run in which the endpoint was
+	// unreachable. Appending here also makes them show up as reasons on the
+	// status-change notification and on the status timeline for free.
+	finalChecks = append(finalChecks, accountRes.checks...)
+
 	newStatus := string(checker.AggregateStatus(finalChecks, ignores))
 	transition := h.handleStatusTransition(ctx, env, oldChecks, finalChecks, newStatus)
 
@@ -518,6 +528,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		favicon:           favicon,
 		transition:        transition,
 		sbom:              sbomRes,
+		accounts:          accountRes,
 		runtimeAdvisories: runtimeAdvisories,
 	}); err != nil {
 		return err
@@ -540,6 +551,14 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 			currentIssues = append(currentIssues, issueFromFailure(datasetSBOM, shopware.Failure{Class: shopware.FailureInvalidResponse}))
 		}
 	}
+	if accountRes.supported && !accountRes.fetched {
+		switch {
+		case accountRes.fetchErr != nil:
+			currentIssues = append(currentIssues, issueFromError(datasetAccounts, accountRes.fetchErr))
+		case accountRes.err == errEmptyAccountPayload:
+			currentIssues = append(currentIssues, issueFromFailure(datasetAccounts, shopware.Failure{Class: shopware.FailureInvalidResponse}))
+		}
+	}
 	sort.Slice(currentIssues, func(i, j int) bool { return currentIssues[i].key < currentIssues[j].key })
 
 	evaluated := map[string]bool{
@@ -550,6 +569,9 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	if !missing.Extensions {
 		evaluated[datasetFroshTools] = true
 		evaluated[datasetSBOM] = true
+		if env.AccountMonitoringEnabled {
+			evaluated[datasetAccounts] = true
+		}
 	}
 
 	recorded := h.recordScrapeIssues(ctx, env, currentIssues, evaluated)
@@ -563,6 +585,11 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	if recorded.recoveredNotified && len(currentIssues) == 0 {
 		h.dispatchScrapeRecovered(ctx, env)
 	}
+
+	// After the commit: a notification marker written inside the transaction
+	// would be rolled back together with the baseline, and the alert would
+	// then be lost rather than retried.
+	h.notifyAccountChanges(ctx, env)
 
 	h.dispatchStoreExtensionSync(ctx, extensions, shopConfig.Version, catalog)
 
@@ -673,6 +700,7 @@ type scrapeResult struct {
 	favicon           *string
 	transition        *statusTransition
 	sbom              sbomResult
+	accounts          accountResult
 	runtimeAdvisories runtimeMatchResult
 }
 
@@ -830,6 +858,9 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 	}
 	if err := persistRuntimeAdvisories(ctx, txQueries, env.ID, res.runtimeAdvisories); err != nil {
 		return fmt.Errorf("persist runtime advisories: %w", err)
+	}
+	if err := persistAccounts(ctx, txQueries, env.ID, res.accounts); err != nil {
+		return fmt.Errorf("persist accounts: %w", err)
 	}
 
 	// Upsert checks and prune the ones no longer reported, instead of the previous

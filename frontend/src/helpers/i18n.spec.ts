@@ -17,6 +17,8 @@ vi.mock("@/i18n", async () => {
 
 import { i18n } from "@/i18n";
 import {
+  translateAccountChange,
+  translateAccountHint,
   notificationReasons,
   translateCheckMessage,
   translateNotificationMessage,
@@ -160,5 +162,73 @@ describe("translateNotification", () => {
     expect(translateReason(reason)).toBe(
       "High: SSE buffer grows unbounded (CVE-2026-1234) — mcp/sdk 1.2.3 (current: 1.2.3, recommended: 1.2.4)",
     );
+  });
+
+  describe("account monitoring", () => {
+    // Every change kind the backend can emit needs a catalog entry in both
+    // locales, or a real finding renders as a bare key.
+    const changeKinds = [
+      "new_admin_user",
+      "new_user",
+      "new_admin_integration",
+      "new_integration",
+      "new_managed_integration",
+      "new_acl_role",
+      "admin_granted",
+      "roles_added",
+      "role_privileges_grown",
+      "access_keys_added",
+      "reactivated",
+      "password_recovery_opened",
+      "admin_revoked",
+      "roles_removed",
+      "role_privileges_shrunk",
+      "access_keys_removed",
+      "deactivated",
+      "deleted",
+      "password_changed",
+      "password_recovery_closed",
+    ];
+
+    function messageKey(change: string): string {
+      const [head, ...rest] = change.split("_");
+      return `check.account.${head}${rest.map((p) => p[0].toUpperCase() + p.slice(1)).join("")}`;
+    }
+
+    it.each(changeKinds)("has an English and a German message for %s", (change) => {
+      const key = messageKey(change);
+      expect(i18n.global.te(key, "en")).toBe(true);
+      expect(i18n.global.te(key, "de")).toBe(true);
+    });
+
+    it.each(["unusedAdminIntegration", "userWithApiKeys", "passwordRecoveryPending"])(
+      "has an English and a German hint for %s",
+      (hint) => {
+        expect(i18n.global.te(`accounts.posture.${hint}`, "en")).toBe(true);
+        expect(i18n.global.te(`accounts.posture.${hint}`, "de")).toBe(true);
+      },
+    );
+
+    it("renders a finding with its masked label", () => {
+      expect(
+        translateAccountChange({
+          id: 1,
+          level: "red",
+          kind: "user",
+          change: "new_admin_user",
+          label: "b***@e***.de",
+          messageKey: "check.account.newAdminUser",
+          params: { label: "b***@e***.de" },
+          detectedAt: "2026-10-29T07:00:00Z",
+          checkId: "account.user.abc.new_admin_user",
+        }),
+      ).toBe("New administrator account b***@e***.de was created");
+    });
+
+    it("renders a posture hint", () => {
+      expect(
+        translateAccountHint({ hint: "userWithApiKeys", kind: "user", label: "a***@e***.de" }),
+      ).toBe("User account has its own API access keys");
+    });
   });
 });

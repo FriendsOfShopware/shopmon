@@ -34,6 +34,24 @@ export type AccountEnvironment = {
     url: string;
 };
 
+export type AccountEvent = {
+    account?: AccountSnapshot;
+    acknowledgeNote?: string;
+    acknowledgedAt?: string;
+    acknowledgedBy?: string;
+    adminUrl?: string;
+    change: string;
+    detectedAt: string;
+    id: number;
+    kind: string;
+    label: string;
+    level: string;
+    messageKey: string;
+    params?: {
+        [key: string]: unknown;
+    };
+};
+
 export type AccountExtension = {
     active: boolean;
     changelog: Array<ExtensionChangelogEntry>;
@@ -71,6 +89,22 @@ export type AccountExtensionEnvironment = {
     version: string;
 };
 
+export type AccountFinding = {
+    account?: AccountSnapshot;
+    adminUrl?: string;
+    change: string;
+    checkId: string;
+    detectedAt: string;
+    id: number;
+    kind: string;
+    label: string;
+    level: string;
+    messageKey: string;
+    params?: {
+        [key: string]: unknown;
+    };
+};
+
 export type AccountOrganization = {
     createdAt: string;
     environmentCount: number;
@@ -78,6 +112,16 @@ export type AccountOrganization = {
     logo: string | null;
     memberCount: number;
     name: string;
+};
+
+export type AccountPostureHint = {
+    accessKeyCount?: number;
+    adminUrl?: string;
+    createdAt?: string;
+    hint: string;
+    kind: string;
+    label: string;
+    lastUsageAt?: string;
 };
 
 export type AccountShop = {
@@ -88,6 +132,25 @@ export type AccountShop = {
     name: string;
     organizationId: string;
     organizationName: string;
+};
+
+export type AccountSnapshot = {
+    accessKeyCount: number;
+    active: boolean;
+    admin: boolean;
+    appName?: string;
+    createdAt?: string;
+    firstSeenAt: string;
+    lastUsageAt?: string;
+    managedByApp: boolean;
+    passwordChangedAt?: string;
+    passwordRecoveryPending: boolean;
+    privilegeCount: number;
+    roleCount: number;
+};
+
+export type AcknowledgeAccountEventRequest = {
+    note?: string;
 };
 
 export type AdminAdvisory = {
@@ -755,6 +818,18 @@ export type EcosystemStats = {
     shopwareVersions: Array<ShopwareVersionCount>;
 };
 
+export type EnvironmentAccounts = {
+    accountCount: number;
+    baselineAt?: string;
+    enabled: boolean;
+    events: Array<AccountEvent>;
+    lastError?: string;
+    lastSyncedAt?: string;
+    openFindings: Array<AccountFinding>;
+    postureHints: Array<AccountPostureHint>;
+    supported: boolean;
+};
+
 export type EnvironmentChangelogsResponse = {
     entries: Array<AccountChangelog>;
     total: number;
@@ -772,6 +847,7 @@ export type EnvironmentCheck = {
 };
 
 export type EnvironmentDetail = {
+    accountMonitoringEnabled: boolean;
     cache: CacheInfo;
     changelogsCount: number;
     checks: Array<EnvironmentCheck>;
@@ -789,6 +865,7 @@ export type EnvironmentDetail = {
     lastScrapedAt: string | null;
     lastScrapedError: string | null;
     name: string;
+    openAccountFindings: number;
     organizationId: string;
     organizationName: string;
     phpVersion?: string;
@@ -1252,6 +1329,10 @@ export type UnlinkAccountRequest = {
 
 export type UpdateAccountMeJsonBody = {
     locale?: string;
+};
+
+export type UpdateAccountMonitoringRequest = {
+    enabled: boolean;
 };
 
 export type UpdateAdvisoryEnrichmentRequest = {
@@ -4327,6 +4408,148 @@ export type UpdateEnvironmentResponses = {
 };
 
 export type UpdateEnvironmentResponse = UpdateEnvironmentResponses[keyof UpdateEnvironmentResponses];
+
+export type AcknowledgeEnvironmentAccountEventData = {
+    body: AcknowledgeAccountEventRequest;
+    path: {
+        /**
+         * Environment ID
+         */
+        environmentId: number;
+        /**
+         * Account event ID
+         */
+        eventId: number;
+    };
+    query?: never;
+    url: '/environments/{environmentId}/account-events/{eventId}/acknowledge';
+};
+
+export type AcknowledgeEnvironmentAccountEventErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AcknowledgeEnvironmentAccountEventError = AcknowledgeEnvironmentAccountEventErrors[keyof AcknowledgeEnvironmentAccountEventErrors];
+
+export type AcknowledgeEnvironmentAccountEventResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type AcknowledgeEnvironmentAccountEventResponse = AcknowledgeEnvironmentAccountEventResponses[keyof AcknowledgeEnvironmentAccountEventResponses];
+
+export type UpdateAccountMonitoringSettingsData = {
+    body: UpdateAccountMonitoringRequest;
+    path: {
+        /**
+         * Environment ID
+         */
+        environmentId: number;
+    };
+    query?: never;
+    url: '/environments/{environmentId}/account-monitoring';
+};
+
+export type UpdateAccountMonitoringSettingsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type UpdateAccountMonitoringSettingsError = UpdateAccountMonitoringSettingsErrors[keyof UpdateAccountMonitoringSettingsErrors];
+
+export type UpdateAccountMonitoringSettingsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateAccountMonitoringSettingsResponse = UpdateAccountMonitoringSettingsResponses[keyof UpdateAccountMonitoringSettingsResponses];
+
+export type GetEnvironmentAccountsData = {
+    body?: never;
+    path: {
+        /**
+         * Environment ID
+         */
+        environmentId: number;
+    };
+    query?: never;
+    url: '/environments/{environmentId}/accounts';
+};
+
+export type GetEnvironmentAccountsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetEnvironmentAccountsError = GetEnvironmentAccountsErrors[keyof GetEnvironmentAccountsErrors];
+
+export type GetEnvironmentAccountsResponses = {
+    /**
+     * OK
+     */
+    200: EnvironmentAccounts;
+};
+
+export type GetEnvironmentAccountsResponse = GetEnvironmentAccountsResponses[keyof GetEnvironmentAccountsResponses];
 
 export type GetEnvironmentChangelogsData = {
     body?: never;

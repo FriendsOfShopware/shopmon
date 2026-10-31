@@ -1,0 +1,138 @@
+package monitoring
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"testing"
+)
+
+func accountService(repository *stubRepository, jobs *stubJobDispatcher, member bool) *Service {
+	return NewService(repository, &stubAuthorizer{member: member}, &stubEnvironmentGateway{}, jobs, nil)
+}
+
+// Acknowledging has to refresh the environment: the status is only ever
+// written by a scrape, so without one the shop stays red until the next hour.
+func TestAcknowledgeAccountEventRefreshesEnvironment(t *testing.T) {
+	repository := &stubRepository{environment: Environment{ID: 7, OrganizationID: "org-1"}, acknowledgeResult: true}
+	jobs := &stubJobDispatcher{}
+	service := accountService(repository, jobs, true)
+
+	note := "checked with the team, this is our new colleague"
+	err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, 42, &note)
+
+	if err != nil {
+		t.Fatalf("AcknowledgeAccountEvent: %v", err)
+	}
+	if repository.acknowledgedEvent != 42 || repository.acknowledgedEnvironment != 7 {
+		t.Errorf("acknowledged event %d on environment %d", repository.acknowledgedEvent, repository.acknowledgedEnvironment)
+	}
+	if repository.acknowledgedBy != "user-1" {
+		t.Errorf("acknowledgedBy = %q, the reviewer must be recorded", repository.acknowledgedBy)
+	}
+	if len(jobs.scrapeIDs) != 1 || jobs.scrapeIDs[0] != 7 {
+		t.Errorf("scrapeIDs = %v, want one refresh of environment 7", jobs.scrapeIDs)
+	}
+}
+
+// An event that is already reviewed must not look like a fresh acknowledgement.
+func TestAcknowledgeAccountEventRejectsUnknownOrAcknowledged(t *testing.T) {
+	repository := &stubRepository{environment: Environment{ID: 7, OrganizationID: "org-1"}, acknowledgeResult: false}
+	jobs := &stubJobDispatcher{}
+	service := accountService(repository, jobs, true)
+
+	err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, 42, nil)
+
+	if !errors.Is(err, ErrAccountEventNotFound) {
+		t.Fatalf("err = %v, want ErrAccountEventNotFound", err)
+	}
+	if len(jobs.scrapeIDs) != 0 {
+		t.Error("a rejected acknowledgement must not refresh the environment")
+	}
+}
+
+func TestAcknowledgeAccountEventRequiresMembership(t *testing.T) {
+	repository := &stubRepository{environment: Environment{ID: 7, OrganizationID: "org-1"}, acknowledgeResult: true}
+	jobs := &stubJobDispatcher{}
+	service := accountService(repository, jobs, false)
+
+	err := service.AcknowledgeAccountEvent(context.Background(), "outsider", 7, 42, nil)
+
+	if !errors.Is(err, ErrNotAuthorized) {
+		t.Fatalf("err = %v, want ErrNotAuthorized", err)
+	}
+	if repository.acknowledgedEvent != 0 {
+		t.Error("a non-member must not be able to clear a finding")
+	}
+}
+
+// Clearing several findings in a row is one user action, not a reason to hit
+// the shop once per click.
+func TestAcknowledgeAccountEventThrottlesRefresh(t *testing.T) {
+	repository := &stubRepository{
+		environment:       Environment{ID: 7, OrganizationID: "org-1"},
+		acknowledgeResult: true,
+		lockTaken:         true,
+	}
+	jobs := &stubJobDispatcher{}
+	service := accountService(repository, jobs, true)
+
+	if err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, 42, nil); err != nil {
+		t.Fatalf("AcknowledgeAccountEvent: %v", err)
+	}
+	if len(jobs.scrapeIDs) != 0 {
+		t.Errorf("scrapeIDs = %v, want the refresh suppressed while the lock is held", jobs.scrapeIDs)
+	}
+}
+
+// A reviewer note is user input and ends up in a stored column.
+func TestAcknowledgeAccountEventBoundsNote(t *testing.T) {
+	repository := &stubRepository{environment: Environment{ID: 7, OrganizationID: "org-1"}, acknowledgeResult: true}
+	service := accountService(repository, &stubJobDispatcher{}, true)
+
+	long := strings.Repeat("x", maxAcknowledgeNoteLen+100)
+	if err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, 42, &long); err != nil {
+		t.Fatalf("AcknowledgeAccountEvent: %v", err)
+	}
+	if repository.acknowledgedNote == nil || len(*repository.acknowledgedNote) != maxAcknowledgeNoteLen {
+		t.Errorf("note was not bounded to %d characters", maxAcknowledgeNoteLen)
+	}
+
+	empty := ""
+	if err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, 43, &empty); err != nil {
+		t.Fatalf("AcknowledgeAccountEvent: %v", err)
+	}
+	if repository.acknowledgedNote != nil {
+		t.Error("an empty note must be stored as NULL, not as an empty string")
+	}
+}
+
+func TestSetAccountMonitoring(t *testing.T) {
+	repository := &stubRepository{environment: Environment{ID: 7, OrganizationID: "org-1"}}
+	jobs := &stubJobDispatcher{}
+	service := accountService(repository, jobs, true)
+
+	if err := service.SetAccountMonitoring(context.Background(), "user-1", 7, false); err != nil {
+		t.Fatalf("SetAccountMonitoring: %v", err)
+	}
+	if repository.accountMonitoringCalls != 1 || repository.accountMonitoringEnabled {
+		t.Errorf("calls=%d enabled=%v", repository.accountMonitoringCalls, repository.accountMonitoringEnabled)
+	}
+	// Disabling has to refresh too, or the checks it removes keep colouring
+	// the status until the next scheduled scrape.
+	if len(jobs.scrapeIDs) != 1 {
+		t.Errorf("scrapeIDs = %v, want a refresh", jobs.scrapeIDs)
+	}
+}
+
+func TestSetAccountMonitoringRequiresMembership(t *testing.T) {
+	repository := &stubRepository{environment: Environment{ID: 7, OrganizationID: "org-1"}}
+	service := accountService(repository, &stubJobDispatcher{}, false)
+
+	if err := service.SetAccountMonitoring(context.Background(), "outsider", 7, false); !errors.Is(err, ErrNotAuthorized) {
+		t.Fatalf("err = %v, want ErrNotAuthorized", err)
+	}
+	if repository.accountMonitoringCalls != 0 {
+		t.Error("a non-member must not be able to switch monitoring off")
+	}
+}
