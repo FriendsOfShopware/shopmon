@@ -37,4 +37,17 @@ describe("AccountMonitoringCard", () => {
     expect(wrapper.text()).toContain("Account monitoring is switched off");
     expect(wrapper.text()).not.toContain("Nothing needs review");
   });
+
+  // Open findings are stored, so a later failed or unsupported fetch does not
+  // make them go away -- they still need review and must stay visible.
+  it.each([
+    ["error", "last account check failed"],
+    ["unsupported", "does not serve the account endpoint"],
+    ["pending", "Not initialised yet"],
+  ])("keeps reporting open findings while %s", (state, warning) => {
+    const wrapper = mountCard(state, 3);
+    expect(wrapper.text()).toContain("3");
+    expect(wrapper.text()).toContain(warning);
+    expect(wrapper.text()).not.toContain("Nothing needs review");
+  });
 });

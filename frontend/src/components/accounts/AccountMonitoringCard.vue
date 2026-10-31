@@ -12,11 +12,19 @@ const props = defineProps<{
   to: Record<string, unknown>;
 }>();
 
-// Zero open findings is not automatically good news: an unsupported endpoint, a
-// failed read or a baseline that has not been taken yet all produce zero too,
-// and rendering those green would claim an all-clear nobody checked.
+// Open findings are stored, so they still need review whatever the last fetch
+// did -- they are reported independently of the state.
+const hasFindings = computed(() => props.openFindings > 0);
+
+// A failed read, an unsupported endpoint or a baseline that has not been taken
+// yet is worth saying out loud, and is shown alongside any findings rather than
+// in place of them.
+const hasStateWarning = computed(() => props.state !== "ok" && props.state !== "off");
+
+// Zero open findings is only good news once there is actually a current
+// assessment: the three states above produce zero too, and rendering those
+// green would claim an all-clear nobody checked.
 const allClear = computed(() => props.state === "ok" && props.openFindings === 0);
-const hasFindings = computed(() => props.state === "ok" && props.openFindings > 0);
 </script>
 
 <template>
@@ -38,34 +46,36 @@ const hasFindings = computed(() => props.state === "ok" && props.openFindings > 
       {{ $t("accounts.disabled") }}
     </div>
 
-    <div
-      v-else-if="allClear"
-      class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
-    >
-      <icon-fa6-solid:circle-check class="size-4 shrink-0" />
-      {{ $t("accounts.noFindings") }}
+    <div v-else class="space-y-2">
+      <RouterLink
+        v-if="hasFindings"
+        :to="to"
+        class="flex items-center gap-2.5 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm transition-colors hover:bg-destructive/10"
+      >
+        <icon-fa6-solid:user-shield class="size-4 shrink-0 text-destructive" />
+        <span class="min-w-0 flex-1">
+          {{ $t("accounts.pendingReview", { count: openFindings }) }}
+        </span>
+        <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
+      </RouterLink>
+
+      <RouterLink
+        v-if="hasStateWarning"
+        :to="to"
+        class="flex items-center gap-2.5 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2.5 text-sm transition-colors hover:bg-warning/10"
+      >
+        <icon-fa6-solid:circle-exclamation class="size-4 shrink-0 text-warning" />
+        <span class="min-w-0 flex-1">{{ $t("accounts.state." + state) }}</span>
+        <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
+      </RouterLink>
+
+      <div
+        v-if="allClear"
+        class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+      >
+        <icon-fa6-solid:circle-check class="size-4 shrink-0" />
+        {{ $t("accounts.noFindings") }}
+      </div>
     </div>
-
-    <RouterLink
-      v-else-if="hasFindings"
-      :to="to"
-      class="flex items-center gap-2.5 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm transition-colors hover:bg-destructive/10"
-    >
-      <icon-fa6-solid:user-shield class="size-4 shrink-0 text-destructive" />
-      <span class="min-w-0 flex-1">
-        {{ $t("accounts.pendingReview", { count: openFindings }) }}
-      </span>
-      <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
-    </RouterLink>
-
-    <RouterLink
-      v-else
-      :to="to"
-      class="flex items-center gap-2.5 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2.5 text-sm transition-colors hover:bg-warning/10"
-    >
-      <icon-fa6-solid:circle-exclamation class="size-4 shrink-0 text-warning" />
-      <span class="min-w-0 flex-1">{{ $t("accounts.state." + state) }}</span>
-      <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
-    </RouterLink>
   </CardSection>
 </template>
