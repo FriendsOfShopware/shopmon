@@ -449,8 +449,42 @@ describe("EditEnvironment", () => {
     await flushPromises();
 
     expect(mockError).toHaveBeenCalledWith("upstream exploded");
+    // useAlert holds one alert, so announcing success here would wipe the
+    // explanation and tell the reader a save worked while the form no longer
+    // reflects the server.
+    expect(mockSuccess).not.toHaveBeenCalled();
     // A transient failure keeps the editor, so the reader does not lose context.
     expect(wrapper.text()).toContain("Account monitoring");
+  });
+
+  it("announces the save once the screen has caught up", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(mockSuccess).toHaveBeenCalled();
+    expect(mockError).not.toHaveBeenCalled();
+  });
+
+  it("does not announce a saved sitespeed setting when the reload fails", async () => {
+    vi.mocked(updateSitespeedSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "upstream exploded" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+
+    await wrapper.findAll("form")[1]!.trigger("submit");
+    await flushPromises();
+
+    expect(mockError).toHaveBeenCalledWith("upstream exploded");
+    expect(mockSuccess).not.toHaveBeenCalled();
   });
 
   // Gone or no longer permitted is final: keeping the editor open would invite

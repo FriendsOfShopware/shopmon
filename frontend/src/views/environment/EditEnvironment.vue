@@ -379,7 +379,15 @@ getAccountShops().then(({ data }) => {
   if (data) shops.value = data;
 });
 
-async function loadEnvironment() {
+/**
+ * Loads the environment into the form.
+ *
+ * Returns whether it succeeded. useAlert holds a single alert, so a caller that
+ * announces success right after a failed reload would wipe the explanation off
+ * the screen -- and the reader would be told a save worked while looking at a
+ * form that no longer reflects the server.
+ */
+async function loadEnvironment(): Promise<boolean> {
   isLoading.value = true;
   const {
     data,
@@ -403,7 +411,7 @@ async function loadEnvironment() {
       environment.value = null;
     }
     isLoading.value = false;
-    return;
+    return false;
   }
   environment.value = data;
 
@@ -423,6 +431,7 @@ async function loadEnvironment() {
   setFieldValue("taskGraceMinutes", data.taskGraceMinutes ?? DEFAULT_TASK_GRACE_MINUTES);
 
   isLoading.value = false;
+  return true;
 }
 
 loadEnvironment();
@@ -547,8 +556,9 @@ async function onAccountMonitoringSubmit() {
       return;
     }
 
-    await loadEnvironment();
-    success(t("environment.accountMonitoringSaved"));
+    if (await loadEnvironment()) {
+      success(t("environment.accountMonitoringSaved"));
+    }
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));
   } finally {
@@ -582,8 +592,9 @@ async function onSitespeedSubmit() {
         return;
       }
 
-      await loadEnvironment();
-      success(t("environment.sitespeedSaved"));
+      if (await loadEnvironment()) {
+        success(t("environment.sitespeedSaved"));
+      }
     } catch (e) {
       error(e instanceof Error ? e.message : String(e));
     } finally {
