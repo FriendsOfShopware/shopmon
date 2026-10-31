@@ -491,19 +491,46 @@ func (h *Service) notifyAccountChanges(ctx context.Context, env queries.GetAllEn
 	h.markAccountEventsNotified(ctx, env.ID, pending)
 }
 
+// markAccountEventsNotified records that this batch was delivered.
+//
+// All or nothing, in one transaction. The dedup key covers the whole pending
+// set, so marking only part of it would leave the rest to be retried under a
+// different key: the email lock would no longer match and subscribers would get
+// a second mail about a finding that had not changed. Leaving the batch
+// untouched keeps the retry identical to the delivery, which is what the lock
+// relies on.
 func (h *Service) markAccountEventsNotified(ctx context.Context, environmentID int32, events []queries.EnvironmentAccountEvent) {
+	if len(events) == 0 {
+		return
+	}
+
+	tx, err := h.pool.Begin(ctx)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to begin transaction for account notification markers",
+			"environmentId", environmentID, "error", err)
+		return
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := h.queries.WithTx(tx)
 	for _, e := range events {
 		// Guarded by the revision that was actually delivered: a refresh that
 		// landed after these events were read carries a higher one, and
 		// marking it would bury a change nobody was told about.
-		if err := h.queries.MarkEnvironmentAccountEventNotified(ctx, queries.MarkEnvironmentAccountEventNotifiedParams{
+		if err := q.MarkEnvironmentAccountEventNotified(ctx, queries.MarkEnvironmentAccountEventNotifiedParams{
 			EnvironmentID: environmentID,
 			ID:            e.ID,
 			Revision:      e.Revision,
 		}); err != nil {
-			slog.WarnContext(ctx, "failed to mark account event notified",
+			slog.WarnContext(ctx, "failed to mark account event notified, keeping the batch pending",
 				"environmentId", environmentID, "eventId", e.ID, "error", err)
+			return
 		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		slog.WarnContext(ctx, "failed to commit account notification markers",
+			"environmentId", environmentID, "error", err)
 	}
 }
 

@@ -840,3 +840,50 @@ func TestMarkAccountEventsNotifiedIsGuardedByRevision(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, still, 1, "the newer revision stays pending so it is still alerted")
 }
+
+// The dedup key covers the whole pending set, so marking only part of a batch
+// would leave the rest to be retried under a different key -- the email lock
+// would no longer match and subscribers would get a second mail about a
+// finding that had not changed.
+func TestMarkAccountEventsNotifiedIsAllOrNothing(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	first := adminUser("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(first)))
+	second := adminUser("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "b***@e***.de")
+	third := adminUser("cccccccccccccccccccccccccccccccc", "c***@e***.de")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{first}, []accounts.Account{first, second, third})))
+
+	pending, err := h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, pending, 2)
+
+	// Reject the write for the last of the batch, so the first one has already
+	// succeeded when the failure hits.
+	_, err = pool.Exec(ctx, `
+		CREATE FUNCTION reject_one_marker() RETURNS trigger AS $$
+		BEGIN
+			IF NEW.id = `+strconv.FormatInt(pending[1].ID, 10)+` THEN
+				RAISE EXCEPTION 'marker rejected';
+			END IF;
+			RETURN NEW;
+		END $$ LANGUAGE plpgsql;
+		CREATE TRIGGER reject_one_marker BEFORE UPDATE ON environment_account_event
+		FOR EACH ROW EXECUTE FUNCTION reject_one_marker();`)
+	require.NoError(t, err)
+	defer func() {
+		_, err := pool.Exec(context.Background(), `
+			DROP TRIGGER reject_one_marker ON environment_account_event;
+			DROP FUNCTION reject_one_marker();`)
+		require.NoError(t, err)
+	}()
+
+	h.markAccountEventsNotified(ctx, env.ID, pending)
+
+	still, err := h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Len(t, still, 2,
+		"a partial failure must leave the whole batch pending, so the retry keys the same")
+}
