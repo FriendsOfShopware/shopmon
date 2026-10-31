@@ -100,19 +100,24 @@ func (c *recordingChannel) Send(_ context.Context, _ Recipient, _ Event, msg Ren
 type fakeLocker struct {
 	mu   sync.Mutex
 	held map[string]bool
+	// err, when set, stands in for an unreachable lock store.
+	err error
 }
 
-func (l *fakeLocker) acquire(_ context.Context, key string, _ time.Duration) bool {
+func (l *fakeLocker) acquire(_ context.Context, key string, _ time.Duration) (bool, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if l.err != nil {
+		return false, l.err
+	}
 	if l.held == nil {
 		l.held = map[string]bool{}
 	}
 	if l.held[key] {
-		return false
+		return false, nil
 	}
 	l.held[key] = true
-	return true
+	return true, nil
 }
 
 func (l *fakeLocker) release(_ context.Context, key string) {
@@ -307,5 +312,27 @@ func TestDispatchKeepsEmailLockWhenTheSendSucceeds(t *testing.T) {
 
 	if len(email.sent) != 1 {
 		t.Fatalf("email channel saw %d sends, want the second one deduped", len(email.sent))
+	}
+}
+
+// An unreachable lock store is not the same as a held lock. Counting it as a
+// skip would let a caller record the alert as delivered and never retry it.
+func TestDispatchCountsAnUnknownDedupStateAsFailed(t *testing.T) {
+	locker := &fakeLocker{err: errors.New("lock table unreachable")}
+	inApp := &recordingChannel{name: ChannelInApp}
+	email := &recordingChannel{name: ChannelEmail}
+	d := newTestDispatcher(inApp, email, locker)
+
+	res := d.Dispatch(context.Background(), degradeEvent(), []Recipient{{ID: "u1", Locale: "en"}})
+
+	if res.Failed == 0 {
+		t.Fatalf("expected the unsent email to count as failed, got %+v", res)
+	}
+	if len(email.sent) != 0 {
+		t.Error("the email must not be sent while the dedup state is unknown")
+	}
+	// The in-app entry still lands; only the email is in doubt.
+	if len(inApp.sent) != 1 {
+		t.Errorf("in-app channel sent %d, want 1", len(inApp.sent))
 	}
 }

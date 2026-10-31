@@ -77,9 +77,15 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 	emailAllowed := true
 	emailLockKey := "alert_" + ev.DedupKey
 	emailLockHeld := false
+	// lockUnknown means the dedup state could not be read. The email is not
+	// sent either way, but it counts as failed rather than skipped so the
+	// caller retries instead of recording the alert as delivered.
+	lockUnknown := false
 	if meta.emailDedupTTL > 0 {
-		emailAllowed = d.locker.acquire(ctx, emailLockKey, meta.emailDedupTTL)
-		emailLockHeld = emailAllowed
+		acquired, err := d.locker.acquire(ctx, emailLockKey, meta.emailDedupTTL)
+		emailAllowed = acquired
+		emailLockHeld = acquired
+		lockUnknown = err != nil
 	}
 
 	// A lock guarding a delivery that failed must not outlive the attempt. Held
@@ -106,7 +112,11 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 
 		for _, name := range channels {
 			if name == ChannelEmail && !emailAllowed {
-				res.Skipped++
+				if lockUnknown {
+					res.Failed++
+				} else {
+					res.Skipped++
+				}
 				continue
 			}
 			ch, ok := d.channels[name]
