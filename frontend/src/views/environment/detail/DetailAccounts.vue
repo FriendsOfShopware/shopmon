@@ -448,9 +448,10 @@ async function submitAcknowledge() {
     acknowledgeOpen.value = false;
     pending.value = null;
     await load();
-    // The backend queues a scrape to recompute the status; reload the shared
-    // environment so the header and the tab badge follow it instead of keeping
-    // the stale colour for the rest of the visit.
+    // The backend queues a scrape to recompute the status; this reload picks up
+    // whatever has already landed. The scrape may not have committed yet, so
+    // the message says the status follows rather than claiming it is done --
+    // the same promise the manual refresh makes.
     await loadEnvironment(true);
     info(t("accounts.acknowledged"));
   } catch (err) {

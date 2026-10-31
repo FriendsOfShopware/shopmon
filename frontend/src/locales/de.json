@@ -1610,7 +1610,7 @@
     "filterFindings": "Zu prüfen",
     "filterInfo": "Informativ",
     "toSettings": "Einstellungen öffnen",
-    "acknowledged": "Änderung bestätigt",
+    "acknowledged": "Änderung bestätigt — der Status der Umgebung folgt mit dem angestoßenen Abgleich",
     "facts": {
       "kind": "Typ",
       "account": "Konto",

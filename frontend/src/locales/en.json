@@ -1610,7 +1610,7 @@
     "filterFindings": "Needs review",
     "filterInfo": "Informational",
     "toSettings": "Open settings",
-    "acknowledged": "Change confirmed",
+    "acknowledged": "Change confirmed — the environment status follows with the queued refresh",
     "facts": {
       "kind": "Type",
       "account": "Account",
