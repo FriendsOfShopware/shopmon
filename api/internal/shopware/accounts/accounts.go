@@ -203,14 +203,6 @@ func Parse(raw []byte) (*Snapshot, error) {
 		return nil, fmt.Errorf("parse accounts: %w", err)
 	}
 
-	// A Shopware shop always has at least one administrator. An absent or empty
-	// user list is a truncated or filtered response, and accepting it would
-	// prune every stored user from the baseline — after which the next
-	// successful run reports each of them as brand new.
-	if len(doc.Users) == 0 {
-		return nil, fmt.Errorf("parse accounts: response contained no users")
-	}
-
 	// Silently keeping the first N would leave the rest unwatched, which is
 	// indistinguishable from "those accounts do not exist" and would report
 	// them as deleted. Refusing keeps the previous baseline instead.
@@ -312,6 +304,16 @@ func Parse(raw []byte) (*Snapshot, error) {
 		})
 	}
 
+	// A Shopware shop always has at least one administrator, so a response that
+	// yields no usable user is truncated or filtered. Counted after parsing,
+	// not on the wire entries: rows with an unusable id are dropped below, and
+	// a response of nothing but those would otherwise pass the check and then
+	// prune every stored user from the baseline — after which the next
+	// successful run reports each of them as brand new.
+	if !hasKind(out, KindUser) {
+		return nil, fmt.Errorf("parse accounts: response contained no usable users")
+	}
+
 	sort.Slice(out, func(a, b int) bool {
 		if out[a].Kind != out[b].Kind {
 			return out[a].Kind < out[b].Kind
@@ -320,6 +322,15 @@ func Parse(raw []byte) (*Snapshot, error) {
 	})
 	snap.Accounts = out
 	return snap, nil
+}
+
+func hasKind(in []Account, kind Kind) bool {
+	for _, a := range in {
+		if a.Kind == kind {
+			return true
+		}
+	}
+	return false
 }
 
 // checkLimits refuses an implausibly large response rather than trimming it.
@@ -334,6 +345,20 @@ func checkLimits(doc wire) error {
 	} {
 		if l.n > maxEntries {
 			return fmt.Errorf("parse accounts: %s list too large (%d entries, limit %d)", l.name, l.n, maxEntries)
+		}
+	}
+
+	// Per-account role lists get the same treatment. Trimming one would leave
+	// the dropped roles out of the hash and the holder count, so granting such
+	// a role would raise no finding at all.
+	for _, u := range doc.Users {
+		if len(u.AclRoleIDs) > maxEntries {
+			return fmt.Errorf("parse accounts: user role list too large (%d entries, limit %d)", len(u.AclRoleIDs), maxEntries)
+		}
+	}
+	for _, i := range doc.Integrations {
+		if len(i.AclRoleIDs) > maxEntries {
+			return fmt.Errorf("parse accounts: integration role list too large (%d entries, limit %d)", len(i.AclRoleIDs), maxEntries)
 		}
 	}
 	return nil
@@ -386,9 +411,6 @@ func normalizeRoleIDs(in []string) ([]string, string) {
 	}
 	seen := make(map[string]bool, len(in))
 	out := make([]string, 0, len(in))
-	if len(in) > maxEntries {
-		in = in[:maxEntries]
-	}
 	for _, raw := range in {
 		id := normalizeID(raw)
 		if id == "" || seen[id] {

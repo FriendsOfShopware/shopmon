@@ -370,3 +370,35 @@ func TestParseNormalizesTimestampsToUTC(t *testing.T) {
 		t.Fatalf("lastUsageAt = %v, want the UTC equivalent", got)
 	}
 }
+
+// The no-users guard has to count what parsing produced, not what arrived:
+// rows with an unusable id are dropped, and a response of nothing but those
+// would pass a wire-level check and then prune every stored user.
+func TestParseRejectsUsersThatAllFailToParse(t *testing.T) {
+	raw := `{"users":[{"id":"","maskedEmail":"a***@e.de"},{"id":"   ","maskedEmail":"b***@e.de"}],` +
+		`"integrations":[{"id":"69ba0db6351d47369ea35d6873cd115a","label":"still here"}]}`
+
+	if _, err := Parse([]byte(raw)); err == nil {
+		t.Fatal("expected a response whose users all fail to parse to be rejected")
+	}
+}
+
+// A role beyond a trim point changes neither the role hash nor the holder
+// count, so granting it would raise no finding at all.
+func TestParseRejectsOversizedRoleLists(t *testing.T) {
+	var roles strings.Builder
+	for i := 0; i < maxEntries+1; i++ {
+		if i > 0 {
+			roles.WriteByte(',')
+		}
+		roles.WriteString(`"role-`)
+		roles.WriteString(itoa(i))
+		roles.WriteString(`"`)
+	}
+	raw := `{"users":[{"id":"cee011c787fb441d8751cffe0a591eb1","maskedEmail":"a***@e.de","aclRoleIds":[` +
+		roles.String() + `]}]}`
+
+	if _, err := Parse([]byte(raw)); err == nil {
+		t.Fatal("expected an oversized role list to be rejected rather than trimmed")
+	}
+}
