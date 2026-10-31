@@ -652,7 +652,8 @@
       "scrape_issue": "Aktualisierungsprobleme (Berechtigungen, Verbindung)",
       "scrape_recovered": "Aktualisierung funktioniert wieder",
       "scrape_paused": "Aktualisierung nach wiederholten Fehlern verlangsamt",
-      "advisory_detected": "Neue Sicherheitsmeldungen"
+      "advisory_detected": "Neue Sicherheitsmeldungen",
+      "account_changed": "Kontoänderungen"
     },
     "watchedEnvironments": "Beobachtete Umgebungen",
     "otherEnvironments": "Sonstige",

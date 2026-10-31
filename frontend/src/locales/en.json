@@ -652,7 +652,8 @@
       "scrape_issue": "Refresh problems (permissions, connection)",
       "scrape_recovered": "Refresh working again",
       "scrape_paused": "Refresh slowed down after repeated failures",
-      "advisory_detected": "New security advisories"
+      "advisory_detected": "New security advisories",
+      "account_changed": "Account changes"
     },
     "watchedEnvironments": "Watched environments",
     "otherEnvironments": "Other",
