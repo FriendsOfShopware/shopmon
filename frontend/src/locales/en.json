@@ -758,7 +758,7 @@
     "subscribed": "You have subscribed to notifications for this environment",
     "unsubscribed": "You have unsubscribed from notifications for this environment",
     "accountMonitoring": "Account monitoring",
-    "accountMonitoringDesc": "Watches the shop's administrators, integrations and permission roles. A new administrator, newly granted admin rights or a widened permission role is reported as a finding that colours the environment status until you confirm it. Shopmon stores no list of who has access — only what changed, with the masked identifier the shop itself provides.",
+    "accountMonitoringDesc": "Watches the shop's administrators, integrations and permission roles. A new administrator, newly granted admin rights or a widened permission role is reported as a finding that colours the environment status until you confirm it. To compare against, Shopmon keeps a baseline of the accounts that currently exist: one row per user, integration and permission role, holding the masked identifier the shop itself provides for users, the assigned role ids and the privilege counts. No account directory is shown in the interface — only changes, and accounts that stand out.",
     "accountMonitoringEnabled": "Report account changes",
     "accountMonitoringHint": "Switching this off confirms all open findings. Switching it back on records the current state first, so changes made in the meantime are not reported as new.",
     "accountMonitoringRequires": "Requires the FroshTools plugin in the shop. Without it, monitoring stays idle instead of failing.",

@@ -758,7 +758,7 @@
     "subscribed": "Sie haben Benachrichtigungen für diese Umgebung abonniert",
     "unsubscribed": "Sie haben Benachrichtigungen für diese Umgebung abbestellt",
     "accountMonitoring": "Kontoüberwachung",
-    "accountMonitoringDesc": "Überwacht Administratoren, Integrationen und Rechterollen des Shops. Ein neuer Administrator, nachträglich vergebene Adminrechte oder eine erweiterte Rechterolle werden als Finding gemeldet und färben den Status der Umgebung, bis Sie es bestätigen. Shopmon speichert keine Liste der Zugangsberechtigten — nur was sich geändert hat, mit der maskierten Kennung, die der Shop selbst liefert.",
+    "accountMonitoringDesc": "Überwacht Administratoren, Integrationen und Rechterollen des Shops. Ein neuer Administrator, nachträglich vergebene Adminrechte oder eine erweiterte Rechterolle werden als Finding gemeldet und färben den Status der Umgebung, bis Sie es bestätigen. Zum Vergleich hält Shopmon einen Ausgangsstand der aktuell existierenden Konten: je eine Zeile pro Benutzer, Integration und Rechterolle, mit der maskierten Kennung, die der Shop für Benutzer selbst liefert, den zugewiesenen Rollen-IDs und den Berechtigungszahlen. In der Oberfläche wird kein Kontenverzeichnis angezeigt — nur Änderungen und auffällige Konten.",
     "accountMonitoringEnabled": "Kontoänderungen melden",
     "accountMonitoringHint": "Beim Ausschalten werden alle offenen Findings bestätigt. Beim Wiedereinschalten wird zuerst der aktuelle Stand erfasst, damit zwischenzeitliche Änderungen nicht als neu gemeldet werden.",
     "accountMonitoringRequires": "Setzt das FroshTools-Plugin im Shop voraus. Ohne das Plugin bleibt die Überwachung untätig statt zu scheitern.",
