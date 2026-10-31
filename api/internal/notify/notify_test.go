@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -112,6 +113,12 @@ func (l *fakeLocker) acquire(_ context.Context, key string, _ time.Duration) boo
 	}
 	l.held[key] = true
 	return true
+}
+
+func (l *fakeLocker) release(_ context.Context, key string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.held, key)
 }
 
 func newTestDispatcher(inApp, email *recordingChannel, locker lockAcquirer) *Dispatcher {
@@ -243,4 +250,62 @@ func TestDispatchResultReportsDeliveryOutcome(t *testing.T) {
 		assert.Zero(t, res.Delivered)
 		assert.False(t, res.Delivery(), "nothing was delivered, but nothing needs retrying either")
 	})
+}
+
+// A dedup lock guarding a delivery that failed must not outlive the attempt.
+// Held for its full TTL it would make the retry skip email, report nothing
+// failed, and let the caller mark the alert as sent -- losing it.
+func TestDispatchReleasesEmailLockWhenTheSendFails(t *testing.T) {
+	locker := &fakeLocker{}
+	inApp := &recordingChannel{}
+	email := &recordingChannel{err: errors.New("smtp unreachable")}
+	d := newTestDispatcher(inApp, email, locker)
+
+	ev := Event{
+		Type: EventStatusDegraded, DedupKey: "env-1",
+		TitleKey:   "notification.statusDegraded.title",
+		MessageKey: "notification.statusDegraded.message",
+	}
+	recipients := []Recipient{{ID: "u1", Email: "u1@example.com"}}
+
+	first := d.Dispatch(context.Background(), ev, recipients)
+	if first.Failed == 0 {
+		t.Fatal("expected the email delivery to fail")
+	}
+
+	// The retry must get the email channel again rather than find it deduped.
+	email.err = nil
+	second := d.Dispatch(context.Background(), ev, recipients)
+	if second.Failed != 0 {
+		t.Fatalf("retry failed: %+v", second)
+	}
+	// recordingChannel only records successful sends, so this is exactly the
+	// retry. Without releasing the lock it would be 0: the retry would find the
+	// channel deduped, report nothing failed, and the alert would be lost.
+	if len(email.sent) != 1 {
+		t.Fatalf("email channel recorded %d sends, want the retry to have got through", len(email.sent))
+	}
+}
+
+// A successful send keeps the lock, which is what suppresses a second mail for
+// the same event within the dedup window.
+func TestDispatchKeepsEmailLockWhenTheSendSucceeds(t *testing.T) {
+	locker := &fakeLocker{}
+	inApp := &recordingChannel{}
+	email := &recordingChannel{}
+	d := newTestDispatcher(inApp, email, locker)
+
+	ev := Event{
+		Type: EventStatusDegraded, DedupKey: "env-2",
+		TitleKey:   "notification.statusDegraded.title",
+		MessageKey: "notification.statusDegraded.message",
+	}
+	recipients := []Recipient{{ID: "u1", Email: "u1@example.com"}}
+
+	d.Dispatch(context.Background(), ev, recipients)
+	d.Dispatch(context.Background(), ev, recipients)
+
+	if len(email.sent) != 1 {
+		t.Fatalf("email channel saw %d sends, want the second one deduped", len(email.sent))
+	}
 }
