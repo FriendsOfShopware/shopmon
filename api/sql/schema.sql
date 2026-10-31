@@ -783,9 +783,14 @@ CREATE INDEX "idx_environment_account_event_unnotified"
 -- twice and the environment would stay red until each copy was acknowledged
 -- separately.
 --
--- Partial by design: once a finding is acknowledged it stops blocking, so a
--- change that genuinely happens again is recorded again.
+-- Partial twice over:
+--   * acknowledged rows stop blocking, so a change that genuinely happens
+--     again is recorded again;
+--   * informational rows are excluded entirely. Nothing ever acknowledges them
+--     (they are history, not findings), so one would hold the slot forever --
+--     and the same change later arriving as a real finding, after the role was
+--     actually assigned to somebody, would be dropped unnoticed.
 CREATE UNIQUE INDEX "idx_environment_account_event_one_open"
   ON "environment_account_event" ("environment_id", "account_type", "account_id", "change")
-  WHERE "acknowledged_at" IS NULL;
+  WHERE "acknowledged_at" IS NULL AND "level" <> 'info';
 

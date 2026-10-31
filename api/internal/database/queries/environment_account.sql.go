@@ -145,7 +145,7 @@ INSERT INTO environment_account_event (
   environment_id, account_type, account_id, label, change, level, params, admin_path
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (environment_id, account_type, account_id, change)
-  WHERE acknowledged_at IS NULL
+  WHERE acknowledged_at IS NULL AND level <> 'info'
   DO NOTHING
 `
 
@@ -164,6 +164,11 @@ type InsertEnvironmentAccountEventParams struct {
 // environment diff the same baseline and reach for the same event, and the
 // reviewer must not have to acknowledge the same finding twice. The index
 // predicate has to be repeated for Postgres to infer the partial index.
+//
+// Informational rows fall outside that index, so they never conflict and are
+// appended as plain history. A duplicate history line from two overlapping
+// scrapes is cosmetic; an informational row blocking a later finding would not
+// be.
 func (q *Queries) InsertEnvironmentAccountEvent(ctx context.Context, arg InsertEnvironmentAccountEventParams) error {
 	_, err := q.db.Exec(ctx, insertEnvironmentAccountEvent,
 		arg.EnvironmentID,

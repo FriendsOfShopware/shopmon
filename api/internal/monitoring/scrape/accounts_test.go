@@ -571,3 +571,62 @@ func TestNotifyAccountChangesKeepsEventsWhenSubscriberLookupFails(t *testing.T) 
 	assert.Equal(t, 1, unnotifiedCount(t, h, env.ID),
 		"a lookup failure must leave the alert pending, not consume it")
 }
+
+// An informational row must not occupy the one-open-finding slot. Nothing ever
+// acknowledges informational rows, so one would hold the key forever -- and the
+// same change arriving later as a real finding, once the role was actually
+// assigned to somebody, would be dropped without a check or an alert.
+func TestPersistAccountsInfoEventDoesNotBlockLaterFinding(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+
+	const roleID = "cccccccccccccccccccccccccccccccc"
+	role := func(count int32, hash string) accounts.Account {
+		return accounts.Account{
+			Kind: accounts.KindACLRole, ID: roleID, Label: "Editor",
+			Active: true, PrivilegeCount: count, PrivilegesHash: hash,
+		}
+	}
+	holder := func(roles ...string) accounts.Account {
+		a := accounts.Account{Kind: accounts.KindUser, ID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Label: "a***@e.de", Active: true}
+		a.RoleIDs = roles
+		return a
+	}
+
+	// Nobody holds the role yet, so growing it grants nothing: informational.
+	unheld, unheldGrown := role(10, "h1"), role(20, "h2")
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID, seededResult(unheld, holder())))
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{unheld, holder()}, []accounts.Account{unheldGrown, holder()})))
+
+	open, err := h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Empty(t, open, "an unassigned role grants nothing")
+
+	// The role is assigned and grows again -- now it does widen access.
+	held, heldGrown := holder(roleID), holder(roleID)
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{unheldGrown, holder()}, []accounts.Account{unheldGrown, held})))
+	require.NoError(t, persistAccounts(ctx, h.queries, env.ID,
+		diffedResult([]accounts.Account{unheldGrown, heldGrown}, []accounts.Account{role(30, "h3"), heldGrown})))
+
+	open, err = h.queries.ListOpenEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+
+	var grown bool
+	for _, e := range open {
+		if e.Change == string(accounts.ChangeRolePrivilegesGrown) {
+			grown = true
+			assert.Equal(t, string(accounts.LevelYellow), e.Level)
+		}
+	}
+	assert.True(t, grown, "the earlier informational row must not have swallowed this finding")
+
+	var infos int
+	for _, e := range eventRows(t, pool, env.ID) {
+		if e.Level == string(accounts.LevelInfo) && e.Change == string(accounts.ChangeRolePrivilegesGrown) {
+			infos++
+		}
+	}
+	assert.Equal(t, 1, infos, "the informational row is still in the history")
+}
