@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 func accountService(repository *stubRepository, jobs *stubJobDispatcher, member bool) *Service {
@@ -98,8 +99,26 @@ func TestAcknowledgeAccountEventBoundsNote(t *testing.T) {
 	if err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, 42, &long); err != nil {
 		t.Fatalf("AcknowledgeAccountEvent: %v", err)
 	}
-	if repository.acknowledgedNote == nil || len(*repository.acknowledgedNote) != maxAcknowledgeNoteLen {
+	if repository.acknowledgedNote == nil || utf8.RuneCountInString(*repository.acknowledgedNote) != maxAcknowledgeNoteLen {
 		t.Errorf("note was not bounded to %d characters", maxAcknowledgeNoteLen)
+	}
+
+	// Multibyte input: Huma counts characters, so this note is valid at 500
+	// characters but far longer in bytes. Cutting bytes would split the last
+	// character and Postgres would reject the write.
+	multibyte := strings.Repeat("ä", maxAcknowledgeNoteLen+100)
+	if err := service.AcknowledgeAccountEvent(context.Background(), "user-1", 7, 44, &multibyte); err != nil {
+		t.Fatalf("AcknowledgeAccountEvent: %v", err)
+	}
+	got := repository.acknowledgedNote
+	if got == nil {
+		t.Fatal("expected a note")
+	}
+	if !utf8.ValidString(*got) {
+		t.Error("the truncated note is not valid UTF-8")
+	}
+	if utf8.RuneCountInString(*got) != maxAcknowledgeNoteLen {
+		t.Errorf("note has %d characters, want %d", utf8.RuneCountInString(*got), maxAcknowledgeNoteLen)
 	}
 
 	empty := ""

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"unicode/utf8"
 )
 
 var (
@@ -77,13 +78,19 @@ func (s *Service) refreshAfterAcknowledge(ctx context.Context, environmentID int
 	}
 }
 
+// boundNote caps the reviewer's note.
+//
+// Counted and cut in runes, not bytes: Huma validates maxLength by character
+// count, so a note of 500 accented characters is well over 500 bytes. Slicing
+// bytes would split the final character, and Postgres rejects the invalid
+// UTF-8 that results -- losing the acknowledgement over a note.
 func boundNote(note *string) *string {
 	if note == nil || *note == "" {
 		return nil
 	}
 	s := *note
-	if len(s) > maxAcknowledgeNoteLen {
-		s = s[:maxAcknowledgeNoteLen]
+	if utf8.RuneCountInString(s) > maxAcknowledgeNoteLen {
+		s = string([]rune(s)[:maxAcknowledgeNoteLen])
 	}
 	return &s
 }
