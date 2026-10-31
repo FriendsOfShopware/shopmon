@@ -1633,6 +1633,11 @@
     },
     "viewAll": "Open account monitoring",
     "pendingReview": "{count} account change(s) need review",
-    "loadFailed": "The accounts could not be loaded"
+    "loadFailed": "The accounts could not be loaded",
+    "state": {
+      "pending": "Not initialised yet — the first scrape only records the current state",
+      "unsupported": "FroshTools in this shop does not serve the account endpoint yet",
+      "error": "The last account check failed"
+    }
   }
 }

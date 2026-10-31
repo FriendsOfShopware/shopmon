@@ -249,3 +249,18 @@ func TestRenderParamsAlwaysCarriesTheLabel(t *testing.T) {
 	require.NotNil(t, got)
 	assert.Equal(t, "Fallback", (*got)["label"])
 }
+
+// Zero open findings means something different in each state, so the overview
+// has to be able to tell them apart.
+func TestAccountMonitoringStateFoldsInTheOptOut(t *testing.T) {
+	assert.Equal(t, AccountStateOff, accountMonitoringState(false, AccountStateOK),
+		"a disabled environment reports off whatever the stored state says")
+	assert.Equal(t, AccountStateOff, accountMonitoringState(false, ""))
+
+	assert.Equal(t, AccountStateOK, accountMonitoringState(true, AccountStateOK))
+	assert.Equal(t, AccountStateError, accountMonitoringState(true, AccountStateError))
+	assert.Equal(t, AccountStateUnsupported, accountMonitoringState(true, AccountStateUnsupported))
+
+	// No stored row yet: the environment has not been scraped for accounts.
+	assert.Equal(t, AccountStatePending, accountMonitoringState(true, ""))
+}

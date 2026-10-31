@@ -253,3 +253,47 @@ func indexSnapshots(rows []queries.EnvironmentAccount) map[string]*api.AccountSn
 	}
 	return out
 }
+
+// Account monitoring states for the overview card. Zero open findings means
+// something different in each of them, so the card must not render them alike.
+const (
+	AccountStateOK          = "ok"
+	AccountStatePending     = "pending"
+	AccountStateUnsupported = "unsupported"
+	AccountStateError       = "error"
+	AccountStateOff         = "off"
+)
+
+// accountMonitoringState reads the stored capability state. A missing row is
+// "pending": the environment has not been scraped for accounts yet.
+func (s *Service) accountMonitoringState(ctx context.Context, environmentID int32) (string, error) {
+	row, err := s.queries.GetEnvironmentAccountSummary(ctx, environmentID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AccountStatePending, nil
+		}
+		return "", fmt.Errorf("get account summary: %w", err)
+	}
+	switch {
+	case !row.Supported:
+		return AccountStateUnsupported, nil
+	case row.Failed:
+		return AccountStateError, nil
+	case !row.Initialised:
+		return AccountStatePending, nil
+	default:
+		return AccountStateOK, nil
+	}
+}
+
+// accountMonitoringState folds the opt-out in: a disabled environment reports
+// "off" whatever the stored state says.
+func accountMonitoringState(enabled bool, stored string) string {
+	if !enabled {
+		return AccountStateOff
+	}
+	if stored == "" {
+		return AccountStatePending
+	}
+	return stored
+}

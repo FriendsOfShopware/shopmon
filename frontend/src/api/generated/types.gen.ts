@@ -848,6 +848,7 @@ export type EnvironmentCheck = {
 
 export type EnvironmentDetail = {
     accountMonitoringEnabled: boolean;
+    accountMonitoringState: string;
     cache: CacheInfo;
     changelogsCount: number;
     checks: Array<EnvironmentCheck>;

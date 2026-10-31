@@ -1292,13 +1292,21 @@ type EnvironmentDetail struct {
 
 	// AccountMonitoringEnabled is the per-environment opt-out for account
 	// monitoring.
-	AccountMonitoringEnabled bool        `json:"accountMonitoringEnabled"`
-	SitespeedUrls            *[]string   `json:"sitespeedUrls"`
-	Sitespeeds               []Sitespeed `json:"sitespeeds"`
-	Status                   string      `json:"status"`
-	Subscribed               bool        `json:"subscribed"`
-	Url                      string      `json:"url"`
-	TaskGraceMinutes         int         `json:"taskGraceMinutes"`
+	AccountMonitoringEnabled bool `json:"accountMonitoringEnabled"`
+
+	// AccountMonitoringState says whether monitoring has anything to report on:
+	// "ok" once a baseline exists and the last read succeeded, "pending" before
+	// the first run, "unsupported" when the shop's FroshTools has no account
+	// endpoint, "error" when the last read failed, "off" when disabled. Without
+	// it the overview cannot tell "nothing changed" from "nothing was looked
+	// at" -- both yield zero open findings, but only one is good news.
+	AccountMonitoringState string      `json:"accountMonitoringState"`
+	SitespeedUrls          *[]string   `json:"sitespeedUrls"`
+	Sitespeeds             []Sitespeed `json:"sitespeeds"`
+	Status                 string      `json:"status"`
+	Subscribed             bool        `json:"subscribed"`
+	Url                    string      `json:"url"`
+	TaskGraceMinutes       int         `json:"taskGraceMinutes"`
 }
 
 // EnvironmentExtension defines model for EnvironmentExtension.

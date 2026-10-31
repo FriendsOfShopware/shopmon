@@ -140,6 +140,29 @@ func (q *Queries) GetEnvironmentAccountState(ctx context.Context, environmentID 
 	return i, err
 }
 
+const getEnvironmentAccountSummary = `-- name: GetEnvironmentAccountSummary :one
+SELECT supported,
+       (baseline_at IS NOT NULL)::boolean AS initialised,
+       (last_error IS NOT NULL)::boolean AS failed
+FROM environment_account_state WHERE environment_id = $1
+`
+
+type GetEnvironmentAccountSummaryRow struct {
+	Supported   bool `json:"supported"`
+	Initialised bool `json:"initialised"`
+	Failed      bool `json:"failed"`
+}
+
+// Just enough for the overview card to tell "nothing changed" from "nothing was
+// looked at": both produce zero open findings, but only one of them is good
+// news.
+func (q *Queries) GetEnvironmentAccountSummary(ctx context.Context, environmentID int32) (GetEnvironmentAccountSummaryRow, error) {
+	row := q.db.QueryRow(ctx, getEnvironmentAccountSummary, environmentID)
+	var i GetEnvironmentAccountSummaryRow
+	err := row.Scan(&i.Supported, &i.Initialised, &i.Failed)
+	return i, err
+}
+
 const insertEnvironmentAccountEvent = `-- name: InsertEnvironmentAccountEvent :exec
 INSERT INTO environment_account_event (
   environment_id, account_type, account_id, label, change, level, params, admin_path

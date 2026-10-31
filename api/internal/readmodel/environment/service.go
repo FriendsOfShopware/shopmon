@@ -114,6 +114,7 @@ type detailAggregate struct {
 	// openAccountFindings drives the account tab badge, so the detail page
 	// needs no second request to know whether anything is waiting.
 	openAccountFindings int32
+	accountState        string
 	lastDeployAt        pgtype.Timestamp
 	subscribed          bool
 }
@@ -184,6 +185,14 @@ func (s *Service) loadAggregate(ctx context.Context, environmentID int32, langua
 			return fmt.Errorf("count open account findings: %w", err)
 		}
 		aggregate.openAccountFindings = count
+		return nil
+	})
+	group.Go(func() error {
+		state, err := s.accountMonitoringState(groupCtx, environmentID)
+		if err != nil {
+			return err
+		}
+		aggregate.accountState = state
 		return nil
 	})
 	group.Go(func() error {
@@ -303,6 +312,7 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		CreatedAt:                database.Time(environment.CreatedAt),
 		SitespeedEnabled:         environment.SitespeedEnabled,
 		AccountMonitoringEnabled: environment.AccountMonitoringEnabled,
+		AccountMonitoringState:   accountMonitoringState(environment.AccountMonitoringEnabled, aggregate.accountState),
 		OpenAccountFindings:      int(aggregate.openAccountFindings),
 		SitespeedDetailUrl:       sitespeedDetailURL(s.config, environment.ID, environment.SitespeedEnabled),
 		SitespeedUrls:            sitespeedURLs,

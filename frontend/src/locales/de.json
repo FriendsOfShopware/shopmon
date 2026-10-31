@@ -1633,6 +1633,11 @@
     },
     "viewAll": "Kontoüberwachung öffnen",
     "pendingReview": "{count} Kontoänderung(en) zu prüfen",
-    "loadFailed": "Die Konten konnten nicht geladen werden"
+    "loadFailed": "Die Konten konnten nicht geladen werden",
+    "state": {
+      "pending": "Noch nicht initialisiert — der erste Scrape erfasst nur den aktuellen Stand",
+      "unsupported": "FroshTools in diesem Shop kennt den Konten-Endpunkt noch nicht",
+      "error": "Die letzte Kontenprüfung ist fehlgeschlagen"
+    }
   }
 }

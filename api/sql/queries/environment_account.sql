@@ -164,3 +164,12 @@ WHERE environment_id = $1 AND acknowledged_at IS NULL;
 -- name: CountOpenEnvironmentAccountFindings :one
 SELECT COUNT(*)::int FROM environment_account_event
 WHERE environment_id = $1 AND acknowledged_at IS NULL AND level <> 'info';
+
+-- name: GetEnvironmentAccountSummary :one
+-- Just enough for the overview card to tell "nothing changed" from "nothing was
+-- looked at": both produce zero open findings, but only one of them is good
+-- news.
+SELECT supported,
+       (baseline_at IS NOT NULL)::boolean AS initialised,
+       (last_error IS NOT NULL)::boolean AS failed
+FROM environment_account_state WHERE environment_id = $1;
