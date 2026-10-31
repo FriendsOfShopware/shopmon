@@ -384,32 +384,31 @@ async function loadEnvironment() {
   const { data } = await getEnvironment({
     path: { environmentId },
   });
-  // Only replace on success. A failed reload after a saved setting would
-  // otherwise null this out, hiding the whole editor behind its v-if while the
-  // success message is still on screen.
-  if (data) environment.value = data;
+  // A failed reload keeps whatever was loaded before, so the editor does not
+  // vanish behind its v-if while a success message is still on screen. The form
+  // is deliberately NOT repopulated from that stale object: after a saved
+  // setting it would snap the control back to the value that was just replaced,
+  // and saving again would submit the opposite of what the screen shows.
+  if (!data) {
+    isLoading.value = false;
+    return;
+  }
+  environment.value = data;
 
-  if (environment.value?.organizationId) {
+  if (data.organizationId) {
     const { data: shopsData } = await getAccountShops();
     if (shopsData) shops.value = shopsData;
-    selectedShopId.value = environment.value.shopId ?? 0;
+    selectedShopId.value = data.shopId ?? 0;
   }
 
-  if (environment.value) {
-    sitespeedEnabled.value = environment.value.sitespeedEnabled ?? false;
-    accountMonitoringEnabled.value = environment.value.accountMonitoringEnabled ?? true;
-    sitespeedUrls.value = environment.value.sitespeedUrls
-      ? [...environment.value.sitespeedUrls]
-      : [];
+  sitespeedEnabled.value = data.sitespeedEnabled ?? false;
+  accountMonitoringEnabled.value = data.accountMonitoringEnabled ?? true;
+  sitespeedUrls.value = data.sitespeedUrls ? [...data.sitespeedUrls] : [];
 
-    setFieldValue("name", environment.value.name);
-    setFieldValue("shopUrl", environment.value.url);
-    setFieldValue("shopId", String(environment.value.shopId ?? ""));
-    setFieldValue(
-      "taskGraceMinutes",
-      environment.value.taskGraceMinutes ?? DEFAULT_TASK_GRACE_MINUTES,
-    );
-  }
+  setFieldValue("name", data.name);
+  setFieldValue("shopUrl", data.url);
+  setFieldValue("shopId", String(data.shopId ?? ""));
+  setFieldValue("taskGraceMinutes", data.taskGraceMinutes ?? DEFAULT_TASK_GRACE_MINUTES);
 
   isLoading.value = false;
 }

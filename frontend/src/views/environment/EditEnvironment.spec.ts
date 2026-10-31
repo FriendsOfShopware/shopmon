@@ -394,4 +394,41 @@ describe("EditEnvironment", () => {
 
     expect(wrapper.text()).toContain("Account monitoring");
   });
+
+  // Keeping the stale object must not repopulate the form from it: the control
+  // would snap back to the value that was just replaced, and saving again would
+  // submit the opposite of what the screen shows.
+  it("does not restore the saved switch from a stale environment", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    // The loaded environment has monitoring on; turn it off and save.
+    const toggle = wrapper.findAllComponents({ name: "Switch" }).at(-1);
+    expect(toggle).toBeTruthy();
+    await toggle!.setValue(false);
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "gone" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(updateAccountMonitoringSettings).toHaveBeenCalledWith({
+      path: { environmentId: 1 },
+      body: { enabled: false },
+    });
+
+    // Saving again must submit the same thing, not its opposite.
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(updateAccountMonitoringSettings).toHaveBeenLastCalledWith({
+      path: { environmentId: 1 },
+      body: { enabled: false },
+    });
+  });
 });
