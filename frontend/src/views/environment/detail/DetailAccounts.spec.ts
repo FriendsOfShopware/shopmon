@@ -538,4 +538,19 @@ describe("DetailAccounts", () => {
     expect(getEnvironmentAccounts).toHaveBeenCalledTimes(2);
     expect(bodyButton("Confirm")).toBeFalsy();
   });
+
+  // The shared environment is loaded by its own request. While that is in
+  // flight -- or after it failed -- it can still hold the previous
+  // environment, and these numbers must not be written into that one.
+  it("does not write its counts into a different environment", async () => {
+    environment.value = { id: 8, openAccountFindings: 0 };
+    getEnvironmentAccounts.mockResolvedValue(
+      response({ openFindings: [adminFinding], accountCount: 4 }),
+    );
+
+    await mountComponent();
+
+    expect(environment.value?.openAccountFindings).toBe(0);
+    expect(environment.value?.accountMonitoringState).toBeUndefined();
+  });
 });

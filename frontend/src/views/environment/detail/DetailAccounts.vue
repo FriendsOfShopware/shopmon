@@ -430,7 +430,7 @@ async function load() {
     }
 
     data.value = result ?? null;
-    syncBadge();
+    syncBadge(requestedId);
   } catch (err) {
     loadFailed.value = true;
     error(err instanceof Error ? err.message : String(err));
@@ -484,8 +484,13 @@ async function submitAcknowledge() {
 
 // Keep the tab badge in step with what this view just changed, without
 // re-fetching the whole environment.
-function syncBadge() {
-  if (!environment.value || !data.value) return;
+function syncBadge(forEnvironmentId: number) {
+  // The shared environment is loaded by its own request. If that one is still
+  // in flight -- or failed -- it can still hold the previous environment,
+  // and writing these numbers into it would leave that header showing another
+  // environment's findings.
+  if (!environment.value || environment.value.id !== forEnvironmentId) return;
+  if (!data.value) return;
   environment.value = {
     ...environment.value,
     openAccountFindings: data.value.openFindings.length,
