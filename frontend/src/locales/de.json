@@ -763,7 +763,8 @@
     "accountMonitoringEnabled": "Kontoänderungen melden",
     "accountMonitoringHint": "Beim Ausschalten werden alle offenen Findings bestätigt. Beim Wiedereinschalten wird zuerst der aktuelle Stand erfasst, damit zwischenzeitliche Änderungen nicht als neu gemeldet werden.",
     "accountMonitoringRequires": "Setzt das FroshTools-Plugin im Shop voraus. Ohne das Plugin bleibt die Überwachung untätig statt zu scheitern.",
-    "accountMonitoringSaved": "Kontoüberwachung aktualisiert"
+    "accountMonitoringSaved": "Kontoüberwachung aktualisiert",
+    "reloadFailed": "Die Umgebung konnte nicht neu geladen werden"
   },
   "shop": {
     "newShop": "Neues Shop",

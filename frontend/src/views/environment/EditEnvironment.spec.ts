@@ -431,4 +431,44 @@ describe("EditEnvironment", () => {
       body: { enabled: false },
     });
   });
+
+  // Failing quietly left the reader editing a form that no longer reflects the
+  // server, with a success message from the save still on screen.
+  it("reports a failed reload instead of failing quietly", async () => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "upstream exploded" },
+      response: new Response(null, { status: 500 }),
+    } as never);
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(mockError).toHaveBeenCalledWith("upstream exploded");
+    // A transient failure keeps the editor, so the reader does not lose context.
+    expect(wrapper.text()).toContain("Account monitoring");
+  });
+
+  // Gone or no longer permitted is final: keeping the editor open would invite
+  // edits that can never be saved.
+  it.each([404, 403])("closes the editor when the environment is gone (%i)", async (status) => {
+    vi.mocked(updateAccountMonitoringSettings).mockResolvedValue({ error: undefined } as never);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    vi.mocked(getEnvironment).mockResolvedValue({
+      data: undefined,
+      error: { message: "not found" },
+      response: new Response(null, { status }),
+    } as never);
+
+    await wrapper.findAll("form")[2]!.trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("Account monitoring");
+  });
 });

@@ -381,15 +381,27 @@ getAccountShops().then(({ data }) => {
 
 async function loadEnvironment() {
   isLoading.value = true;
-  const { data } = await getEnvironment({
+  const {
+    data,
+    error: apiError,
+    response,
+  } = await getEnvironment({
     path: { environmentId },
   });
-  // A failed reload keeps whatever was loaded before, so the editor does not
-  // vanish behind its v-if while a success message is still on screen. The form
-  // is deliberately NOT repopulated from that stale object: after a saved
-  // setting it would snap the control back to the value that was just replaced,
-  // and saving again would submit the opposite of what the screen shows.
   if (!data) {
+    // Say so rather than failing quietly: after a saved setting the success
+    // message is on screen, and without this the reader would go on editing a
+    // form that no longer reflects the server.
+    error(apiErrorMessage(apiError, t("environment.reloadFailed")));
+
+    // Gone or no longer permitted is final, so let the editor close. Anything
+    // else keeps whatever was loaded before -- the form is deliberately NOT
+    // repopulated from that stale object, because after a saved setting it
+    // would snap the control back to the value that was just replaced and
+    // saving again would submit the opposite of what the screen shows.
+    if (response?.status === 404 || response?.status === 403) {
+      environment.value = null;
+    }
     isLoading.value = false;
     return;
   }

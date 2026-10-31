@@ -763,7 +763,8 @@
     "accountMonitoringEnabled": "Report account changes",
     "accountMonitoringHint": "Switching this off confirms all open findings. Switching it back on records the current state first, so changes made in the meantime are not reported as new.",
     "accountMonitoringRequires": "Requires the FroshTools plugin in the shop. Without it, monitoring stays idle instead of failing.",
-    "accountMonitoringSaved": "Account monitoring updated"
+    "accountMonitoringSaved": "Account monitoring updated",
+    "reloadFailed": "The environment could not be reloaded"
   },
   "shop": {
     "newShop": "New Shop",
