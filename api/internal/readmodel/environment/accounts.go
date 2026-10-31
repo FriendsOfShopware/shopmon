@@ -145,7 +145,16 @@ func postureHints(envURL string, rows []queries.EnvironmentAccount, now time.Tim
 				continue
 			}
 			// An integration created moments ago has simply not been used yet.
-			if !r.RemoteCreatedAt.Valid || r.RemoteCreatedAt.Time.After(cutoff) {
+			// Shops do not always report a creation date, so fall back to when
+			// Shopmon first saw the account -- otherwise such an integration
+			// would never qualify for the hint at all. The hint's CreatedAt
+			// stays on the shop's own value, since the UI labels it as the
+			// creation date in the shop.
+			since := r.RemoteCreatedAt
+			if !since.Valid {
+				since = r.FirstSeenAt
+			}
+			if !since.Valid || since.Time.After(cutoff) {
 				continue
 			}
 			if r.LastUsageAt.Valid && r.LastUsageAt.Time.After(cutoff) {

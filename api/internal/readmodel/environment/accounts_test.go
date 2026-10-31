@@ -57,6 +57,24 @@ func TestPostureHints(t *testing.T) {
 			want: nil,
 		},
 		{
+			// Not every shop reports a creation date; without a fallback such
+			// an integration would never qualify for the hint.
+			name: "an integration without a creation date falls back to first seen",
+			rows: []queries.EnvironmentAccount{integration("Legacy", func(r *queries.EnvironmentAccount) {
+				r.RemoteCreatedAt = pgtype.Timestamp{}
+				r.FirstSeenAt = ts(old)
+			})},
+			want: []string{hintUnusedAdminIntegration},
+		},
+		{
+			name: "an integration first seen moments ago is not dormant",
+			rows: []queries.EnvironmentAccount{integration("Fresh", func(r *queries.EnvironmentAccount) {
+				r.RemoteCreatedAt = pgtype.Timestamp{}
+				r.FirstSeenAt = ts(recent)
+			})},
+			want: nil,
+		},
+		{
 			name: "a non-admin integration is not worth pointing at",
 			rows: []queries.EnvironmentAccount{integration("Reader", func(r *queries.EnvironmentAccount) {
 				r.Admin = false
