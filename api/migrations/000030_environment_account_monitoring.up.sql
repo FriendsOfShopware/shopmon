@@ -70,6 +70,10 @@ CREATE TABLE "environment_account_event" (
   "change"           text NOT NULL,
   "level"            text NOT NULL,              -- red | yellow | info
   "params"           jsonb NOT NULL DEFAULT '{}'::jsonb,
+  -- Bumped whenever an unreviewed finding is refreshed with a newer state. The
+  -- row id stays the same across such a refresh, so it alone cannot tell one
+  -- delivery from the next -- which is what the notification dedup key needs.
+  "revision"         integer NOT NULL DEFAULT 1,
   "admin_path"       text,
   "detected_at"      timestamp NOT NULL DEFAULT NOW(),
   -- Only set once the dispatch succeeded for every recipient; otherwise the

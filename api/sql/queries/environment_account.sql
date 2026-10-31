@@ -119,6 +119,7 @@ ON CONFLICT (environment_id, account_type, account_id, change)
     params = EXCLUDED.params,
     admin_path = EXCLUDED.admin_path,
     detected_at = NOW(),
+    revision = environment_account_event.revision + 1,
     -- Re-alert, because this is new information. Guarded by the WHERE below so
     -- an identical re-detection from two overlapping scrapes stays a no-op and
     -- cannot mail the same finding twice.
@@ -144,10 +145,15 @@ WHERE environment_id = $1
   AND level <> 'info'
 ORDER BY detected_at, id;
 
--- name: MarkEnvironmentAccountEventsNotified :exec
+-- name: MarkEnvironmentAccountEventNotified :exec
+-- Keyed on the revision the caller actually delivered. A refresh that landed
+-- after the events were read carries a higher revision, so this cannot mark a
+-- change nobody was told about as notified. One row per call: a scrape reports
+-- a handful of findings at most, and pairing ids with revisions in a single
+-- statement buys nothing but SQL that is harder to read.
 UPDATE environment_account_event
 SET notified_at = NOW()
-WHERE environment_id = $1 AND id = ANY(@ids::bigint[]);
+WHERE environment_id = $1 AND id = $2 AND revision = $3;
 
 -- name: ListEnvironmentAccountEvents :many
 -- Full history for the UI timeline, acknowledged and informational rows

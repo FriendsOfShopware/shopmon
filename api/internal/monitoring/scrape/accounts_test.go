@@ -790,3 +790,51 @@ func TestPersistAccountsSkipsEventsWhenMonitoringWasDisabledMidScrape(t *testing
 	// The baseline still advances, so re-enabling later does not replay it.
 	assert.Len(t, accountRows(t, h, env.ID), 2)
 }
+
+// Refreshing an unreviewed finding keeps its row id, so an id-only dedup key
+// would collide with the delivery an hour earlier: the dispatcher would skip
+// the email as deduped and the newer change would be marked notified without
+// anyone being told.
+func TestAccountAlertDedupKeyFollowsTheRevision(t *testing.T) {
+	first := []queries.EnvironmentAccountEvent{{ID: 7, Revision: 1}}
+	refreshed := []queries.EnvironmentAccountEvent{{ID: 7, Revision: 2}}
+
+	assert.NotEqual(t, accountAlertDedupKey(1, first), accountAlertDedupKey(1, refreshed),
+		"a refreshed finding must not reuse the previous delivery's key")
+
+	// An identical set keys the same, which is what keeps a retry from mailing
+	// the same findings twice.
+	assert.Equal(t, accountAlertDedupKey(1, first), accountAlertDedupKey(1, first))
+
+	// A change to any member counts, not just the newest row.
+	pair := []queries.EnvironmentAccountEvent{{ID: 7, Revision: 1}, {ID: 9, Revision: 1}}
+	olderBumped := []queries.EnvironmentAccountEvent{{ID: 7, Revision: 2}, {ID: 9, Revision: 1}}
+	assert.NotEqual(t, accountAlertDedupKey(1, pair), accountAlertDedupKey(1, olderBumped))
+
+	// Environments do not share a key.
+	assert.NotEqual(t, accountAlertDedupKey(1, first), accountAlertDedupKey(2, first))
+}
+
+// A refresh that lands after the events were read carries a higher revision;
+// marking the older delivery must not bury it.
+func TestMarkAccountEventsNotifiedIsGuardedByRevision(t *testing.T) {
+	h, pool, env := setupPersistTest(t)
+	ctx := context.Background()
+	seedOneFinding(t, h, env.ID)
+
+	pending, err := h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	require.Len(t, pending, 1)
+	require.EqualValues(t, 1, pending[0].Revision)
+
+	// The finding is refreshed while the notification is in flight.
+	_, err = pool.Exec(ctx,
+		`UPDATE environment_account_event SET revision = revision + 1 WHERE id = $1`, pending[0].ID)
+	require.NoError(t, err)
+
+	h.markAccountEventsNotified(ctx, env.ID, pending)
+
+	still, err := h.queries.ListUnnotifiedEnvironmentAccountEvents(ctx, env.ID)
+	require.NoError(t, err)
+	assert.Len(t, still, 1, "the newer revision stays pending so it is still alerted")
+}

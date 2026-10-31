@@ -91,7 +91,7 @@ func (q *Queries) DeleteEnvironmentAccountsNotIn(ctx context.Context, arg Delete
 }
 
 const getEnvironmentAccountEvent = `-- name: GetEnvironmentAccountEvent :one
-SELECT id, environment_id, account_type, account_id, label, change, level, params, admin_path, detected_at, notified_at, acknowledged_at, acknowledged_by, acknowledge_note FROM environment_account_event WHERE id = $1 AND environment_id = $2
+SELECT id, environment_id, account_type, account_id, label, change, level, params, revision, admin_path, detected_at, notified_at, acknowledged_at, acknowledged_by, acknowledge_note FROM environment_account_event WHERE id = $1 AND environment_id = $2
 `
 
 type GetEnvironmentAccountEventParams struct {
@@ -111,6 +111,7 @@ func (q *Queries) GetEnvironmentAccountEvent(ctx context.Context, arg GetEnviron
 		&i.Change,
 		&i.Level,
 		&i.Params,
+		&i.Revision,
 		&i.AdminPath,
 		&i.DetectedAt,
 		&i.NotifiedAt,
@@ -180,6 +181,7 @@ ON CONFLICT (environment_id, account_type, account_id, change)
     params = EXCLUDED.params,
     admin_path = EXCLUDED.admin_path,
     detected_at = NOW(),
+    revision = environment_account_event.revision + 1,
     -- Re-alert, because this is new information. Guarded by the WHERE below so
     -- an identical re-detection from two overlapping scrapes stays a no-op and
     -- cannot mail the same finding twice.
@@ -223,7 +225,7 @@ func (q *Queries) InsertEnvironmentAccountEvent(ctx context.Context, arg InsertE
 }
 
 const listEnvironmentAccountEvents = `-- name: ListEnvironmentAccountEvents :many
-SELECT e.id, e.environment_id, e.account_type, e.account_id, e.label, e.change, e.level, e.params, e.admin_path, e.detected_at, e.notified_at, e.acknowledged_at, e.acknowledged_by, e.acknowledge_note, u.name AS acknowledged_by_name
+SELECT e.id, e.environment_id, e.account_type, e.account_id, e.label, e.change, e.level, e.params, e.revision, e.admin_path, e.detected_at, e.notified_at, e.acknowledged_at, e.acknowledged_by, e.acknowledge_note, u.name AS acknowledged_by_name
 FROM environment_account_event e
 LEFT JOIN "user" u ON u.id = e.acknowledged_by
 WHERE e.environment_id = $1
@@ -245,6 +247,7 @@ type ListEnvironmentAccountEventsRow struct {
 	Change             string           `json:"change"`
 	Level              string           `json:"level"`
 	Params             json.RawMessage  `json:"params"`
+	Revision           int32            `json:"revision"`
 	AdminPath          *string          `json:"admin_path"`
 	DetectedAt         pgtype.Timestamp `json:"detected_at"`
 	NotifiedAt         pgtype.Timestamp `json:"notified_at"`
@@ -275,6 +278,7 @@ func (q *Queries) ListEnvironmentAccountEvents(ctx context.Context, arg ListEnvi
 			&i.Change,
 			&i.Level,
 			&i.Params,
+			&i.Revision,
 			&i.AdminPath,
 			&i.DetectedAt,
 			&i.NotifiedAt,
@@ -342,7 +346,7 @@ func (q *Queries) ListEnvironmentAccounts(ctx context.Context, environmentID int
 }
 
 const listOpenEnvironmentAccountEvents = `-- name: ListOpenEnvironmentAccountEvents :many
-SELECT id, environment_id, account_type, account_id, label, change, level, params, admin_path, detected_at, notified_at, acknowledged_at, acknowledged_by, acknowledge_note FROM environment_account_event
+SELECT id, environment_id, account_type, account_id, label, change, level, params, revision, admin_path, detected_at, notified_at, acknowledged_at, acknowledged_by, acknowledge_note FROM environment_account_event
 WHERE environment_id = $1 AND acknowledged_at IS NULL AND level <> 'info'
 ORDER BY detected_at, id
 `
@@ -367,6 +371,7 @@ func (q *Queries) ListOpenEnvironmentAccountEvents(ctx context.Context, environm
 			&i.Change,
 			&i.Level,
 			&i.Params,
+			&i.Revision,
 			&i.AdminPath,
 			&i.DetectedAt,
 			&i.NotifiedAt,
@@ -385,7 +390,7 @@ func (q *Queries) ListOpenEnvironmentAccountEvents(ctx context.Context, environm
 }
 
 const listUnnotifiedEnvironmentAccountEvents = `-- name: ListUnnotifiedEnvironmentAccountEvents :many
-SELECT id, environment_id, account_type, account_id, label, change, level, params, admin_path, detected_at, notified_at, acknowledged_at, acknowledged_by, acknowledge_note FROM environment_account_event
+SELECT id, environment_id, account_type, account_id, label, change, level, params, revision, admin_path, detected_at, notified_at, acknowledged_at, acknowledged_by, acknowledge_note FROM environment_account_event
 WHERE environment_id = $1
   AND notified_at IS NULL
   AND acknowledged_at IS NULL
@@ -414,6 +419,7 @@ func (q *Queries) ListUnnotifiedEnvironmentAccountEvents(ctx context.Context, en
 			&i.Change,
 			&i.Level,
 			&i.Params,
+			&i.Revision,
 			&i.AdminPath,
 			&i.DetectedAt,
 			&i.NotifiedAt,
@@ -431,19 +437,25 @@ func (q *Queries) ListUnnotifiedEnvironmentAccountEvents(ctx context.Context, en
 	return items, nil
 }
 
-const markEnvironmentAccountEventsNotified = `-- name: MarkEnvironmentAccountEventsNotified :exec
+const markEnvironmentAccountEventNotified = `-- name: MarkEnvironmentAccountEventNotified :exec
 UPDATE environment_account_event
 SET notified_at = NOW()
-WHERE environment_id = $1 AND id = ANY($2::bigint[])
+WHERE environment_id = $1 AND id = $2 AND revision = $3
 `
 
-type MarkEnvironmentAccountEventsNotifiedParams struct {
-	EnvironmentID int32   `json:"environment_id"`
-	Ids           []int64 `json:"ids"`
+type MarkEnvironmentAccountEventNotifiedParams struct {
+	EnvironmentID int32 `json:"environment_id"`
+	ID            int64 `json:"id"`
+	Revision      int32 `json:"revision"`
 }
 
-func (q *Queries) MarkEnvironmentAccountEventsNotified(ctx context.Context, arg MarkEnvironmentAccountEventsNotifiedParams) error {
-	_, err := q.db.Exec(ctx, markEnvironmentAccountEventsNotified, arg.EnvironmentID, arg.Ids)
+// Keyed on the revision the caller actually delivered. A refresh that landed
+// after the events were read carries a higher revision, so this cannot mark a
+// change nobody was told about as notified. One row per call: a scrape reports
+// a handful of findings at most, and pairing ids with revisions in a single
+// statement buys nothing but SQL that is harder to read.
+func (q *Queries) MarkEnvironmentAccountEventNotified(ctx context.Context, arg MarkEnvironmentAccountEventNotifiedParams) error {
+	_, err := q.db.Exec(ctx, markEnvironmentAccountEventNotified, arg.EnvironmentID, arg.ID, arg.Revision)
 	return err
 }
 

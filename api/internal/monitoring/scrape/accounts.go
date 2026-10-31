@@ -2,6 +2,8 @@ package scrape
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -424,10 +426,8 @@ func (h *Service) notifyAccountChanges(ctx context.Context, env queries.GetAllEn
 	}
 
 	reasons := make([]notify.StatusReason, 0, len(pending))
-	ids := make([]int64, 0, len(pending))
 	level := notify.LevelWarning
 	for _, e := range pending {
-		ids = append(ids, e.ID)
 		if e.Level == string(accounts.LevelRed) {
 			level = notify.LevelError
 		}
@@ -465,7 +465,7 @@ func (h *Service) notifyAccountChanges(ctx context.Context, env queries.GetAllEn
 		// per-environment key would let the hourly email dedup lock swallow a
 		// second wave of changes, and the in-app entry for the first wave
 		// would be overwritten before anyone had reviewed it.
-		DedupKey:        fmt.Sprintf("account_changed:%d:%d", env.ID, ids[len(ids)-1]),
+		DedupKey:        accountAlertDedupKey(env.ID, pending),
 		TitleKey:        titleKey,
 		MessageKey:      messageKey,
 		EmailSubjectKey: subjectKey,
@@ -492,16 +492,18 @@ func (h *Service) notifyAccountChanges(ctx context.Context, env queries.GetAllEn
 }
 
 func (h *Service) markAccountEventsNotified(ctx context.Context, environmentID int32, events []queries.EnvironmentAccountEvent) {
-	ids := make([]int64, 0, len(events))
 	for _, e := range events {
-		ids = append(ids, e.ID)
-	}
-	if err := h.queries.MarkEnvironmentAccountEventsNotified(ctx, queries.MarkEnvironmentAccountEventsNotifiedParams{
-		EnvironmentID: environmentID,
-		Ids:           ids,
-	}); err != nil {
-		slog.WarnContext(ctx, "failed to mark account events notified",
-			"environmentId", environmentID, "error", err)
+		// Guarded by the revision that was actually delivered: a refresh that
+		// landed after these events were read carries a higher one, and
+		// marking it would bury a change nobody was told about.
+		if err := h.queries.MarkEnvironmentAccountEventNotified(ctx, queries.MarkEnvironmentAccountEventNotifiedParams{
+			EnvironmentID: environmentID,
+			ID:            e.ID,
+			Revision:      e.Revision,
+		}); err != nil {
+			slog.WarnContext(ctx, "failed to mark account event notified",
+				"environmentId", environmentID, "eventId", e.ID, "error", err)
+		}
 	}
 }
 
@@ -514,4 +516,21 @@ func accountsLink(envID int32) notify.Link {
 			"environmentId": strconv.Itoa(int(envID)),
 		},
 	}
+}
+
+// accountAlertDedupKey identifies one delivery of one set of findings.
+//
+// It covers every event's revision, not just the newest row id: refreshing an
+// unreviewed finding keeps its id, so an id-only key would collide with the
+// delivery an hour earlier, the dispatcher would skip the email as deduped, and
+// the newer change would be marked notified without anyone being told. Any
+// member changing yields a different key; an identical set yields the same one,
+// which is what keeps a retry from mailing twice.
+func accountAlertDedupKey(environmentID int32, events []queries.EnvironmentAccountEvent) string {
+	var b strings.Builder
+	for _, e := range events {
+		fmt.Fprintf(&b, "%d:%d;", e.ID, e.Revision)
+	}
+	sum := sha256.Sum256([]byte(b.String()))
+	return fmt.Sprintf("account_changed:%d:%s", environmentID, hex.EncodeToString(sum[:])[:16])
 }

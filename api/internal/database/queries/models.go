@@ -182,6 +182,7 @@ type EnvironmentAccountEvent struct {
 	Change          string           `json:"change"`
 	Level           string           `json:"level"`
 	Params          json.RawMessage  `json:"params"`
+	Revision        int32            `json:"revision"`
 	AdminPath       *string          `json:"admin_path"`
 	DetectedAt      pgtype.Timestamp `json:"detected_at"`
 	NotifiedAt      pgtype.Timestamp `json:"notified_at"`
