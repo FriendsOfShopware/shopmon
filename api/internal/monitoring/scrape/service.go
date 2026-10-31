@@ -468,10 +468,15 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		// prevent, so fail the scrape and let it retry with the stored state
 		// intact. Without an unevaluated group the loss only costs the reasons
 		// attached to a transition, which is not worth failing over.
-		if len(checkerResult.Unavailable) > 0 {
+		// The account group counts the same way: its findings live only in the
+		// stored checks once the open-events read has failed, so losing both
+		// reads in one scrape would prune them and mail out that same false
+		// recovery.
+		if len(checkerResult.Unavailable) > 0 || accountRes.unevaluated {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
-			return fmt.Errorf("load previous checks while %v unavailable: %w", unavailableNames, err)
+			return fmt.Errorf("load previous checks while %v unavailable (accounts unevaluated: %t): %w",
+				unavailableNames, accountRes.unevaluated, err)
 		}
 		slog.Warn("failed to load previous checks for status diff", "environmentId", env.ID, "error", err)
 		oldChecks = nil
