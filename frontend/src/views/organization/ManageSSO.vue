@@ -117,7 +117,7 @@
                   <Input
                     v-bind="componentField"
                     type="url"
-                    placeholder="https://auth.example.com"
+                    placeholder="auth.example.com"
                     class="flex-1"
                     @update:model-value="issuerUrl = $event as string"
                   />
@@ -186,7 +186,7 @@
                 <Input
                   v-bind="componentField"
                   type="url"
-                  placeholder="https://auth.example.com/oauth2/authorize"
+                  placeholder="auth.example.com/oauth2/authorize"
                 />
               </FormControl>
               <FormMessage />
@@ -200,7 +200,7 @@
                 <Input
                   v-bind="componentField"
                   type="url"
-                  placeholder="https://auth.example.com/oauth2/token"
+                  placeholder="auth.example.com/oauth2/token"
                 />
               </FormControl>
               <FormMessage />
@@ -214,7 +214,7 @@
                 <Input
                   v-bind="componentField"
                   type="url"
-                  placeholder="https://auth.example.com/.well-known/jwks.json"
+                  placeholder="auth.example.com/.well-known/jwks.json"
                 />
               </FormControl>
               <FormMessage />

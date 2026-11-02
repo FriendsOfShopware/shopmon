@@ -71,11 +71,7 @@
               <FormItem>
                 <FormLabel>{{ $t("shop.gitRepoUrl") }}</FormLabel>
                 <FormControl>
-                  <Input
-                    v-bind="componentField"
-                    type="url"
-                    placeholder="https://github.com/org/repo"
-                  />
+                  <Input v-bind="componentField" type="url" placeholder="github.com/org/repo" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
