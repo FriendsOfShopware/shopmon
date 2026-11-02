@@ -186,7 +186,7 @@
               <Input
                 :model-value="sitespeedUrls[index]"
                 type="url"
-                placeholder="https://example.com"
+                placeholder="example.com"
                 class="flex-1"
                 @update:model-value="sitespeedUrls[index] = $event as string"
               />

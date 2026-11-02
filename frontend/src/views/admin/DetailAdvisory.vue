@@ -266,7 +266,7 @@
                 <Input
                   id="edit-advisory-contentForm-link"
                   v-model="contentForm.link"
-                  placeholder="https://…"
+                  placeholder="…"
                 />
               </div>
               <div class="space-y-2">
@@ -322,11 +322,7 @@
               </div>
               <div class="space-y-2">
                 <Label for="edit-advisory-linkForm-link">{{ $t("advisories.disclosure") }}</Label>
-                <Input
-                  id="edit-advisory-linkForm-link"
-                  v-model="linkForm.link"
-                  placeholder="https://…"
-                />
+                <Input id="edit-advisory-linkForm-link" v-model="linkForm.link" placeholder="…" />
               </div>
               <Button
                 :disabled="linking || (!linkForm.cve.trim() && !linkForm.ghsaId.trim())"
