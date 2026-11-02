@@ -1,20 +1,25 @@
 <script setup lang="ts">
 import type { PrimitiveProps } from "reka-ui";
-import type { HTMLAttributes } from "vue";
+import type { ButtonHTMLAttributes, HTMLAttributes } from "vue";
 import type { ButtonVariants } from ".";
+import { reactiveOmit } from "@vueuse/core";
 import { Primitive } from "reka-ui";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from ".";
 
-interface Props extends PrimitiveProps {
-  variant?: ButtonVariants["variant"];
-  size?: ButtonVariants["size"];
-  class?: HTMLAttributes["class"];
-}
+const props = withDefaults(
+  defineProps<
+    PrimitiveProps &
+      /* @vue-ignore */ Omit<ButtonHTMLAttributes, "class"> & {
+        variant?: ButtonVariants["variant"];
+        size?: ButtonVariants["size"];
+        class?: HTMLAttributes["class"];
+      }
+  >(),
+  { as: "button" },
+);
 
-const props = withDefaults(defineProps<Props>(), {
-  as: "button",
-});
+const forwarded = reactiveOmit(props, "variant", "size", "class");
 </script>
 
 <template>
@@ -22,8 +27,7 @@ const props = withDefaults(defineProps<Props>(), {
     data-slot="button"
     :data-variant="variant"
     :data-size="size"
-    :as="as"
-    :as-child="asChild"
+    v-bind="forwarded"
     :class="cn(buttonVariants({ variant, size }), props.class)"
   >
     <slot />

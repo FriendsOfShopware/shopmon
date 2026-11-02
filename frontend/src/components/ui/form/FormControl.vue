@@ -6,6 +6,7 @@ const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
 </script>
 
 <template>
+  <!-- @vue-ignore Slot merges id and aria attributes onto its child -->
   <Slot
     :id="formItemId"
     data-slot="form-control"

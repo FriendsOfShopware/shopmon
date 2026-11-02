@@ -57,6 +57,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- @vue-ignore id falls through ListboxItem to the DOM -->
   <ListboxItem
     v-if="isRender"
     v-bind="forwarded"

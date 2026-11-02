@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "patch-package",
+    "postinstall": "patch-package && node scripts/link-content-mapper-typescript.mjs",
     "dev": "SHOPMON_API_URL=http://127.0.0.1:5789 vite --port 3000 --host",
     "build": "vite-ssg build",
     "preview": "vite preview",
@@ -15,7 +15,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "tsc": "vue-tsc --noEmit --skipLibCheck",
+    "tsc": "node scripts/generate-component-types.mjs && node ./node_modules/typescript-7/bin/tsc --noEmit --skipLibCheck --runExternalCode",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --check",
@@ -71,6 +71,7 @@
     "@vitejs/plugin-vue": "6.0.10",
     "@vitest/coverage-v8": "^5.0.5",
     "@vitest/ui": "^5.0.0",
+    "@vue/content-mapper": "4.0.0-alpha.0",
     "@vue/test-utils": "^2.5.1",
     "beasties": "^0.5.5",
     "jsdom": "^30.1.3",
@@ -79,14 +80,17 @@
     "oxlint-tsgolint": "^7.0.2005",
     "patch-package": "^8.0.1",
     "typescript": "6.0.3",
+    "typescript-7": "npm:typescript@7.1.0-beta",
     "vite": "8.3.5",
     "vite-ssg": "^28.3.0",
-    "vitest": "^5.0.0",
-    "vue-tsc": "3.3.11"
+    "vitest": "^5.0.0"
   },
   "overrides": {
     "@unhead/dom": "3.4.3",
     "@unhead/vue": "$@unhead/vue",
+    "@vue/content-mapper": {
+      "typescript": "$typescript-7"
+    },
     "unhead": "3.4.3",
     "vite-ssg": {
       "beasties": "$beasties"
