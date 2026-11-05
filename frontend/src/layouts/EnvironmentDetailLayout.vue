@@ -327,6 +327,7 @@ import FaShop from "~icons/fa6-solid/shop";
 import FaCircleCheck from "~icons/fa6-solid/circle-check";
 import FaClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
 import FaPlug from "~icons/fa6-solid/plug";
+import FaUserShield from "~icons/fa6-solid/user-shield";
 import FaListCheck from "~icons/fa6-solid/list-check";
 import FaRocket from "~icons/fa6-solid/rocket";
 import FaFileWaveform from "~icons/fa6-solid/file-waveform";
@@ -397,6 +398,12 @@ const tabs = computed(() => {
       label: t("nav.statusHistory"),
       icon: FaClockRotateLeft,
       count: 0,
+    },
+    {
+      route: "account.environments.detail.accounts",
+      label: t("nav.accounts"),
+      icon: FaUserShield,
+      count: environment.value?.openAccountFindings ?? 0,
     },
     {
       route: "account.environments.detail.extensions",

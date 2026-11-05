@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -99,19 +100,30 @@ func (c *recordingChannel) Send(_ context.Context, _ Recipient, _ Event, msg Ren
 type fakeLocker struct {
 	mu   sync.Mutex
 	held map[string]bool
+	// err, when set, stands in for an unreachable lock store.
+	err error
 }
 
-func (l *fakeLocker) acquire(_ context.Context, key string, _ time.Duration) bool {
+func (l *fakeLocker) acquire(_ context.Context, key string, _ time.Duration) (bool, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if l.err != nil {
+		return false, l.err
+	}
 	if l.held == nil {
 		l.held = map[string]bool{}
 	}
 	if l.held[key] {
-		return false
+		return false, nil
 	}
 	l.held[key] = true
-	return true
+	return true, nil
+}
+
+func (l *fakeLocker) release(_ context.Context, key string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.held, key)
 }
 
 func newTestDispatcher(inApp, email *recordingChannel, locker lockAcquirer) *Dispatcher {
@@ -243,4 +255,84 @@ func TestDispatchResultReportsDeliveryOutcome(t *testing.T) {
 		assert.Zero(t, res.Delivered)
 		assert.False(t, res.Delivery(), "nothing was delivered, but nothing needs retrying either")
 	})
+}
+
+// A dedup lock guarding a delivery that failed must not outlive the attempt.
+// Held for its full TTL it would make the retry skip email, report nothing
+// failed, and let the caller mark the alert as sent -- losing it.
+func TestDispatchReleasesEmailLockWhenTheSendFails(t *testing.T) {
+	locker := &fakeLocker{}
+	inApp := &recordingChannel{}
+	email := &recordingChannel{err: errors.New("smtp unreachable")}
+	d := newTestDispatcher(inApp, email, locker)
+
+	ev := Event{
+		Type: EventStatusDegraded, DedupKey: "env-1",
+		TitleKey:   "notification.statusDegraded.title",
+		MessageKey: "notification.statusDegraded.message",
+	}
+	recipients := []Recipient{{ID: "u1", Email: "u1@example.com"}}
+
+	first := d.Dispatch(context.Background(), ev, recipients)
+	if first.Failed == 0 {
+		t.Fatal("expected the email delivery to fail")
+	}
+
+	// The retry must get the email channel again rather than find it deduped.
+	email.err = nil
+	second := d.Dispatch(context.Background(), ev, recipients)
+	if second.Failed != 0 {
+		t.Fatalf("retry failed: %+v", second)
+	}
+	// recordingChannel only records successful sends, so this is exactly the
+	// retry. Without releasing the lock it would be 0: the retry would find the
+	// channel deduped, report nothing failed, and the alert would be lost.
+	if len(email.sent) != 1 {
+		t.Fatalf("email channel recorded %d sends, want the retry to have got through", len(email.sent))
+	}
+}
+
+// A successful send keeps the lock, which is what suppresses a second mail for
+// the same event within the dedup window.
+func TestDispatchKeepsEmailLockWhenTheSendSucceeds(t *testing.T) {
+	locker := &fakeLocker{}
+	inApp := &recordingChannel{}
+	email := &recordingChannel{}
+	d := newTestDispatcher(inApp, email, locker)
+
+	ev := Event{
+		Type: EventStatusDegraded, DedupKey: "env-2",
+		TitleKey:   "notification.statusDegraded.title",
+		MessageKey: "notification.statusDegraded.message",
+	}
+	recipients := []Recipient{{ID: "u1", Email: "u1@example.com"}}
+
+	d.Dispatch(context.Background(), ev, recipients)
+	d.Dispatch(context.Background(), ev, recipients)
+
+	if len(email.sent) != 1 {
+		t.Fatalf("email channel saw %d sends, want the second one deduped", len(email.sent))
+	}
+}
+
+// An unreachable lock store is not the same as a held lock. Counting it as a
+// skip would let a caller record the alert as delivered and never retry it.
+func TestDispatchCountsAnUnknownDedupStateAsFailed(t *testing.T) {
+	locker := &fakeLocker{err: errors.New("lock table unreachable")}
+	inApp := &recordingChannel{name: ChannelInApp}
+	email := &recordingChannel{name: ChannelEmail}
+	d := newTestDispatcher(inApp, email, locker)
+
+	res := d.Dispatch(context.Background(), degradeEvent(), []Recipient{{ID: "u1", Locale: "en"}})
+
+	if res.Failed == 0 {
+		t.Fatalf("expected the unsent email to count as failed, got %+v", res)
+	}
+	if len(email.sent) != 0 {
+		t.Error("the email must not be sent while the dedup state is unknown")
+	}
+	// The in-app entry still lands; only the email is in doubt.
+	if len(inApp.sent) != 1 {
+		t.Errorf("in-app channel sent %d, want 1", len(inApp.sent))
+	}
 }

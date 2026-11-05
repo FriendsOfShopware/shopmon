@@ -43,6 +43,11 @@ var registry = map[EventType]eventMeta{
 		emailSubjectKey: "email.advisoryDetected.subject",
 		emailDedupTTL:   time.Hour,
 	},
+	EventAccountChanged: {
+		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey: "email.accountChanged.subject",
+		emailDedupTTL:   time.Hour,
+	},
 	EventDataFetchError: {
 		// Data-fetch errors are re-recorded every scrape, so the email is gated
 		// behind a one-hour dedup lock to avoid spamming while a fetch keeps
@@ -88,6 +93,7 @@ var orderedEventTypes = []EventType{
 	EventScrapeRecovered,
 	EventScrapePaused,
 	EventAdvisoryDetected,
+	EventAccountChanged,
 }
 
 // EventTypeInfo describes a notifiable event type for the preferences UI.

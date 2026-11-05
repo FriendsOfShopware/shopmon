@@ -122,30 +122,83 @@ type Deployment struct {
 }
 
 type Environment struct {
-	ID                   int32            `json:"id"`
-	OrganizationID       string           `json:"organization_id"`
-	ShopID               int32            `json:"shop_id"`
-	Name                 string           `json:"name"`
-	Status               string           `json:"status"`
-	Url                  string           `json:"url"`
-	Favicon              *string          `json:"favicon"`
-	ClientID             string           `json:"client_id"`
-	ClientSecret         string           `json:"client_secret"`
-	ShopwareVersion      string           `json:"shopware_version"`
-	PhpVersion           *string          `json:"php_version"`
-	DatabaseVersion      *string          `json:"database_version"`
-	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError     *string          `json:"last_scraped_error"`
-	Ignores              json.RawMessage  `json:"ignores"`
-	EnvironmentImage     *string          `json:"environment_image"`
-	LastChangelog        []byte           `json:"last_changelog"`
-	ActiveDeploymentID   *int32           `json:"active_deployment_id"`
-	ConnectionIssueCount int32            `json:"connection_issue_count"`
-	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
-	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
-	EnvironmentToken     string           `json:"environment_token"`
-	TaskGraceMinutes     int32            `json:"task_grace_minutes"`
-	CreatedAt            pgtype.Timestamp `json:"created_at"`
+	ID                       int32            `json:"id"`
+	OrganizationID           string           `json:"organization_id"`
+	ShopID                   int32            `json:"shop_id"`
+	Name                     string           `json:"name"`
+	Status                   string           `json:"status"`
+	Url                      string           `json:"url"`
+	Favicon                  *string          `json:"favicon"`
+	ClientID                 string           `json:"client_id"`
+	ClientSecret             string           `json:"client_secret"`
+	ShopwareVersion          string           `json:"shopware_version"`
+	PhpVersion               *string          `json:"php_version"`
+	DatabaseVersion          *string          `json:"database_version"`
+	LastScrapedAt            pgtype.Timestamp `json:"last_scraped_at"`
+	LastScrapedError         *string          `json:"last_scraped_error"`
+	Ignores                  json.RawMessage  `json:"ignores"`
+	EnvironmentImage         *string          `json:"environment_image"`
+	LastChangelog            []byte           `json:"last_changelog"`
+	ActiveDeploymentID       *int32           `json:"active_deployment_id"`
+	ConnectionIssueCount     int32            `json:"connection_issue_count"`
+	SitespeedEnabled         bool             `json:"sitespeed_enabled"`
+	SitespeedUrls            json.RawMessage  `json:"sitespeed_urls"`
+	EnvironmentToken         string           `json:"environment_token"`
+	TaskGraceMinutes         int32            `json:"task_grace_minutes"`
+	AccountMonitoringEnabled bool             `json:"account_monitoring_enabled"`
+	CreatedAt                pgtype.Timestamp `json:"created_at"`
+}
+
+type EnvironmentAccount struct {
+	EnvironmentID           int32            `json:"environment_id"`
+	AccountType             string           `json:"account_type"`
+	AccountID               string           `json:"account_id"`
+	Label                   string           `json:"label"`
+	Active                  bool             `json:"active"`
+	Admin                   bool             `json:"admin"`
+	RoleIds                 json.RawMessage  `json:"role_ids"`
+	RolesHash               string           `json:"roles_hash"`
+	AccessKeyCount          int32            `json:"access_key_count"`
+	PrivilegeCount          int32            `json:"privilege_count"`
+	PrivilegesHash          string           `json:"privileges_hash"`
+	ManagedByApp            bool             `json:"managed_by_app"`
+	AppName                 *string          `json:"app_name"`
+	PasswordRecoveryPending bool             `json:"password_recovery_pending"`
+	LastUsageAt             pgtype.Timestamp `json:"last_usage_at"`
+	PasswordChangedAt       pgtype.Timestamp `json:"password_changed_at"`
+	RemoteCreatedAt         pgtype.Timestamp `json:"remote_created_at"`
+	RemoteUpdatedAt         pgtype.Timestamp `json:"remote_updated_at"`
+	AdminPath               *string          `json:"admin_path"`
+	FirstSeenAt             pgtype.Timestamp `json:"first_seen_at"`
+	SyncedAt                pgtype.Timestamp `json:"synced_at"`
+}
+
+type EnvironmentAccountEvent struct {
+	ID              int64            `json:"id"`
+	EnvironmentID   int32            `json:"environment_id"`
+	AccountType     string           `json:"account_type"`
+	AccountID       string           `json:"account_id"`
+	Label           string           `json:"label"`
+	Change          string           `json:"change"`
+	Level           string           `json:"level"`
+	Params          json.RawMessage  `json:"params"`
+	Revision        int32            `json:"revision"`
+	AdminPath       *string          `json:"admin_path"`
+	DetectedAt      pgtype.Timestamp `json:"detected_at"`
+	NotifiedAt      pgtype.Timestamp `json:"notified_at"`
+	AcknowledgedAt  pgtype.Timestamp `json:"acknowledged_at"`
+	AcknowledgedBy  *string          `json:"acknowledged_by"`
+	AcknowledgeNote *string          `json:"acknowledge_note"`
+}
+
+type EnvironmentAccountState struct {
+	EnvironmentID int32            `json:"environment_id"`
+	Supported     bool             `json:"supported"`
+	BaselineAt    pgtype.Timestamp `json:"baseline_at"`
+	AccountCount  int32            `json:"account_count"`
+	GeneratedAt   pgtype.Timestamp `json:"generated_at"`
+	LastSyncedAt  pgtype.Timestamp `json:"last_synced_at"`
+	LastError     *string          `json:"last_error"`
 }
 
 type EnvironmentAdvisoryMatch struct {

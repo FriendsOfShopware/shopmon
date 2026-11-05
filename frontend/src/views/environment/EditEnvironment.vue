@@ -236,6 +236,51 @@
       </CardContent>
     </Card>
 
+    <!-- Account monitoring -->
+    <Card>
+      <CardHeader class="px-4 pb-3 sm:px-6">
+        <CardTitle class="flex items-center gap-2 text-base">
+          <icon-fa6-solid:user-shield class="size-4 text-muted-foreground" />
+          {{ $t("environment.accountMonitoring") }}
+        </CardTitle>
+      </CardHeader>
+      <CardContent class="px-4 sm:px-6">
+        <p class="mb-4 text-sm text-muted-foreground">
+          {{ $t("environment.accountMonitoringDesc") }}
+        </p>
+
+        <form @submit.prevent="onAccountMonitoringSubmit" class="space-y-4">
+          <label class="flex cursor-pointer items-center gap-3">
+            <Switch v-model="accountMonitoringEnabled" />
+            <span class="text-sm font-medium">
+              {{ $t("environment.accountMonitoringEnabled") }}
+            </span>
+          </label>
+
+          <div class="space-y-2 rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground">
+            <p>{{ $t("environment.accountMonitoringHint") }}</p>
+            <p>{{ $t("environment.accountMonitoringRequires") }}</p>
+          </div>
+
+          <div class="flex justify-end">
+            <Button
+              :disabled="isAccountMonitoringSubmitting"
+              type="submit"
+              class="w-full whitespace-normal text-xs sm:w-auto sm:whitespace-nowrap sm:text-sm"
+            >
+              <icon-fa6-solid:floppy-disk
+                v-if="!isAccountMonitoringSubmitting"
+                class="mr-1.5 size-3.5"
+                aria-hidden="true"
+              />
+              <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
+              {{ $t("common.save") }}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+
     <!-- Danger zone -->
     <Card class="border-destructive/30">
       <CardHeader class="px-4 pb-3 sm:px-6">
@@ -287,6 +332,7 @@ import {
   type AccountShop,
   type EnvironmentDetail,
   updateEnvironment,
+  updateAccountMonitoringSettings,
   updateSitespeedSettings,
 } from "@/api/generated";
 import { useForm } from "vee-validate";
@@ -333,35 +379,59 @@ getAccountShops().then(({ data }) => {
   if (data) shops.value = data;
 });
 
-async function loadEnvironment() {
+/**
+ * Loads the environment into the form.
+ *
+ * Returns whether it succeeded. useAlert holds a single alert, so a caller that
+ * announces success right after a failed reload would wipe the explanation off
+ * the screen -- and the reader would be told a save worked while looking at a
+ * form that no longer reflects the server.
+ */
+async function loadEnvironment(): Promise<boolean> {
   isLoading.value = true;
-  const { data } = await getEnvironment({
+  const {
+    data,
+    error: apiError,
+    response,
+  } = await getEnvironment({
     path: { environmentId },
   });
-  environment.value = data ?? null;
+  if (!data) {
+    // Say so rather than failing quietly: after a saved setting the success
+    // message is on screen, and without this the reader would go on editing a
+    // form that no longer reflects the server.
+    error(apiErrorMessage(apiError, t("environment.reloadFailed")));
 
-  if (environment.value?.organizationId) {
+    // Gone or no longer permitted is final, so let the editor close. Anything
+    // else keeps whatever was loaded before -- the form is deliberately NOT
+    // repopulated from that stale object, because after a saved setting it
+    // would snap the control back to the value that was just replaced and
+    // saving again would submit the opposite of what the screen shows.
+    if (response?.status === 404 || response?.status === 403) {
+      environment.value = null;
+    }
+    isLoading.value = false;
+    return false;
+  }
+  environment.value = data;
+
+  if (data.organizationId) {
     const { data: shopsData } = await getAccountShops();
     if (shopsData) shops.value = shopsData;
-    selectedShopId.value = environment.value.shopId ?? 0;
+    selectedShopId.value = data.shopId ?? 0;
   }
 
-  if (environment.value) {
-    sitespeedEnabled.value = environment.value.sitespeedEnabled ?? false;
-    sitespeedUrls.value = environment.value.sitespeedUrls
-      ? [...environment.value.sitespeedUrls]
-      : [];
+  sitespeedEnabled.value = data.sitespeedEnabled ?? false;
+  accountMonitoringEnabled.value = data.accountMonitoringEnabled ?? true;
+  sitespeedUrls.value = data.sitespeedUrls ? [...data.sitespeedUrls] : [];
 
-    setFieldValue("name", environment.value.name);
-    setFieldValue("shopUrl", environment.value.url);
-    setFieldValue("shopId", String(environment.value.shopId ?? ""));
-    setFieldValue(
-      "taskGraceMinutes",
-      environment.value.taskGraceMinutes ?? DEFAULT_TASK_GRACE_MINUTES,
-    );
-  }
+  setFieldValue("name", data.name);
+  setFieldValue("shopUrl", data.url);
+  setFieldValue("shopId", String(data.shopId ?? ""));
+  setFieldValue("taskGraceMinutes", data.taskGraceMinutes ?? DEFAULT_TASK_GRACE_MINUTES);
 
   isLoading.value = false;
+  return true;
 }
 
 loadEnvironment();
@@ -369,6 +439,8 @@ loadEnvironment();
 const showEnvironmentDeletionModal = ref(false);
 const sitespeedUrls = ref<string[]>([]);
 const sitespeedEnabled = ref(false);
+const accountMonitoringEnabled = ref(false);
+const isAccountMonitoringSubmitting = ref(false);
 const isSitespeedSubmitting = ref(false);
 
 const showPluginModal = ref(false);
@@ -469,6 +541,31 @@ function removeSitespeedUrl(index: number) {
   sitespeedUrls.value.splice(index, 1);
 }
 
+async function onAccountMonitoringSubmit() {
+  if (!environment.value) return;
+  try {
+    isAccountMonitoringSubmitting.value = true;
+
+    const { error: apiError } = await updateAccountMonitoringSettings({
+      path: { environmentId: environment.value.id },
+      body: { enabled: accountMonitoringEnabled.value },
+    });
+
+    if (apiError) {
+      error(apiErrorMessage(apiError, "Request failed. Please check the settings and try again."));
+      return;
+    }
+
+    if (await loadEnvironment()) {
+      success(t("environment.accountMonitoringSaved"));
+    }
+  } catch (e) {
+    error(e instanceof Error ? e.message : String(e));
+  } finally {
+    isAccountMonitoringSubmitting.value = false;
+  }
+}
+
 async function onSitespeedSubmit() {
   if (environment.value) {
     try {
@@ -495,8 +592,9 @@ async function onSitespeedSubmit() {
         return;
       }
 
-      await loadEnvironment();
-      success(t("environment.sitespeedSaved"));
+      if (await loadEnvironment()) {
+        success(t("environment.sitespeedSaved"));
+      }
     } catch (e) {
       error(e instanceof Error ? e.message : String(e));
     } finally {

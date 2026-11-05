@@ -25,6 +25,10 @@ const (
 	SourceShopware   = "Shopware"
 	SourceFroshTools = "FroshTools"
 	SourceSecurity   = "Security"
+	// SourceAccounts groups the account-monitoring findings. They are derived
+	// from stored events rather than from a live fetch, so unlike every other
+	// source they are never reported unavailable.
+	SourceAccounts = "Accounts"
 )
 
 // Check ID prefixes. Each checker names its checks after the data set it reads,
@@ -35,6 +39,9 @@ const (
 	prefixScheduledTask = "task."
 	prefixFroshTools    = "frosh."
 	prefixSecurity      = "security."
+	// Account findings use the reserved "account." prefix, defined as
+	// accounts.CheckIDPrefix: they are derived from stored events rather than
+	// a live fetch, so no checker here owns or can invalidate them.
 )
 
 // UnavailableSource marks one checker's checks as unevaluated for this run.

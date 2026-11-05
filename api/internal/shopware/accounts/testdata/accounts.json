@@ -1,0 +1,234 @@
+{
+  "generatedAt": "2026-10-29T07:17:37+00:00",
+  "users": [
+    {
+      "id": "c290193153b554850b1c8d6d9e56186f",
+      "maskedEmail": "a***@e***.com",
+      "active": true,
+      "admin": true,
+      "aclRoleIds": [],
+      "accessKeyCount": 0,
+      "accessKeyLastUsageAt": null,
+      "passwordRecoveryPending": false,
+      "lastUpdatedPasswordAt": "2026-10-11T09:22:10+00:00",
+      "createdAt": "2019-07-18T06:23:23+00:00",
+      "updatedAt": "2026-10-11T09:22:10+00:00",
+      "adminPath": "/admin#/sw/users/permissions/user/detail/c290193153b554850b1c8d6d9e56186f"
+    },
+    {
+      "id": "db6fbfbc17df3b49c93174229896c2a3",
+      "maskedEmail": "b***@e***.com",
+      "active": true,
+      "admin": true,
+      "aclRoleIds": [],
+      "accessKeyCount": 0,
+      "accessKeyLastUsageAt": null,
+      "passwordRecoveryPending": false,
+      "lastUpdatedPasswordAt": "2022-03-10T07:36:34+00:00",
+      "createdAt": "2019-07-18T06:29:33+00:00",
+      "updatedAt": "2022-03-10T07:36:34+00:00",
+      "adminPath": "/admin#/sw/users/permissions/user/detail/db6fbfbc17df3b49c93174229896c2a3"
+    },
+    {
+      "id": "d53511fba8f02d164c2461efba474c96",
+      "maskedEmail": "c***@e***.com",
+      "active": true,
+      "admin": true,
+      "aclRoleIds": [],
+      "accessKeyCount": 2,
+      "accessKeyLastUsageAt": null,
+      "passwordRecoveryPending": false,
+      "lastUpdatedPasswordAt": "2025-11-28T09:42:55+00:00",
+      "createdAt": "2019-07-18T08:19:57+00:00",
+      "updatedAt": "2026-10-23T20:29:45+00:00",
+      "adminPath": "/admin#/sw/users/permissions/user/detail/d53511fba8f02d164c2461efba474c96"
+    },
+    {
+      "id": "dd23f6e88381dc031456a820a3f7de05",
+      "maskedEmail": "d***@e***.com",
+      "active": true,
+      "admin": true,
+      "aclRoleIds": [],
+      "accessKeyCount": 0,
+      "accessKeyLastUsageAt": null,
+      "passwordRecoveryPending": false,
+      "lastUpdatedPasswordAt": "2022-03-10T07:37:15+00:00",
+      "createdAt": "2020-04-17T12:46:44+00:00",
+      "updatedAt": "2022-03-10T07:37:15+00:00",
+      "adminPath": "/admin#/sw/users/permissions/user/detail/dd23f6e88381dc031456a820a3f7de05"
+    },
+    {
+      "id": "b90d082c346a43e7233ab828f294626d",
+      "maskedEmail": "e***@e***.com",
+      "active": true,
+      "admin": true,
+      "aclRoleIds": [],
+      "accessKeyCount": 0,
+      "accessKeyLastUsageAt": null,
+      "passwordRecoveryPending": false,
+      "lastUpdatedPasswordAt": "2022-03-10T07:37:06+00:00",
+      "createdAt": "2021-09-22T09:33:00+00:00",
+      "updatedAt": "2022-03-10T07:37:06+00:00",
+      "adminPath": "/admin#/sw/users/permissions/user/detail/b90d082c346a43e7233ab828f294626d"
+    },
+    {
+      "id": "c8f5a30d8830761d14c6082be10f487e",
+      "maskedEmail": "f***@e***.org",
+      "active": true,
+      "admin": false,
+      "aclRoleIds": [
+        "1a5cc1d6bd912ee8417e271356ee30a6"
+      ],
+      "accessKeyCount": 0,
+      "accessKeyLastUsageAt": null,
+      "passwordRecoveryPending": false,
+      "lastUpdatedPasswordAt": "2022-03-10T07:36:39+00:00",
+      "createdAt": "2022-03-10T07:36:39+00:00",
+      "updatedAt": null,
+      "adminPath": "/admin#/sw/users/permissions/user/detail/c8f5a30d8830761d14c6082be10f487e"
+    },
+    {
+      "id": "5c55c2a1218df602fee6402f3a9d2472",
+      "maskedEmail": "g***@e***.com",
+      "active": true,
+      "admin": true,
+      "aclRoleIds": [],
+      "accessKeyCount": 0,
+      "accessKeyLastUsageAt": null,
+      "passwordRecoveryPending": false,
+      "lastUpdatedPasswordAt": "2026-10-11T09:11:51+00:00",
+      "createdAt": "2024-01-16T12:35:44+00:00",
+      "updatedAt": "2026-10-11T09:11:51+00:00",
+      "adminPath": "/admin#/sw/users/permissions/user/detail/5c55c2a1218df602fee6402f3a9d2472"
+    },
+    {
+      "id": "8411e5db2e9caaa4a761821c1cb5798d",
+      "maskedEmail": "h***@e***.net",
+      "active": true,
+      "admin": true,
+      "aclRoleIds": [],
+      "accessKeyCount": 0,
+      "accessKeyLastUsageAt": null,
+      "passwordRecoveryPending": false,
+      "lastUpdatedPasswordAt": "2025-07-15T11:31:28+00:00",
+      "createdAt": "2025-07-15T11:29:52+00:00",
+      "updatedAt": "2025-07-15T11:31:28+00:00",
+      "adminPath": "/admin#/sw/users/permissions/user/detail/8411e5db2e9caaa4a761821c1cb5798d"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "fa6c3a2067bfa556062d5b20954ea27c",
+      "label": "Erp Connector",
+      "admin": true,
+      "aclRoleIds": [],
+      "managedByApp": false,
+      "appName": null,
+      "lastUsageAt": null,
+      "deletedAt": null,
+      "createdAt": "2020-02-12T12:30:24+00:00",
+      "updatedAt": "2020-02-12T12:48:34+00:00",
+      "adminPath": "/admin#/sw/integration/index"
+    },
+    {
+      "id": "74e078f0a013f3f058a11b0843743740",
+      "label": "Shopmon",
+      "admin": true,
+      "aclRoleIds": [],
+      "managedByApp": false,
+      "appName": null,
+      "lastUsageAt": null,
+      "deletedAt": null,
+      "createdAt": "2022-08-28T11:44:06+00:00",
+      "updatedAt": null,
+      "adminPath": "/admin#/sw/integration/index"
+    },
+    {
+      "id": "059ffd06c0ca0e360bc7228f478c75d3",
+      "label": "Menu App",
+      "admin": false,
+      "aclRoleIds": [
+        "ab2cb63dfa259507b0f9b8cc58d57895"
+      ],
+      "managedByApp": true,
+      "appName": "MenuApp",
+      "lastUsageAt": null,
+      "deletedAt": null,
+      "createdAt": "2023-04-17T11:31:35+00:00",
+      "updatedAt": null,
+      "adminPath": "/admin#/sw/integration/index"
+    },
+    {
+      "id": "b07db8f32cef0c5635639665000067e7",
+      "label": "Shopmon Dev",
+      "admin": true,
+      "aclRoleIds": [],
+      "managedByApp": false,
+      "appName": null,
+      "lastUsageAt": null,
+      "deletedAt": null,
+      "createdAt": "2023-08-24T14:36:42+00:00",
+      "updatedAt": "2023-08-24T14:48:21+00:00",
+      "adminPath": "/admin#/sw/integration/index"
+    },
+    {
+      "id": "3b71ca24cadeaeac9327a674aa443132",
+      "label": "Shopmon Staging",
+      "admin": true,
+      "aclRoleIds": [],
+      "managedByApp": false,
+      "appName": null,
+      "lastUsageAt": "2026-10-29T07:00:00+00:00",
+      "deletedAt": null,
+      "createdAt": "2025-05-27T18:00:46+00:00",
+      "updatedAt": null,
+      "adminPath": "/admin#/sw/integration/index"
+    },
+    {
+      "id": "9d3aafbe88b37a776e11474e7d6d9ac1",
+      "label": "Shopmon Local",
+      "admin": true,
+      "aclRoleIds": [],
+      "managedByApp": false,
+      "appName": null,
+      "lastUsageAt": "2025-09-12T06:00:00+00:00",
+      "deletedAt": null,
+      "createdAt": "2025-05-30T10:35:42+00:00",
+      "updatedAt": null,
+      "adminPath": "/admin#/sw/integration/index"
+    },
+    {
+      "id": "b31f1288d3d4e4b3910cb7fa4087c8cf",
+      "label": "Api Client",
+      "admin": true,
+      "aclRoleIds": [],
+      "managedByApp": false,
+      "appName": null,
+      "lastUsageAt": "2026-10-29T07:17:36+00:00",
+      "deletedAt": null,
+      "createdAt": "2026-10-23T20:40:29+00:00",
+      "updatedAt": "2026-10-23T21:03:04+00:00",
+      "adminPath": "/admin#/sw/integration/index"
+    }
+  ],
+  "aclRoles": [
+    {
+      "id": "1a5cc1d6bd912ee8417e271356ee30a6",
+      "name": "Editor",
+      "privilegeCount": 286,
+      "privilegesHash": "554fd66d9f52779c980defe6af7dac00cc7ea08d606b38249dcda16ac59cf709",
+      "deletedAt": null,
+      "createdAt": "2022-03-10T07:31:51+00:00",
+      "updatedAt": "2026-10-10T00:00:00+00:00"
+    },
+    {
+      "id": "ab2cb63dfa259507b0f9b8cc58d57895",
+      "name": "Menu App",
+      "privilegeCount": 0,
+      "privilegesHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "deletedAt": null,
+      "createdAt": "2023-04-17T11:31:35+00:00",
+      "updatedAt": null
+    }
+  ]
+}

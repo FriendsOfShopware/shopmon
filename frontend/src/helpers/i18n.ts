@@ -1,5 +1,8 @@
 import { i18n } from "@/i18n";
 import type {
+  AccountEvent,
+  AccountFinding,
+  AccountPostureHint,
   EnvironmentCheck,
   EnvironmentScrapeIssue,
   Notification,
@@ -91,4 +94,17 @@ export function translateReason(reason: StatusReason): string {
 export function notificationReasons(n: Notification): StatusReason[] {
   const reasons = (n.params as { reasons?: unknown } | undefined)?.reasons;
   return Array.isArray(reasons) ? (reasons as StatusReason[]) : [];
+}
+
+/**
+ * Renders an account-monitoring entry in the viewer's locale. Findings and
+ * history entries share the shape, so one helper covers both.
+ */
+export function translateAccountChange(entry: AccountFinding | AccountEvent): string {
+  return renderKeyed(entry.messageKey, (entry.params ?? {}) as Params, entry.label);
+}
+
+/** Renders a posture hint in the viewer's locale. */
+export function translateAccountHint(hint: AccountPostureHint): string {
+  return renderKeyed(`accounts.posture.${hint.hint}`, {}, hint.hint);
 }
