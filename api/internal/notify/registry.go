@@ -43,12 +43,32 @@ var registry = map[EventType]eventMeta{
 		emailSubjectKey: "email.advisoryDetected.subject",
 		emailDedupTTL:   time.Hour,
 	},
+	EventAccountChanged: {
+		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey: "email.accountChanged.subject",
+		emailDedupTTL:   time.Hour,
+	},
 	EventDataFetchError: {
 		// Data-fetch errors are re-recorded every scrape, so the email is gated
 		// behind a one-hour dedup lock to avoid spamming while a fetch keeps
 		// failing.
 		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
 		emailSubjectKey: "email.dataFetchError.subject",
+		emailDedupTTL:   time.Hour,
+	},
+	EventScrapeIssue: {
+		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey: "email.scrapeIssue.subject",
+		emailDedupTTL:   time.Hour,
+	},
+	EventScrapeRecovered: {
+		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey: "email.scrapeRecovered.subject",
+		emailDedupTTL:   time.Hour,
+	},
+	EventScrapePaused: {
+		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey: "email.scrapePaused.subject",
 		emailDedupTTL:   time.Hour,
 	},
 }
@@ -63,13 +83,17 @@ func metaFor(t EventType) eventMeta {
 }
 
 // orderedEventTypes is the stable display order for ListEventTypes (registry is
-// a map and therefore unordered).
+// a map and therefore unordered). EventAuthError and EventDataFetchError stay
+// registered so historical notifications render, but scrape failures now emit
+// the EventScrape* types, so the legacy ones leave the preferences list.
 var orderedEventTypes = []EventType{
 	EventStatusDegraded,
 	EventStatusRecovered,
-	EventAuthError,
-	EventDataFetchError,
+	EventScrapeIssue,
+	EventScrapeRecovered,
+	EventScrapePaused,
 	EventAdvisoryDetected,
+	EventAccountChanged,
 }
 
 // EventTypeInfo describes a notifiable event type for the preferences UI.

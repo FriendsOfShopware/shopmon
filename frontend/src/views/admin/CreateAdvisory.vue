@@ -118,7 +118,7 @@
               </div>
               <div class="space-y-2">
                 <Label for="create-advisory-form-link">{{ $t("advisories.disclosure") }}</Label>
-                <Input id="create-advisory-form-link" v-model="form.link" placeholder="https://…" />
+                <Input id="create-advisory-form-link" v-model="form.link" placeholder="…" />
               </div>
               <div class="space-y-2">
                 <Label for="create-advisory-form-reportedAt">{{ $t("admin.reportedAt") }}</Label>

@@ -153,9 +153,26 @@
       </div>
     </div>
 
-    <!-- Error banner -->
+    <!-- Refresh issues banner -->
     <Alert
-      v-if="environment.lastScrapedError"
+      v-if="environment.scrapeIssues?.length"
+      variant="destructive"
+      class="border-destructive/30 bg-destructive/10"
+    >
+      <CircleX class="size-4" />
+      <AlertTitle>{{ $t("environment.scrapeIssuesTitle") }}</AlertTitle>
+      <AlertDescription>
+        <ul class="list-disc space-y-1 pl-4">
+          <li v-for="issue in environment.scrapeIssues" :key="issue.key">
+            {{ translateScrapeIssue(issue) }}
+          </li>
+        </ul>
+      </AlertDescription>
+    </Alert>
+
+    <!-- Error banner (legacy rows without recorded scrape issues yet) -->
+    <Alert
+      v-else-if="environment.lastScrapedError"
       variant="destructive"
       class="border-destructive/30 bg-destructive/10"
     >
@@ -274,7 +291,8 @@ import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import Breadcrumbs from "@/components/layout/Breadcrumbs.vue";
 import StatusIcon from "@/components/StatusIcon.vue";
 import EnvironmentNotificationModal from "@/components/EnvironmentNotificationModal.vue";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { translateScrapeIssue } from "@/helpers/i18n";
 import { CircleX } from "lucide-vue-next";
 import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
 import {
@@ -309,6 +327,7 @@ import FaShop from "~icons/fa6-solid/shop";
 import FaCircleCheck from "~icons/fa6-solid/circle-check";
 import FaClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
 import FaPlug from "~icons/fa6-solid/plug";
+import FaUserShield from "~icons/fa6-solid/user-shield";
 import FaListCheck from "~icons/fa6-solid/list-check";
 import FaRocket from "~icons/fa6-solid/rocket";
 import FaFileWaveform from "~icons/fa6-solid/file-waveform";
@@ -379,6 +398,12 @@ const tabs = computed(() => {
       label: t("nav.statusHistory"),
       icon: FaClockRotateLeft,
       count: 0,
+    },
+    {
+      route: "account.environments.detail.accounts",
+      label: t("nav.accounts"),
+      icon: FaUserShield,
+      count: environment.value?.openAccountFindings ?? 0,
     },
     {
       route: "account.environments.detail.extensions",

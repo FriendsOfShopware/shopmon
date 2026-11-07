@@ -24,15 +24,20 @@ func environmentLink(envID int32) notify.Link {
 }
 
 // environmentRecipients resolves the subscribers of an environment into notify
-// recipients. It returns nil (and logs) on error so callers can simply skip.
-func (h *Service) environmentRecipients(ctx context.Context, env queries.GetAllEnvironmentsRow) []notify.Recipient {
+// recipients.
+//
+// The error is returned rather than folded into an empty list: a caller that
+// records "these recipients were told" must be able to tell a lookup failure
+// from a genuinely unsubscribed environment. Marking on failure would drop the
+// alert permanently. Callers that only dispatch may ignore it.
+func (h *Service) environmentRecipients(ctx context.Context, env queries.GetAllEnvironmentsRow) ([]notify.Recipient, error) {
 	subscribers, err := h.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
 		OrganizationID: env.OrganizationID,
 		EnvironmentID:  strconv.Itoa(int(env.ID)),
 	})
 	if err != nil {
 		slog.Warn("failed to get notification subscribers", "environmentId", env.ID, "error", err)
-		return nil
+		return nil, fmt.Errorf("get notification subscribers: %w", err)
 	}
 
 	recipients := make([]notify.Recipient, 0, len(subscribers))
@@ -44,7 +49,7 @@ func (h *Service) environmentRecipients(ctx context.Context, env queries.GetAllE
 			Locale: u.Locale,
 		})
 	}
-	return recipients
+	return recipients, nil
 }
 
 func environmentDisplayName(name string, shopName *string) string {
@@ -115,7 +120,8 @@ func (h *Service) handleStatusTransition(ctx context.Context, env queries.GetAll
 		ev.MessageKey = "notification.statusRecovered.message"
 	}
 
-	h.notifier.Dispatch(ctx, ev, h.environmentRecipients(ctx, env))
+	recipients, _ := h.environmentRecipients(ctx, env)
+	h.notifier.Dispatch(ctx, ev, recipients)
 
 	return &statusTransition{oldStatus: oldStatus, newStatus: newStatus, reasons: reasons}
 }
@@ -250,44 +256,5 @@ func decodeParams(raw []byte) map[string]any {
 	return params
 }
 
-// notifyAuthError dispatches notifications when authentication fails.
-func (h *Service) notifyAuthError(ctx context.Context, env queries.GetAllEnvironmentsRow, authErr error) {
-	errMsg := fmt.Sprintf("%v", authErr)
-	if len(errMsg) > 50 {
-		errMsg = errMsg[:50] + "..."
-	}
-
-	h.notifier.Dispatch(ctx, notify.Event{
-		Type:       notify.EventAuthError,
-		Level:      notify.LevelError,
-		ScopeType:  notify.ScopeEnvironment,
-		ScopeID:    strconv.Itoa(int(env.ID)),
-		OrgID:      env.OrganizationID,
-		DedupKey:   fmt.Sprintf("environment.update-auth-error.%d", env.ID),
-		TitleKey:   "notification.authError.title",
-		MessageKey: "notification.authError.message",
-		Params: map[string]any{
-			"name":  environmentDisplayName(env.Name, env.ShopName),
-			"error": errMsg,
-		},
-		Link: environmentLink(env.ID),
-	}, h.environmentRecipients(ctx, env))
-}
-
-// notifyDataFetchError dispatches notifications when data fetching fails.
-func (h *Service) notifyDataFetchError(ctx context.Context, env queries.GetAllEnvironmentsRow, _ string) {
-	h.notifier.Dispatch(ctx, notify.Event{
-		Type:       notify.EventDataFetchError,
-		Level:      notify.LevelError,
-		ScopeType:  notify.ScopeEnvironment,
-		ScopeID:    strconv.Itoa(int(env.ID)),
-		OrgID:      env.OrganizationID,
-		DedupKey:   fmt.Sprintf("environment.not.updated_%d", env.ID),
-		TitleKey:   "notification.dataFetchError.title",
-		MessageKey: "notification.dataFetchError.message",
-		Params: map[string]any{
-			"name": environmentDisplayName(env.Name, env.ShopName),
-		},
-		Link: environmentLink(env.ID),
-	}, h.environmentRecipients(ctx, env))
-}
+// Scrape failure notifications live in issues.go: auth/config failures and
+// per-dataset fetch failures all become classified scrape issues there.

@@ -63,6 +63,7 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	healthData, err := input.Client.Get(ctx, "/_action/frosh-tools/health/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools health status", "error", err)
+		output.RecordFetchError("frosh_tools", err)
 		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
 	}
@@ -70,6 +71,7 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	var healthChecks []froshToolsCheck
 	if err := json.Unmarshal(healthData, &healthChecks); err != nil {
 		slog.Warn("failed to parse FroshTools health data", "error", err)
+		output.RecordFetchError("frosh_tools", err)
 		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
 	}
@@ -79,6 +81,7 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	perfData, err := input.Client.Get(ctx, "/_action/frosh-tools/performance/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools performance status", "error", err)
+		output.RecordFetchError("frosh_tools", err)
 		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
 	}
@@ -86,6 +89,7 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	var perfChecks []froshToolsCheck
 	if err := json.Unmarshal(perfData, &perfChecks); err != nil {
 		slog.Warn("failed to parse FroshTools performance data", "error", err)
+		output.RecordFetchError("frosh_tools", err)
 		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
 	}

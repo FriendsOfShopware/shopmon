@@ -433,3 +433,15 @@ ON CONFLICT (id) DO UPDATE SET
   last_incremental_sync_at = COALESCE(EXCLUDED.last_incremental_sync_at, composer_advisory_sync_state.last_incremental_sync_at),
   last_error = EXCLUDED.last_error,
   updated_at = NOW();
+
+-- Public Composer feed: filter package rows, not just their parent advisory,
+-- so mixed-package advisories cannot expose unrelated packages.
+-- name: ListPublishedStoreComposerAdvisories :many
+SELECT a.advisory_id, a.title, a.cve, a.link, a.sources,
+       a.severity_override, a.severity,
+       COALESCE(a.reported_at, a.created_at)::timestamp AS reported_at,
+       p.package_name, p.packagist_advisory_id, p.affected_versions
+FROM composer_advisory a
+JOIN composer_advisory_package p ON p.advisory_id = a.advisory_id
+WHERE a.is_visible = true AND p.package_name LIKE 'store.shopware.com/%'
+ORDER BY p.package_name, a.advisory_id;

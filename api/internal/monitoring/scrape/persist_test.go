@@ -143,6 +143,7 @@ func snapshotRowVersions(t *testing.T, pool *pgxpool.Pool) map[string]string {
 		"environment_queue":                   `SELECT environment_id || ':' || name, xmin::text FROM environment_queue`,
 		"environment_cache":                   `SELECT environment_id::text, xmin::text FROM environment_cache`,
 		"environment_check":                   `SELECT environment_id || ':' || check_id, xmin::text FROM environment_check`,
+		"environment_account":                 `SELECT environment_id || ':' || account_type || ':' || account_id, xmin::text FROM environment_account`,
 		"store_extension":                     `SELECT name, xmin::text FROM store_extension`,
 		"store_extension_translation":         `SELECT extension_name || ':' || language, xmin::text FROM store_extension_translation`,
 		"store_extension_version":             `SELECT extension_name || ':' || version, xmin::text FROM store_extension_version`,

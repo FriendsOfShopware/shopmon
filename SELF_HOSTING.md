@@ -224,6 +224,31 @@ Required only if you use the deployment tracking feature.
 | `OTEL_TRACES_SAMPLER_RATIO` | `1` | Head sampling ratio, clamped to `[0, 1]` |
 
 
+## Public Composer advisory feed
+
+`GET /api/advisories/composer` returns every published advisory for
+`store.shopware.com/` packages, grouped by package name under `advisories` in
+Composer's security-advisories API format. No authentication or pagination is
+required. Hidden drafts and non-store package rows are excluded. Package-specific
+Packagist IDs are preserved; advisories without one use their Shopmon/GHSA ID.
+
+The same URL accepts `POST` requests from Composer and returns the complete feed
+(package filters are ignored). To use it with `composer audit`, a Composer
+repository's `packages.json` must advertise the endpoint, for example:
+
+```json
+{
+  "packages": {},
+  "security-advisories": {
+    "metadata": false,
+    "api-url": "https://your-shopmon.example/api/advisories/composer"
+  }
+}
+```
+
+Configure that repository in your project's `composer.json`. The feed itself is
+an advisory API response, not a `packages.json` repository index.
+
 ## Reverse Proxy Examples
 
 ### Caddy

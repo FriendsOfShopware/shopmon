@@ -25,6 +25,10 @@ const (
 	SourceShopware   = "Shopware"
 	SourceFroshTools = "FroshTools"
 	SourceSecurity   = "Security"
+	// SourceAccounts groups the account-monitoring findings. They are derived
+	// from stored events rather than from a live fetch, so unlike every other
+	// source they are never reported unavailable.
+	SourceAccounts = "Accounts"
 )
 
 // Check ID prefixes. Each checker names its checks after the data set it reads,
@@ -35,6 +39,9 @@ const (
 	prefixScheduledTask = "task."
 	prefixFroshTools    = "frosh."
 	prefixSecurity      = "security."
+	// Account findings use the reserved "account." prefix, defined as
+	// accounts.CheckIDPrefix: they are derived from stored events rather than
+	// a live fetch, so no checker here owns or can invalidate them.
 )
 
 // UnavailableSource marks one checker's checks as unevaluated for this run.
@@ -150,9 +157,22 @@ type Input struct {
 	SecurityPluginCoverage PluginCoverage
 }
 
+// FetchError is one upstream data set a checker could not retrieve during
+// this run. MarkUnavailable records *that* checks are missing; FetchError
+// carries *why*, so the caller can classify it (missing ACL privilege vs
+// timeout vs shop error) and tell the shop owner. Dataset uses the scrape
+// dataset vocabulary ("frosh_tools").
+type FetchError struct {
+	Dataset string
+	Err     error
+}
+
 type Result struct {
 	Status Status  `json:"status"`
 	Checks []Check `json:"checks"`
+	// FetchErrors lists the upstream fetches that failed inside checkers.
+	// Not serialized: errors are classified by the caller, never stored raw.
+	FetchErrors []FetchError `json:"-"`
 	// PhpVersion and DatabaseVersion hold the exact runtime versions reported by
 	// FroshTools health checks when available.
 	PhpVersion      *string `json:"phpVersion,omitempty"`
@@ -183,6 +203,7 @@ type Output struct {
 	checks          []Check
 	ignores         map[string]bool
 	unavailable     map[UnavailableSource]bool
+	fetchErrors     []FetchError
 	phpVersion      *string
 	databaseVersion *string
 }
@@ -211,6 +232,22 @@ func (o *Output) SetDatabaseVersion(version string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.databaseVersion = &version
+}
+
+// RecordFetchError records why a data set could not be fetched, alongside
+// MarkUnavailable. Only the first error per dataset is kept.
+func (o *Output) RecordFetchError(dataset string, err error) {
+	if err == nil {
+		return
+	}
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	for _, fe := range o.fetchErrors {
+		if fe.Dataset == dataset {
+			return
+		}
+	}
+	o.fetchErrors = append(o.fetchErrors, FetchError{Dataset: dataset, Err: err})
 }
 
 // MarkUnavailable records that the checks named with idPrefix could not be
@@ -278,6 +315,7 @@ func (o *Output) Result() Result {
 	return Result{
 		Status:          aggregateStatus(o.checks, o.ignores),
 		Checks:          o.checks,
+		FetchErrors:     o.fetchErrors,
 		PhpVersion:      o.phpVersion,
 		DatabaseVersion: o.databaseVersion,
 		Unavailable:     unavailable,

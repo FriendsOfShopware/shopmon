@@ -1,5 +1,13 @@
 import { i18n } from "@/i18n";
-import type { EnvironmentCheck, Notification, StatusReason } from "@/api/generated";
+import type {
+  AccountEvent,
+  AccountFinding,
+  AccountPostureHint,
+  EnvironmentCheck,
+  EnvironmentScrapeIssue,
+  Notification,
+  StatusReason,
+} from "@/api/generated";
 
 type Params = Record<string, unknown>;
 
@@ -69,6 +77,11 @@ export function translateCheckMessage(check: EnvironmentCheck): string {
   return renderKeyed(check.messageKey, (check.params ?? {}) as Params, check.message ?? "");
 }
 
+/** Renders a background-refresh (scrape) issue in the viewer's locale. */
+export function translateScrapeIssue(issue: EnvironmentScrapeIssue): string {
+  return renderKeyed(issue.messageKey, (issue.params ?? {}) as Params, issue.messageKey);
+}
+
 /** Renders a status-transition reason (a changed check) in the viewer's locale. */
 export function translateReason(reason: StatusReason): string {
   return renderKeyed(reason.messageKey, (reason.params ?? {}) as Params, "");
@@ -81,4 +94,17 @@ export function translateReason(reason: StatusReason): string {
 export function notificationReasons(n: Notification): StatusReason[] {
   const reasons = (n.params as { reasons?: unknown } | undefined)?.reasons;
   return Array.isArray(reasons) ? (reasons as StatusReason[]) : [];
+}
+
+/**
+ * Renders an account-monitoring entry in the viewer's locale. Findings and
+ * history entries share the shape, so one helper covers both.
+ */
+export function translateAccountChange(entry: AccountFinding | AccountEvent): string {
+  return renderKeyed(entry.messageKey, (entry.params ?? {}) as Params, entry.label);
+}
+
+/** Renders a posture hint in the viewer's locale. */
+export function translateAccountHint(hint: AccountPostureHint): string {
+  return renderKeyed(`accounts.posture.${hint.hint}`, {}, hint.hint);
 }

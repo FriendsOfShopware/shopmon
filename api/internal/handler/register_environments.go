@@ -115,6 +115,36 @@ func registerEnvironments(api huma.API, h *Handler) {
 	}, h.GetEnvironmentStatusEvents)
 
 	huma.Register(api, huma.Operation{
+		OperationID: "getEnvironmentAccounts",
+		Method:      http.MethodGet,
+		Path:        "/environments/{environmentId}/accounts",
+		Summary:     "Get account monitoring findings, history and posture hints",
+		Tags:        []string{"Environments"},
+		Errors:      []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound},
+	}, h.GetEnvironmentAccounts)
+
+	huma.Register(api, huma.Operation{
+		OperationID:   "acknowledgeEnvironmentAccountEvent",
+		Method:        http.MethodPost,
+		Path:          "/environments/{environmentId}/account-events/{eventId}/acknowledge",
+		Summary:       "Acknowledge an account monitoring finding",
+		Tags:          []string{"Environments"},
+		DefaultStatus: http.StatusNoContent,
+		Errors: []int{http.StatusUnauthorized, http.StatusForbidden,
+			http.StatusNotFound, http.StatusConflict},
+	}, h.AcknowledgeEnvironmentAccountEvent)
+
+	huma.Register(api, huma.Operation{
+		OperationID:   "updateAccountMonitoringSettings",
+		Method:        http.MethodPut,
+		Path:          "/environments/{environmentId}/account-monitoring",
+		Summary:       "Enable or disable account monitoring for an environment",
+		Tags:          []string{"Environments"},
+		DefaultStatus: http.StatusNoContent,
+		Errors:        []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound},
+	}, h.UpdateAccountMonitoringSettings)
+
+	huma.Register(api, huma.Operation{
 		OperationID: "getEnvironmentChangelogs",
 		Method:      http.MethodGet,
 		Path:        "/environments/{environmentId}/changelogs",

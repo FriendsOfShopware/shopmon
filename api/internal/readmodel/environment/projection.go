@@ -28,7 +28,7 @@ func toAccountEnvironment(row queries.ListEnvironmentsByOrganizationRow) api.Acc
 		Status:           row.Status,
 		ShopwareVersion:  row.ShopwareVersion,
 		PhpVersion:       row.PhpVersion,
-		DatabaseVersion:     row.DatabaseVersion,
+		DatabaseVersion:  row.DatabaseVersion,
 		LastScrapedAt:    database.TimePtr(row.LastScrapedAt),
 		LastScrapedError: row.LastScrapedError,
 		OrganizationId:   row.OrganizationID,
@@ -230,6 +230,28 @@ func mapEnvironmentChecks(rows []queries.EnvironmentCheck) []api.EnvironmentChec
 	}
 
 	return checks
+}
+
+func mapEnvironmentScrapeIssues(rows []queries.EnvironmentScrapeIssue) []api.EnvironmentScrapeIssue {
+	issues := make([]api.EnvironmentScrapeIssue, 0, len(rows))
+	for _, row := range rows {
+		issue := api.EnvironmentScrapeIssue{
+			Key:         row.IssueKey,
+			Kind:        row.Kind,
+			Dataset:     row.Dataset,
+			MessageKey:  row.MessageKey,
+			FirstSeenAt: database.Time(row.FirstSeenAt),
+			LastSeenAt:  database.Time(row.LastSeenAt),
+		}
+		if len(row.Params) > 0 {
+			var params map[string]any
+			if err := json.Unmarshal(row.Params, &params); err == nil && len(params) > 0 {
+				issue.Params = &params
+			}
+		}
+		issues = append(issues, issue)
+	}
+	return issues
 }
 
 func mapEnvironmentSitespeeds(rows []queries.EnvironmentSitespeed) []api.Sitespeed {

@@ -32,11 +32,19 @@ const (
 	// It stays inside the 24h cron interval so one day's jobs are due before
 	// the next 03:00 enqueue.
 	sitespeedSpreadWindow = 23 * time.Hour
+
+	// scrapeBackoffThreshold is the consecutive total-failure count at which an
+	// environment demotes from hourly scrapes to one retry per
+	// scrapeBackoffInterval. The scrape service mirrors this value to send the
+	// "refresh slowed down" notice (monitoring/scrape/issues.go).
+	scrapeBackoffThreshold = 3
+	scrapeBackoffInterval  = 24 * time.Hour
 )
 
 type ScheduledEnvironment struct {
 	ID                   int32
 	ConnectionIssueCount int32
+	LastScrapedAt        *time.Time
 }
 
 type ScheduleRepository interface {
@@ -66,6 +74,7 @@ type Scheduler struct {
 	config     SchedulerConfig
 	randMu     sync.Mutex
 	rand       *rand.Rand
+	now        func() time.Time
 }
 
 func NewScheduler(repository ScheduleRepository, dispatcher ScheduleDispatcher, config SchedulerConfig) (*Scheduler, error) {
@@ -82,6 +91,7 @@ func NewScheduler(repository ScheduleRepository, dispatcher ScheduleDispatcher, 
 		dispatcher: dispatcher,
 		config:     config,
 		rand:       rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
+		now:        time.Now,
 	}
 	if err := scheduler.register(); err != nil {
 		return nil, err
@@ -186,8 +196,14 @@ func (s *Scheduler) enqueueEnvironmentScrapes(ctx context.Context) {
 	failed := 0
 	for _, target := range targets {
 		// Back off instead of hammering an environment that has repeatedly
-		// failed to connect.
-		if target.ConnectionIssueCount >= 3 {
+		// failed to connect: after scrapeBackoffThreshold consecutive total
+		// failures it is retried once per scrapeBackoffInterval (each attempt
+		// stamps last_scraped_at, success or failure) instead of hourly — but
+		// it keeps being retried, so a fixed shop recovers on its own rather
+		// than staying stale until someone refreshes it by hand.
+		if target.ConnectionIssueCount >= scrapeBackoffThreshold &&
+			target.LastScrapedAt != nil &&
+			s.now().Sub(*target.LastScrapedAt) < scrapeBackoffInterval {
 			skipped++
 			continue
 		}

@@ -49,6 +49,26 @@ const (
 	// in bursts (Shopware publishes several advisories at once), and one email
 	// per advisory would mean a handful of messages in the same minute.
 	EventAdvisoryDetected EventType = "advisory_detected"
+	// EventAccountChanged fires when a shop's admin users, integrations or
+	// permission roles changed in a way that warrants review. Batched per
+	// environment: one password reset and three new roles in the same hour are
+	// one message, not four. It exists alongside the status notification
+	// because a shop that is already degraded produces no status transition —
+	// and a new administrator on an already-red shop is precisely the case
+	// that must not stay silent.
+	EventAccountChanged EventType = "account_changed"
+	// EventScrapeIssue fires when an environment's background refresh fails
+	// fully or partially for an owner-fixable or persistent reason (missing
+	// integration privileges, rejected credentials, unreachable shop, …).
+	// Batched per scrape: one event carries every newly notifiable issue as
+	// Reasons, mirroring EventAdvisoryDetected.
+	EventScrapeIssue EventType = "scrape_issue"
+	// EventScrapeRecovered fires when a previously notified scrape issue
+	// resolves on a later successful refresh.
+	EventScrapeRecovered EventType = "scrape_recovered"
+	// EventScrapePaused fires when repeated total refresh failures demote an
+	// environment from hourly to daily retries.
+	EventScrapePaused EventType = "scrape_paused"
 )
 
 // Link is a frontend route reference attached to a notification.

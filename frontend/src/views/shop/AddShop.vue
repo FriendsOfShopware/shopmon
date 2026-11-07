@@ -56,11 +56,7 @@
               <FormItem class="sm:col-span-2">
                 <FormLabel>{{ $t("shop.gitRepoUrl") }}</FormLabel>
                 <FormControl>
-                  <Input
-                    v-bind="componentField"
-                    type="url"
-                    placeholder="https://github.com/org/repo"
-                  />
+                  <Input v-bind="componentField" type="url" placeholder="github.com/org/repo" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -99,11 +95,7 @@
               <FormItem>
                 <FormLabel>{{ $t("common.url") }}</FormLabel>
                 <FormControl>
-                  <Input
-                    v-bind="componentField"
-                    type="url"
-                    placeholder="https://my-shop.example.com"
-                  />
+                  <Input v-bind="componentField" type="url" placeholder="my-shop.example.com" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -97,6 +97,14 @@ func nonEmptyParam(params map[string]any, k string) bool {
 	return ok && s != ""
 }
 
+// Has reports whether key exists in the default locale. Callers building
+// fallback chains (specific key, then generic key) use it to persist only keys
+// that actually render.
+func (t *Translator) Has(key string) bool {
+	_, ok := t.lookup(DefaultLocale, key)
+	return ok
+}
+
 func (t *Translator) lookup(locale, key string) (string, bool) {
 	msgs, ok := t.messages[locale]
 	if !ok {
