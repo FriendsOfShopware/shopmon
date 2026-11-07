@@ -7,6 +7,18 @@ import (
 )
 
 func registerAdvisories(api huma.API, h *Handler) {
+	for _, method := range []string{http.MethodGet, http.MethodPost} {
+		huma.Register(api, huma.Operation{
+			OperationID: "composerAdvisories" + method,
+			Method:      method,
+			Path:        "/advisories/composer",
+			Summary:     "Export published store package advisories in Composer format",
+			Description: "Returns all published store.shopware.com/ package advisories without pagination. POST supports Composer security-advisories api-url clients; package filters are ignored and the complete feed is returned.",
+			Tags:        []string{"Advisories"},
+			Security:    []map[string][]string{},
+		}, h.ComposerAdvisories)
+	}
+
 	huma.Register(api, huma.Operation{
 		OperationID: "listAdvisories",
 		Method:      http.MethodGet,
