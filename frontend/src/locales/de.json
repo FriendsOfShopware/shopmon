@@ -921,26 +921,6 @@
     "providerDeleted": "SSO-Anbieter erfolgreich gelöscht",
     "failedDiscover": "OpenID-Konfiguration konnte nicht ermittelt werden"
   },
-  "slack": {
-    "title": "Slack",
-    "description": "Benachrichtigungen dieser Organisation (Statusänderungen, Verbindungsfehler, neue Sicherheitsmeldungen) in einen Slack-Channel senden.",
-    "shopDescription": "Benachrichtigungen dieses Shops zusätzlich zum Organisations-Channel in einen eigenen Slack-Channel senden.",
-    "connected": "Verbunden",
-    "connectedHint": "Benachrichtigungen werden in einen Slack-Channel gesendet.",
-    "notConnectedMember": "Nicht verbunden. Ein Organisations-Admin kann einen Slack-Channel verbinden.",
-    "webhookKeep": "Neue Webhook-URL einfügen, um die aktuelle zu ersetzen",
-    "webhookHelp": "Lege in Slack einen Incoming Webhook (Apps → Incoming Webhooks) für den Ziel-Channel an und füge die URL ein. Sie wird verschlüsselt gespeichert und nicht wieder angezeigt.",
-    "sendTest": "Testnachricht senden",
-    "disconnect": "Trennen",
-    "saved": "Slack-Webhook gespeichert",
-    "failedSave": "Slack-Webhook konnte nicht gespeichert werden",
-    "failedLoad": "Slack-Verbindung konnte nicht geladen werden.",
-    "retry": "Erneut versuchen",
-    "testSent": "Testnachricht gesendet",
-    "failedTest": "Testnachricht konnte nicht gesendet werden",
-    "disconnected": "Slack getrennt",
-    "failedDisconnect": "Slack konnte nicht getrennt werden"
-  },
   "shopDetail": {
     "shopInfo": "Umgebungs-Informationen",
     "shopwareVersion": "Shopware-Version",
@@ -1661,5 +1641,35 @@
       "error": "Die letzte Kontenprüfung ist fehlgeschlagen"
     },
     "acknowledgeStale": "Das Finding hat sich währenddessen geändert — bitte den aktuellen Stand prüfen"
+  },
+  "destinations": {
+    "title": "Benachrichtigungsziele",
+    "description": "Organisationsmeldungen an Slack, Telegram, Discord, Gotify oder Microsoft Teams senden.",
+    "shopDescription": "Meldungen dieses Shops an zusätzliche Ziele senden. Die Ziele der Organisation erhalten diese Meldungen ebenfalls.",
+    "loading": "Ziele werden geladen…",
+    "failedLoad": "Ziele konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "empty": "Keine Benachrichtigungsziele konfiguriert.",
+    "webhook": "Eingehender Webhook",
+    "configured": "Konfiguriert",
+    "test": "Test senden",
+    "edit": "Ziel bearbeiten",
+    "remove": "Entfernen",
+    "add": "Ziel hinzufügen",
+    "name": "Name",
+    "namePlaceholder": "z. B. Betriebsmeldungen",
+    "dsn": "Verbindungs-DSN",
+    "keep": "Leer lassen, um die Zugangsdaten beizubehalten",
+    "secretHelp": "Zugangsdaten werden verschlüsselt und nicht erneut angezeigt. Beim Speichern wird keine Nachricht gesendet. Prüfe die Zustellung mit „Test senden“.",
+    "examples": "Unterstützte Anbieter und DSN-Beispiele",
+    "encodingHelp": "Sonderzeichen in Zugangsdaten und Abfragewerten URL-kodieren, einschließlich der vollständigen Webhook-URL.",
+    "cancel": "Abbrechen",
+    "readOnly": "Nur Eigentümer und Administratoren der Organisation können Ziele verwalten.",
+    "failedSave": "Ziel konnte nicht gespeichert werden. Name und DSN prüfen.",
+    "saved": "Ziel gespeichert",
+    "failedTest": "Test fehlgeschlagen. Zugangsdaten und Ziel prüfen.",
+    "testSent": "Testnachricht gesendet",
+    "failedRemove": "Ziel konnte nicht entfernt werden.",
+    "removed": "Ziel entfernt"
   }
 }

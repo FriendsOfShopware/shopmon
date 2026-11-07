@@ -153,8 +153,8 @@
       </div>
     </CardSection>
 
-    <!-- Slack -->
-    <SlackWebhookCard :key="organization.id" :organization-id="organization.id" />
+    <!-- Notification destinations -->
+    <NotificationDestinations :key="organization.id" :organization-id="organization.id" />
 
     <!-- Leave org -->
     <Card class="border-destructive/30">
@@ -221,7 +221,7 @@ import IconShieldHalved from "~icons/fa6-solid/shield-halved";
 import IconKey from "~icons/fa6-solid/key";
 import AddMemberDialog from "./AddMemberDialog.vue";
 import ChangeRoleDialog from "./ChangeRoleDialog.vue";
-import SlackWebhookCard from "@/components/SlackWebhookCard.vue";
+import NotificationDestinations from "@/components/NotificationDestinations.vue";
 import { useI18n } from "vue-i18n";
 
 import { ref } from "vue";

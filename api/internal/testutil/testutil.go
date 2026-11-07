@@ -40,10 +40,10 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/notification"
 	notificationpostgres "github.com/friendsofshopware/shopmon/api/internal/notification/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/organization"
+	"github.com/friendsofshopware/shopmon/api/internal/organization/destination"
+	destinationpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/destination/postgres"
 	organizationmail "github.com/friendsofshopware/shopmon/api/internal/organization/invitationmail"
 	organizationpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/postgres"
-	"github.com/friendsofshopware/shopmon/api/internal/organization/slackwebhook"
-	slackpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/slackwebhook/postgres"
 	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 	ssooidc "github.com/friendsofshopware/shopmon/api/internal/organization/sso/oidc"
 	ssopostgres "github.com/friendsofshopware/shopmon/api/internal/organization/sso/postgres"
@@ -76,30 +76,30 @@ type TestEnv struct {
 	// Mail captures every email sent during the test, in place of real
 	// delivery. Use the mailertest assertion helpers against it.
 	Mail *mailertest.RecordingTransport
-	// Slack captures Slack webhook posts in place of real delivery.
-	Slack *SlackRecorder
+	// Destinations captures notification posts in place of real delivery.
+	Destinations *DestinationRecorder
 }
 
-// SlackRecorder records Slack webhook posts. Set Err to simulate Slack
+// DestinationRecorder records notification posts. Set Err to simulate delivery
 // rejecting the message.
-type SlackRecorder struct {
+type DestinationRecorder struct {
 	mu    sync.Mutex
-	Posts []SlackPost
+	Posts []DestinationPost
 	Err   error
 }
 
-type SlackPost struct {
-	URL  string
+type DestinationPost struct {
+	DSN  string
 	Text string
 }
 
-func (r *SlackRecorder) Post(_ context.Context, webhookURL, text string) error {
+func (r *DestinationRecorder) Post(_ context.Context, dsn, text string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.Err != nil {
 		return r.Err
 	}
-	r.Posts = append(r.Posts, SlackPost{URL: webhookURL, Text: text})
+	r.Posts = append(r.Posts, DestinationPost{DSN: dsn, Text: text})
 	return nil
 }
 
@@ -168,7 +168,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	}
 
 	mailRecorder := mailertest.NewRecordingTransport("")
-	slackRecorder := &SlackRecorder{}
+	destinationRecorder := &DestinationRecorder{}
 	mailSender, err := mail.NewServiceWithTransport(mailRecorder, "noreply@shopmon.test", "", cfg.FrontendURL)
 	if err != nil {
 		t.Fatalf("create mail service: %v", err)
@@ -252,7 +252,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Deployments:   deploymentService,
 		Catalog:       catalogService,
 		SSO:           ssoService,
-		Slack:         slackwebhook.NewService(slackpostgres.NewRepository(q), organizationAuthorizer, slackRecorder, cfg.AppSecret),
+		Destinations:  destination.NewService(destinationpostgres.NewRepository(q), organizationAuthorizer, destinationRecorder, cfg.AppSecret),
 		Account:       accountReadModel,
 		Admin:         adminReadModel,
 		Environments:  environmentReadModel,
@@ -301,13 +301,13 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	})
 
 	return &TestEnv{
-		Pool:    pool,
-		Queries: q,
-		Handler: h,
-		Server:  srv,
-		Cfg:     cfg,
-		Mail:    mailRecorder,
-		Slack:   slackRecorder,
+		Pool:         pool,
+		Queries:      q,
+		Handler:      h,
+		Server:       srv,
+		Cfg:          cfg,
+		Mail:         mailRecorder,
+		Destinations: destinationRecorder,
 	}
 }
 

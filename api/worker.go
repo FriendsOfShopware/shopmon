@@ -90,10 +90,10 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	cleanup := maintenance.NewService(q)
 	changelog := catalogchangelog.NewService(q, cfg)
 	advisorySync := catalogadvisory.NewService(pool, q, catalogadvisory.Config{
-		GithubToken: cfg.GithubToken,
-		NVDAPIKey:   cfg.NVDAPIKey,
-		Mailer:      mailSvc,
-		Slack:       notify.NewSlackConfig(cfg.AppSecret, cfg.FrontendURL),
+		GithubToken:  cfg.GithubToken,
+		NVDAPIKey:    cfg.NVDAPIKey,
+		Mailer:       mailSvc,
+		Destinations: notify.NewDestinationConfig(cfg.AppSecret, cfg.FrontendURL),
 	})
 	securityPluginSync := securityplugin.NewService(pool, q, shopwarepackages.NewClient(cfg.ShopwarePackagesURL, nil))
 	if err := jobs.RegisterHandlers(bus, jobs.Handlers{

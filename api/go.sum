@@ -249,6 +249,8 @@ github.com/shyim/go-mailer/transport/sendmail v0.1.0 h1:OeV5Yq63ibUqByR9MXgqSoWW
 github.com/shyim/go-mailer/transport/sendmail v0.1.0/go.mod h1:sajMdVzJifN0rejTZeCFaEOSsQQUyIygNTiWCmm0kJI=
 github.com/shyim/go-mailer/transport/smtp v0.1.0 h1:WIVDl2TZ+yGPT63kF+CgtP9R5RS0TY2yP+18XyW2Krs=
 github.com/shyim/go-mailer/transport/smtp v0.1.0/go.mod h1:0zhAZAudCho2eNmqCd3JXXu7oQ+MVLuwvMMHlpiAvAo=
+github.com/shyim/go-notifier v0.0.0-20261107100822-8aea0596d7f6 h1:3axLse6wxLozGNzEfiHhnl/siigeeOAf7B8G5HQbBK8=
+github.com/shyim/go-notifier v0.0.0-20261107100822-8aea0596d7f6/go.mod h1:OyJs/mhDrBRxaoPqI9ZPTFjs1yZskD0b4GDbZ/n/ZTs=
 github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9 h1:8ypmSyLMJUO53fqLAmNKwO8lhyJnMCqTsj6GHLLUI0E=
 github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9/go.mod h1:fzclyVXELfyyBh6oX+apcYdduL/nHbzeBcMkAJbo0UA=
 github.com/shyim/go-version v0.0.0-20260602054622-2f4aa95a0358 h1:lynQeFLRGGzEbgqNmxXBSK+omBl56QsKcHwRVxIOqSw=

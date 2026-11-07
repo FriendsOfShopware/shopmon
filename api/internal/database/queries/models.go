@@ -369,6 +369,16 @@ type Member struct {
 	CreatedAt      pgtype.Timestamp `json:"created_at"`
 }
 
+type NotificationDestination struct {
+	ID             string           `json:"id"`
+	OrganizationID string           `json:"organization_id"`
+	ShopID         *int32           `json:"shop_id"`
+	Name           string           `json:"name"`
+	Dsn            string           `json:"dsn"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
+}
+
 type NotificationPreference struct {
 	ID        int32           `json:"id"`
 	UserID    string          `json:"user_id"`
@@ -386,13 +396,6 @@ type Organization struct {
 	Slug      string           `json:"slug"`
 	Logo      *string          `json:"logo"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
-}
-
-type OrganizationSlackWebhook struct {
-	OrganizationID string           `json:"organization_id"`
-	WebhookUrl     string           `json:"webhook_url"`
-	CreatedAt      pgtype.Timestamp `json:"created_at"`
-	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
 }
 
 type Passkey struct {
@@ -459,13 +462,6 @@ type ShopApiKey struct {
 	Scopes     json.RawMessage  `json:"scopes"`
 	CreatedAt  pgtype.Timestamp `json:"created_at"`
 	LastUsedAt pgtype.Timestamp `json:"last_used_at"`
-}
-
-type ShopSlackWebhook struct {
-	ShopID     int32            `json:"shop_id"`
-	WebhookUrl string           `json:"webhook_url"`
-	CreatedAt  pgtype.Timestamp `json:"created_at"`
-	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
 
 type ShopwareVersion struct {

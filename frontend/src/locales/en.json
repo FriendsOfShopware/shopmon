@@ -921,26 +921,6 @@
     "providerDeleted": "SSO provider deleted successfully",
     "failedDiscover": "Failed to discover OpenID configuration"
   },
-  "slack": {
-    "title": "Slack",
-    "description": "Post this organization's alerts (status changes, connection errors, new security advisories) to a Slack channel.",
-    "shopDescription": "Post this shop's alerts to its own Slack channel, in addition to the organization channel.",
-    "connected": "Connected",
-    "connectedHint": "Alerts are posted to a Slack channel.",
-    "notConnectedMember": "Not connected. An organization admin can connect a Slack channel.",
-    "webhookKeep": "Paste a new webhook URL to replace the current one",
-    "webhookHelp": "Create an incoming webhook in Slack (Apps → Incoming Webhooks) for the target channel and paste its URL. It is stored encrypted and never shown again.",
-    "sendTest": "Send test message",
-    "disconnect": "Disconnect",
-    "saved": "Slack webhook saved",
-    "failedSave": "Failed to save Slack webhook",
-    "failedLoad": "Could not load the Slack connection.",
-    "retry": "Retry",
-    "testSent": "Test message sent",
-    "failedTest": "Failed to send test message",
-    "disconnected": "Slack disconnected",
-    "failedDisconnect": "Failed to disconnect Slack"
-  },
   "shopDetail": {
     "shopInfo": "Environment Information",
     "shopwareVersion": "Shopware Version",
@@ -1661,5 +1641,35 @@
       "error": "The last account check failed"
     },
     "acknowledgeStale": "The finding changed while you were looking at it — please review the current state"
+  },
+  "destinations": {
+    "title": "Notification destinations",
+    "description": "Send organization alerts to Slack, Telegram, Discord, Gotify or Microsoft Teams.",
+    "shopDescription": "Send this shop’s alerts to additional destinations. Organization destinations also receive these alerts.",
+    "loading": "Loading destinations…",
+    "failedLoad": "Could not load destinations.",
+    "retry": "Retry",
+    "empty": "No notification destinations configured.",
+    "webhook": "Incoming webhook",
+    "configured": "Configured",
+    "test": "Send test",
+    "edit": "Edit destination",
+    "remove": "Remove",
+    "add": "Add destination",
+    "name": "Name",
+    "namePlaceholder": "e.g. Operations alerts",
+    "dsn": "Connection DSN",
+    "keep": "Leave empty to keep existing credentials",
+    "secretHelp": "Credentials are encrypted and never shown again. Saving does not send a message; use Send test to verify delivery.",
+    "examples": "Supported providers and DSN examples",
+    "encodingHelp": "URL-encode special characters in credentials and query values, including the full webhook URL.",
+    "cancel": "Cancel",
+    "readOnly": "Only organization owners and admins can manage destinations.",
+    "failedSave": "Could not save destination. Check its name and DSN.",
+    "saved": "Destination saved",
+    "failedTest": "Test delivery failed. Check the credentials and destination.",
+    "testSent": "Test message sent",
+    "failedRemove": "Could not remove destination.",
+    "removed": "Destination removed"
   }
 }

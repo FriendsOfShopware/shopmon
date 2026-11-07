@@ -7,7 +7,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/jackc/pgx/v5"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,32 +22,26 @@ type fakeWebhookStore struct {
 	lookups      int
 }
 
-func (s *fakeWebhookStore) GetOrganizationSlackWebhook(_ context.Context, orgID string) (string, error) {
+func (s *fakeWebhookStore) GetEventNotificationDestinations(_ context.Context, arg queries.GetEventNotificationDestinationsParams) ([]queries.NotificationDestination, error) {
 	s.lookups++
-	encrypted, ok := s.webhooks[orgID]
-	if !ok {
-		return "", pgx.ErrNoRows
+	var rows []queries.NotificationDestination
+	if dsn, ok := s.webhooks[arg.OrganizationID]; ok {
+		rows = append(rows, queries.NotificationDestination{Dsn: dsn})
 	}
-	return encrypted, nil
+	if dsn, ok := s.shopWebhooks[arg.EnvironmentID]; ok {
+		rows = append(rows, queries.NotificationDestination{Dsn: dsn})
+	}
+	return rows, nil
 }
 
-func (s *fakeWebhookStore) GetEnvironmentShopSlackWebhook(_ context.Context, arg queries.GetEnvironmentShopSlackWebhookParams) (string, error) {
-	s.lookups++
-	encrypted, ok := s.shopWebhooks[arg.ID]
-	if !ok {
-		return "", pgx.ErrNoRows
-	}
-	return encrypted, nil
-}
-
-type slackPost struct {
+type destinationPost struct {
 	url  string
 	text string
 }
 
 type recordingPoster struct {
 	mu    sync.Mutex
-	posts []slackPost
+	posts []destinationPost
 	err   error
 	// failURL, when set, fails only posts to that webhook.
 	failURL string
@@ -59,7 +53,7 @@ func (p *recordingPoster) Post(_ context.Context, webhookURL, text string) error
 	if p.err != nil || (p.failURL != "" && p.failURL == webhookURL) {
 		return assert.AnError
 	}
-	p.posts = append(p.posts, slackPost{url: webhookURL, text: text})
+	p.posts = append(p.posts, destinationPost{url: webhookURL, text: text})
 	return nil
 }
 
@@ -70,7 +64,7 @@ func encryptWebhook(t *testing.T, url string) string {
 	return e
 }
 
-func newSlackTestDispatcher(t *testing.T, poster *recordingPoster, webhooks map[string]string) (*Dispatcher, *fakeWebhookStore) {
+func newDestinationTestDispatcher(t *testing.T, poster *recordingPoster, webhooks map[string]string) (*Dispatcher, *fakeWebhookStore) {
 	t.Helper()
 	encrypted := make(map[string]string, len(webhooks))
 	for org, url := range webhooks {
@@ -79,7 +73,7 @@ func newSlackTestDispatcher(t *testing.T, poster *recordingPoster, webhooks map[
 	store := &fakeWebhookStore{webhooks: encrypted, shopWebhooks: map[int32]string{}}
 
 	d := newTestDispatcher(&recordingChannel{name: ChannelInApp}, &recordingChannel{name: ChannelEmail}, &fakeLocker{})
-	d.slack = &slackChannel{
+	d.destinations = &destinationChannel{
 		store:     store,
 		poster:    poster,
 		appSecret: testAppSecret,
@@ -98,9 +92,9 @@ func orgDegradeEvent() Event {
 	return ev
 }
 
-func TestSlackPostsOncePerEventRegardlessOfRecipients(t *testing.T) {
+func TestDestinationPostsOncePerEventRegardlessOfRecipients(t *testing.T) {
 	poster := &recordingPoster{}
-	d, _ := newSlackTestDispatcher(t, poster, map[string]string{"org-1": "https://hooks.slack.com/services/a"})
+	d, _ := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fa"})
 
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), []Recipient{
 		{ID: "u1", Locale: "en"},
@@ -108,13 +102,13 @@ func TestSlackPostsOncePerEventRegardlessOfRecipients(t *testing.T) {
 	})
 
 	require.Len(t, poster.posts, 1)
-	assert.Equal(t, "https://hooks.slack.com/services/a", poster.posts[0].url)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fa", poster.posts[0].url)
 	assert.True(t, res.Delivery())
 }
 
-func TestSlackPostsWithoutSubscribers(t *testing.T) {
+func TestDestinationPostsWithoutSubscribers(t *testing.T) {
 	poster := &recordingPoster{}
-	d, _ := newSlackTestDispatcher(t, poster, map[string]string{"org-1": "https://hooks.slack.com/services/a"})
+	d, _ := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fa"})
 
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), nil)
 
@@ -122,9 +116,9 @@ func TestSlackPostsWithoutSubscribers(t *testing.T) {
 	assert.Equal(t, 1, res.Delivered)
 }
 
-func TestSlackSkippedWhenOrganizationHasNoWebhook(t *testing.T) {
+func TestDestinationSkippedWhenOrganizationHasNoWebhook(t *testing.T) {
 	poster := &recordingPoster{}
-	d, _ := newSlackTestDispatcher(t, poster, nil)
+	d, _ := newDestinationTestDispatcher(t, poster, nil)
 
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), nil)
 
@@ -133,9 +127,9 @@ func TestSlackSkippedWhenOrganizationHasNoWebhook(t *testing.T) {
 	assert.Zero(t, res.Skipped)
 }
 
-func TestSlackSkippedForEventsWithoutOrganization(t *testing.T) {
+func TestDestinationSkippedForEventsWithoutOrganization(t *testing.T) {
 	poster := &recordingPoster{}
-	d, store := newSlackTestDispatcher(t, poster, map[string]string{"org-1": "https://hooks.slack.com/services/a"})
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fa"})
 
 	d.Dispatch(context.Background(), degradeEvent(), nil)
 
@@ -143,9 +137,9 @@ func TestSlackSkippedForEventsWithoutOrganization(t *testing.T) {
 	assert.Zero(t, store.lookups)
 }
 
-func TestSlackIsDeduped(t *testing.T) {
+func TestDestinationIsDeduped(t *testing.T) {
 	poster := &recordingPoster{}
-	d, _ := newSlackTestDispatcher(t, poster, map[string]string{"org-1": "https://hooks.slack.com/services/a"})
+	d, _ := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fa"})
 
 	d.Dispatch(context.Background(), orgDegradeEvent(), nil)
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), nil)
@@ -154,21 +148,21 @@ func TestSlackIsDeduped(t *testing.T) {
 	assert.Equal(t, 1, res.Skipped)
 }
 
-func TestSlackFailureIsReported(t *testing.T) {
+func TestDestinationFailureIsReported(t *testing.T) {
 	poster := &recordingPoster{err: assert.AnError}
-	d, _ := newSlackTestDispatcher(t, poster, map[string]string{"org-1": "https://hooks.slack.com/services/a"})
+	d, _ := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fa"})
 
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), []Recipient{{ID: "u1", Locale: "en"}})
 
 	assert.Equal(t, 1, res.Failed)
-	assert.False(t, res.Delivery(), "a failed Slack post must not be recorded as sent")
+	assert.False(t, res.Delivery(), "a failed Destination post must not be recorded as sent")
 }
 
 // A failed post must not leave the dedup lock behind: the caller retries, and a
 // held lock would turn that retry into a "skipped" that is recorded as sent.
-func TestSlackFailureReleasesDedupLockForRetry(t *testing.T) {
+func TestDestinationFailureReleasesDedupLockForRetry(t *testing.T) {
 	poster := &recordingPoster{err: assert.AnError}
-	d, _ := newSlackTestDispatcher(t, poster, map[string]string{"org-1": "https://hooks.slack.com/services/a"})
+	d, _ := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fa"})
 
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), nil)
 	require.Equal(t, 1, res.Failed)
@@ -181,13 +175,13 @@ func TestSlackFailureReleasesDedupLockForRetry(t *testing.T) {
 }
 
 const (
-	orgWebhook  = "https://hooks.slack.com/services/org"
-	shopWebhook = "https://hooks.slack.com/services/shop"
+	orgWebhook  = "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg"
+	shopWebhook = "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop"
 )
 
-func TestSlackPostsToOrganizationAndShopChannels(t *testing.T) {
+func TestDestinationPostsToOrganizationAndShopChannels(t *testing.T) {
 	poster := &recordingPoster{}
-	d, store := newSlackTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
 	store.shopWebhooks[7] = encryptWebhook(t, shopWebhook)
 
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), nil)
@@ -198,9 +192,9 @@ func TestSlackPostsToOrganizationAndShopChannels(t *testing.T) {
 	assert.Equal(t, 2, res.Delivered)
 }
 
-func TestSlackPostsToShopChannelAlone(t *testing.T) {
+func TestDestinationPostsToShopChannelAlone(t *testing.T) {
 	poster := &recordingPoster{}
-	d, store := newSlackTestDispatcher(t, poster, nil)
+	d, store := newDestinationTestDispatcher(t, poster, nil)
 	store.shopWebhooks[7] = encryptWebhook(t, shopWebhook)
 
 	d.Dispatch(context.Background(), orgDegradeEvent(), nil)
@@ -209,9 +203,9 @@ func TestSlackPostsToShopChannelAlone(t *testing.T) {
 	assert.Equal(t, shopWebhook, poster.posts[0].url)
 }
 
-func TestSlackSameWebhookOnBothLevelsPostsOnce(t *testing.T) {
+func TestDestinationSameWebhookOnBothLevelsPostsOnce(t *testing.T) {
 	poster := &recordingPoster{}
-	d, store := newSlackTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
 	store.shopWebhooks[7] = encryptWebhook(t, orgWebhook)
 
 	d.Dispatch(context.Background(), orgDegradeEvent(), nil)
@@ -219,9 +213,9 @@ func TestSlackSameWebhookOnBothLevelsPostsOnce(t *testing.T) {
 	assert.Len(t, poster.posts, 1)
 }
 
-func TestSlackShopFailureDoesNotHoldBackOrganization(t *testing.T) {
+func TestDestinationShopFailureDoesNotHoldBackOrganization(t *testing.T) {
 	poster := &recordingPoster{failURL: shopWebhook}
-	d, store := newSlackTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
 	store.shopWebhooks[7] = encryptWebhook(t, shopWebhook)
 
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), nil)
@@ -239,10 +233,10 @@ func TestSlackShopFailureDoesNotHoldBackOrganization(t *testing.T) {
 }
 
 // An unknown lock state must count as a failure: a skip would let the caller
-// record the alert as delivered although Slack was never called.
-func TestSlackLockErrorIsAFailure(t *testing.T) {
+// record the alert as delivered although Destination was never called.
+func TestDestinationLockErrorIsAFailure(t *testing.T) {
 	poster := &recordingPoster{}
-	d, _ := newSlackTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	d, _ := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
 	d.locker = &fakeLocker{err: assert.AnError}
 
 	res := d.Dispatch(context.Background(), orgDegradeEvent(), nil)
@@ -270,29 +264,50 @@ func TestEmailLockErrorIsAFailure(t *testing.T) {
 
 // Replacing a webhook inside the dedup window must not dedup the new channel
 // against the old one.
-func TestSlackReplacedWebhookIsNotDeduped(t *testing.T) {
+func TestDestinationReplacedWebhookIsNotDeduped(t *testing.T) {
 	poster := &recordingPoster{}
-	d, store := newSlackTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
 
 	d.Dispatch(context.Background(), orgDegradeEvent(), nil)
-	store.webhooks["org-1"] = encryptWebhook(t, "https://hooks.slack.com/services/replaced")
+	store.webhooks["org-1"] = encryptWebhook(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Freplaced")
 	d.Dispatch(context.Background(), orgDegradeEvent(), nil)
 
 	require.Len(t, poster.posts, 2)
-	assert.Equal(t, "https://hooks.slack.com/services/replaced", poster.posts[1].url)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Freplaced", poster.posts[1].url)
 }
 
-func TestSlackRenderEscapesAndLinks(t *testing.T) {
-	c := &slackChannel{tr: NewTranslator(), baseURL: "https://shopmon.example.test/"}
+func TestDestinationRenderEscapesAndLinks(t *testing.T) {
+	c := &destinationChannel{tr: NewTranslator(), baseURL: "https://shopmon.example.test/"}
 	ev := orgDegradeEvent()
 	ev.Params = map[string]any{"name": "Shop <Prod> & Co", "from": "green", "to": "red"}
 	ev.Reasons = []StatusReason{{Level: "red", Key: "does.not.exist"}}
 
 	text := c.render(ev)
 
-	assert.Contains(t, text, ":warning: *")
-	assert.Contains(t, text, "Shop &lt;Prod&gt; &amp; Co")
+	assert.Contains(t, text, "⚠️ ")
+	assert.Contains(t, text, "Shop <Prod> & Co")
 	assert.Contains(t, text, "Status changed from green to red")
 	assert.Contains(t, text, "\n• does.not.exist")
-	assert.Contains(t, text, "<https://shopmon.example.test/app/environments/7|")
+	assert.Contains(t, text, "https://shopmon.example.test/app/environments/7")
+}
+
+// A corrupt destination must not suppress working destinations at the same scope.
+func TestDestinationDecryptionFailureDoesNotBlockOtherTargets(t *testing.T) {
+	poster := &recordingPoster{}
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	store.shopWebhooks[7] = "corrupt encrypted DSN"
+	res := d.Dispatch(t.Context(), orgDegradeEvent(), nil)
+	assert.Equal(t, 1, res.Delivered)
+	assert.Equal(t, 1, res.Failed)
+	assert.False(t, res.Delivery())
+}
+
+func TestInvalidEnvironmentIDDoesNotSelectAnotherShop(t *testing.T) {
+	poster := &recordingPoster{}
+	d, store := newDestinationTestDispatcher(t, poster, nil)
+	store.shopWebhooks[2147483647] = encryptWebhook(t, shopWebhook)
+	event := orgDegradeEvent()
+	event.ScopeID = "999999999999999999"
+	res := d.Dispatch(t.Context(), event, nil)
+	assert.Zero(t, res.Delivered)
 }

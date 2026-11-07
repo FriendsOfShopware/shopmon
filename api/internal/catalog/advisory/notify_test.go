@@ -123,7 +123,7 @@ func TestNotifyNewAdvisoriesEmailIncludesDetails(t *testing.T) {
 	svc := &Service{
 		pool:     env.Pool,
 		queries:  env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.SlackConfig{}),
+		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.DestinationConfig{}),
 	}
 	index := sbom.NewIndex([]sbom.AdvisoryPackage{{
 		AdvisoryID:       "CVE-2026-1234",
@@ -191,7 +191,7 @@ func TestNotifyNewAdvisoriesEmailPluralLinksToEnvironment(t *testing.T) {
 	svc := &Service{
 		pool:     env.Pool,
 		queries:  env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.SlackConfig{}),
+		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.DestinationConfig{}),
 	}
 	index := sbom.NewIndex([]sbom.AdvisoryPackage{
 		{AdvisoryID: "CVE-2026-1", PackageName: "shopware/core", AffectedVersions: ">=6.7.0.0,<6.7.10.1"},
@@ -225,10 +225,10 @@ func unfoldQuotedPrintable(raw []byte) string {
 	return s
 }
 
-// Nobody watches the environment, but the organization has a Slack channel:
-// the alert must still reach Slack and the advisory must be recorded as
+// Nobody watches the environment, but the organization has a Destination channel:
+// the alert must still reach Destination and the advisory must be recorded as
 // notified, or the next pass would alert again.
-func TestNotifyNewAdvisoriesPostsToSlackWithoutSubscribers(t *testing.T) {
+func TestNotifyNewAdvisoriesPostsToDestinationWithoutSubscribers(t *testing.T) {
 	env := testutil.Setup(t)
 	ctx := context.Background()
 
@@ -248,22 +248,20 @@ func TestNotifyNewAdvisoriesPostsToSlackWithoutSubscribers(t *testing.T) {
 	`, envID)
 	require.NoError(t, err)
 
-	encrypted, err := crypto.Encrypt("https://hooks.slack.com/services/org", env.Cfg.AppSecret)
+	encrypted, err := crypto.Encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", env.Cfg.AppSecret)
 	require.NoError(t, err)
-	require.NoError(t, env.Queries.UpsertOrganizationSlackWebhook(ctx, queries.UpsertOrganizationSlackWebhookParams{
-		OrganizationID: "org-1", WebhookUrl: encrypted,
-	}))
-	shopEncrypted, err := crypto.Encrypt("https://hooks.slack.com/services/shop", env.Cfg.AppSecret)
+	_, errSave := env.Queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: "org-destination", Name: "Organization", OrganizationID: "org-1", Dsn: encrypted})
+	require.NoError(t, errSave)
+	shopEncrypted, err := crypto.Encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop", env.Cfg.AppSecret)
 	require.NoError(t, err)
-	require.NoError(t, env.Queries.UpsertShopSlackWebhook(ctx, queries.UpsertShopSlackWebhookParams{
-		ShopID: int32(shopID), WebhookUrl: shopEncrypted,
-	}))
+	_, errSaveShop := env.Queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: "shop-destination", Name: "Shop", OrganizationID: "org-1", ShopID: int32(shopID), Dsn: shopEncrypted})
+	require.NoError(t, errSaveShop)
 
-	poster := &testutil.SlackRecorder{}
+	poster := &testutil.DestinationRecorder{}
 	svc := &Service{
 		pool:    env.Pool,
 		queries: env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, nil, notify.SlackConfig{
+		notifier: notify.NewDispatcher(env.Queries, nil, notify.DestinationConfig{
 			AppSecret: env.Cfg.AppSecret, Poster: poster,
 		}),
 	}
@@ -277,8 +275,8 @@ func TestNotifyNewAdvisoriesPostsToSlackWithoutSubscribers(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, poster.Posts, 2)
-	assert.Equal(t, "https://hooks.slack.com/services/org", poster.Posts[0].URL)
-	assert.Equal(t, "https://hooks.slack.com/services/shop", poster.Posts[1].URL)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", poster.Posts[0].DSN)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop", poster.Posts[1].DSN)
 	assert.Contains(t, poster.Posts[0].Text, "CVE-2026-1234")
 	notified, err := env.Queries.ListNotifiedAdvisoryIDsForEnvironment(ctx, envID)
 	require.NoError(t, err)

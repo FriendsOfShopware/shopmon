@@ -61,8 +61,8 @@ type Config struct {
 	NVDAPIKey   string
 	// Mailer delivers advisory alert emails. Nil disables the email channel.
 	Mailer mail.Sender
-	// Slack posts advisory alerts to organization webhooks.
-	Slack notify.SlackConfig
+	// Destinations delivers advisory alerts to organization and shop destinations.
+	Destinations notify.DestinationConfig
 }
 
 func NewService(pool *pgxpool.Pool, q *queries.Queries, cfg Config) *Service {
@@ -73,7 +73,7 @@ func NewService(pool *pgxpool.Pool, q *queries.Queries, cfg Config) *Service {
 		client:   newPackagistClient(cfg.BaseURL, cfg.UserAgent, httpClient),
 		nvd:      newNVDClient(cfg.NVDAPIKey, cfg.UserAgent, httpClient),
 		github:   newGitHubClient(cfg.GithubToken, cfg.UserAgent, httpClient),
-		notifier: notify.NewDispatcher(q, cfg.Mailer, cfg.Slack),
+		notifier: notify.NewDispatcher(q, cfg.Mailer, cfg.Destinations),
 		now:      time.Now,
 	}
 }

@@ -121,14 +121,26 @@ instance with settings you did not choose.
 | `MAIL_FROM` | `noreply@shopmon.io` | Sender address |
 | `SMTP_REPLY_TO` | | Reply-to address |
 
-### Slack
+### Notification destinations
 
-No configuration is needed on the instance. Organization owners and admins connect channels by pasting a Slack [incoming webhook](https://api.slack.com/messaging/webhooks) URL:
+Organization owners and admins can add multiple named notification destinations on the organization page or in a shop's settings. Delivery uses [go-notifier](https://github.com/shyim/go-notifier). Organization destinations receive all organization alerts; shop destinations receive that shop's alerts as well. Identical DSNs receive only one copy of an event, even when configured at both scopes. No environment subscribers are required.
 
-- on the organization page, for every alert of the organization,
-- in a shop's settings, for that shop's alerts only.
+Configure a connection DSN, then use **Send test** to verify delivery:
 
-When both are set, both channels get the alert, so a team can keep one channel per shop next to an organization-wide one. Alerts are posted once per event and channel, whether or not anyone watches the environment. The worker must be able to reach `https://hooks.slack.com`. Webhook URLs are encrypted with `APP_SECRET`, so changing the secret means reconnecting Slack.
+| Provider | DSN |
+|----------|-----|
+| Slack incoming webhook | `slack://default?webhook_url=URL_ENCODED_WEBHOOK_URL` |
+| Slack bot | `slack://xoxb-TOKEN@default?channel=CHANNEL_ID` |
+| Telegram | `telegram://BOT_TOKEN@default?channel=CHAT_ID` |
+| Discord | `discord://WEBHOOK_TOKEN@default?webhook_id=WEBHOOK_ID` |
+| Gotify | `gotify://APP_TOKEN@SERVER_HOST` |
+| Microsoft Teams | `microsoftteams://WEBHOOK_ID@default?token=TOKEN` |
+
+URL-encode special characters in credentials and query values. For Slack webhooks, encode the complete `https://hooks.slack.com/services/…` URL as the `webhook_url` value. The Teams format above matches the pinned library's factory: for `https://outlook.office.com/webhook/ID/IncomingWebhook/TOKEN`, use `ID` and `TOKEN`.
+
+DSNs are encrypted with `APP_SECRET` and are never returned to the browser. Leave the DSN empty when editing a destination to keep its credentials. Changing `APP_SECRET` requires reconfiguring destinations. Saving alone does not send a message.
+
+The server (test messages) and worker (alerts) need outbound access to the configured services. Destinations must resolve to public addresses; private, loopback and link-local addresses and HTTP redirects are blocked. This also applies to self-hosted Gotify. HTTP tracing is disabled for these requests because provider URLs can contain credentials; delivery outcome metrics remain available.
 
 ### Feature Toggles
 

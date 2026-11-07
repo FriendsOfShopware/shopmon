@@ -72,7 +72,7 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 			"environmentId", environmentID, "error", err)
 		return
 	}
-	// No subscribers still dispatches: the organization Slack channel does not
+	// No subscribers still dispatches: the organization destinations does not
 	// depend on watchers. With nothing configured the result is empty, which
 	// counts as handled below, so the advisories are not re-evaluated forever.
 	recipients := make([]notify.Recipient, 0, len(subscribers))

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AcknowledgeEnvironmentAccountEventData, AcknowledgeEnvironmentAccountEventErrors, AcknowledgeEnvironmentAccountEventResponses, AdminBanUserData, AdminBanUserErrors, AdminBanUserResponses, AdminCreateAdvisoryData, AdminCreateAdvisoryErrors, AdminCreateAdvisoryResponses, AdminGetAdvisoryData, AdminGetAdvisoryErrors, AdminGetAdvisoryResponses, AdminGetAuditLogData, AdminGetAuditLogErrors, AdminGetAuditLogResponses, AdminGetEnvironmentDetailData, AdminGetEnvironmentDetailErrors, AdminGetEnvironmentDetailResponses, AdminGetEnvironmentsData, AdminGetEnvironmentsErrors, AdminGetEnvironmentsResponses, AdminGetGrowthData, AdminGetGrowthErrors, AdminGetGrowthResponses, AdminGetOrganizationDetailData, AdminGetOrganizationDetailErrors, AdminGetOrganizationDetailResponses, AdminGetOrganizationsData, AdminGetOrganizationsErrors, AdminGetOrganizationsResponses, AdminGetRecentActivityData, AdminGetRecentActivityErrors, AdminGetRecentActivityResponses, AdminGetShopwareVersionsData, AdminGetShopwareVersionsErrors, AdminGetShopwareVersionsResponses, AdminGetStatsData, AdminGetStatsErrors, AdminGetStatsResponses, AdminGetUserDetailData, AdminGetUserDetailErrors, AdminGetUserDetailResponses, AdminImpersonateData, AdminImpersonateErrors, AdminImpersonateResponses, AdminImportGhsaAdvisoryData, AdminImportGhsaAdvisoryErrors, AdminImportGhsaAdvisoryResponses, AdminLinkAdvisoryOfficialData, AdminLinkAdvisoryOfficialErrors, AdminLinkAdvisoryOfficialResponses, AdminListAdvisoriesData, AdminListAdvisoriesErrors, AdminListAdvisoriesResponses, AdminListUsersData, AdminListUsersErrors, AdminListUsersResponses, AdminPreviewAdvisoryImpactData, AdminPreviewAdvisoryImpactErrors, AdminPreviewAdvisoryImpactResponses, AdminPreviewGhsaImportData, AdminPreviewGhsaImportErrors, AdminPreviewGhsaImportResponses, AdminSetUserRoleData, AdminSetUserRoleErrors, AdminSetUserRoleResponses, AdminStopImpersonatingData, AdminStopImpersonatingErrors, AdminStopImpersonatingResponses, AdminSyncAdvisoriesData, AdminSyncAdvisoriesErrors, AdminSyncAdvisoriesResponses, AdminUnbanUserData, AdminUnbanUserErrors, AdminUnbanUserResponses, AdminUpdateAdvisoryData, AdminUpdateAdvisoryErrors, AdminUpdateAdvisoryResponses, CancelInvitationData, CancelInvitationErrors, CancelInvitationResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckExtensionCompatibilityData, CheckExtensionCompatibilityErrors, CheckExtensionCompatibilityResponses, ClearEnvironmentCacheData, ClearEnvironmentCacheErrors, ClearEnvironmentCacheResponses, ComposerAdvisoriesGetData, ComposerAdvisoriesGetErrors, ComposerAdvisoriesGetResponses, ComposerAdvisoriesPostData, ComposerAdvisoriesPostErrors, ComposerAdvisoriesPostResponses, CreateAdvisorySuppressionData, CreateAdvisorySuppressionErrors, CreateAdvisorySuppressionResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateCliDeploymentData, CreateCliDeploymentErrors, CreateCliDeploymentResponses, CreateEnvironmentData, CreateEnvironmentErrors, CreateEnvironmentResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreatePackagesTokenData, CreatePackagesTokenErrors, CreatePackagesTokenResponses, CreateShopData, CreateShopErrors, CreateShopResponses, DeleteAllNotificationsData, DeleteAllNotificationsErrors, DeleteAllNotificationsResponses, DeleteApiKeyData, DeleteApiKeyErrors, DeleteApiKeyResponses, DeleteDeploymentData, DeleteDeploymentErrors, DeleteDeploymentResponses, DeleteEnvironmentData, DeleteEnvironmentErrors, DeleteEnvironmentResponses, DeleteNotificationData, DeleteNotificationErrors, DeleteNotificationPreferenceData, DeleteNotificationPreferenceErrors, DeleteNotificationPreferenceResponses, DeleteNotificationResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeletePackagesTokenData, DeletePackagesTokenErrors, DeletePackagesTokenResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteShopData, DeleteShopErrors, DeleteShopResponses, DeleteShopSlackWebhookData, DeleteShopSlackWebhookErrors, DeleteShopSlackWebhookResponses, DeleteSlackWebhookData, DeleteSlackWebhookErrors, DeleteSlackWebhookResponses, DeleteSsoProviderData, DeleteSsoProviderErrors, DeleteSsoProviderResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DiscoverSsoData, DiscoverSsoErrors, DiscoverSsoResponses, ExchangeCodeData, ExchangeCodeErrors, ExchangeCodeResponses, ForgetPasswordData, ForgetPasswordErrors, ForgetPasswordResponses, GetAccountChangelogsData, GetAccountChangelogsErrors, GetAccountChangelogsResponses, GetAccountEnvironmentsData, GetAccountEnvironmentsErrors, GetAccountEnvironmentsResponses, GetAccountExtensionData, GetAccountExtensionErrors, GetAccountExtensionResponses, GetAccountExtensionsData, GetAccountExtensionsErrors, GetAccountExtensionsResponses, GetAccountMeData, GetAccountMeErrors, GetAccountMeResponses, GetAccountOrganizationsData, GetAccountOrganizationsErrors, GetAccountOrganizationsResponses, GetAccountShopsData, GetAccountShopsErrors, GetAccountShopsResponses, GetAccountSubscribedEnvironmentsData, GetAccountSubscribedEnvironmentsErrors, GetAccountSubscribedEnvironmentsResponses, GetAdvisoryData, GetAdvisoryErrors, GetAdvisoryResponses, GetApiKeyScopesData, GetApiKeyScopesErrors, GetApiKeyScopesResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetDeploymentData, GetDeploymentErrors, GetDeploymentResponses, GetDeploymentsData, GetDeploymentsErrors, GetDeploymentsResponses, GetEcosystemStatsData, GetEcosystemStatsErrors, GetEcosystemStatsResponses, GetEnvironmentAccountsData, GetEnvironmentAccountsErrors, GetEnvironmentAccountsResponses, GetEnvironmentChangelogsData, GetEnvironmentChangelogsErrors, GetEnvironmentChangelogsResponses, GetEnvironmentData, GetEnvironmentErrors, GetEnvironmentResponses, GetEnvironmentStatusEventsData, GetEnvironmentStatusEventsErrors, GetEnvironmentStatusEventsResponses, GetFullOrganizationData, GetFullOrganizationErrors, GetFullOrganizationResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetInstanceConfigData, GetInstanceConfigErrors, GetInstanceConfigResponses, GetNotificationEventTypesData, GetNotificationEventTypesErrors, GetNotificationEventTypesResponses, GetNotificationPreferencesData, GetNotificationPreferencesErrors, GetNotificationPreferencesResponses, GetNotificationsData, GetNotificationsErrors, GetNotificationsResponses, GetOrganizationEnvironmentsData, GetOrganizationEnvironmentsErrors, GetOrganizationEnvironmentsResponses, GetOrganizationShopsData, GetOrganizationShopsErrors, GetOrganizationShopsResponses, GetPackagesTokenConfigurationData, GetPackagesTokenConfigurationErrors, GetPackagesTokenConfigurationResponses, GetPackagesTokensData, GetPackagesTokensErrors, GetPackagesTokensResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetShopSlackWebhookData, GetShopSlackWebhookErrors, GetShopSlackWebhookResponses, GetShopwareVersionsData, GetShopwareVersionsErrors, GetShopwareVersionsResponses, GetSlackWebhookData, GetSlackWebhookErrors, GetSlackWebhookResponses, GetSsoProvidersData, GetSsoProvidersErrors, GetSsoProvidersResponses, GithubCallbackData, GithubCallbackErrors, GithubCallbackResponses, HasPermissionData, HasPermissionErrors, HasPermissionResponses, InviteMemberData, InviteMemberErrors, InviteMemberResponses, LeaveOrganizationData, LeaveOrganizationErrors, LeaveOrganizationResponses, LinkSocialData, LinkSocialErrors, LinkSocialResponses, ListAccountsData, ListAccountsErrors, ListAccountsResponses, ListAdvisoriesData, ListAdvisoriesErrors, ListAdvisoriesResponses, ListAdvisoryAffectedEnvironmentsData, ListAdvisoryAffectedEnvironmentsErrors, ListAdvisoryAffectedEnvironmentsResponses, ListAdvisoryPackagesData, ListAdvisoryPackagesErrors, ListAdvisoryPackagesResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsResponses, ListOrganizationMembersData, ListOrganizationMembersErrors, ListOrganizationMembersResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListSuppressionsData, ListSuppressionsErrors, ListSuppressionsResponses, ListUserOrganizationsData, ListUserOrganizationsErrors, ListUserOrganizationsResponses, ListUserPasskeysData, ListUserPasskeysErrors, ListUserPasskeysResponses, MarkNotificationsReadData, MarkNotificationsReadErrors, MarkNotificationsReadResponses, PasskeyLoginData, PasskeyLoginErrors, PasskeyLoginOptionsData, PasskeyLoginOptionsErrors, PasskeyLoginOptionsResponses, PasskeyLoginResponses, PasskeyRegisterData, PasskeyRegisterErrors, PasskeyRegisterOptionsData, PasskeyRegisterOptionsErrors, PasskeyRegisterOptionsResponses, PasskeyRegisterResponses, RefreshEnvironmentData, RefreshEnvironmentErrors, RefreshEnvironmentResponses, RegisterSsoProviderData, RegisterSsoProviderErrors, RegisterSsoProviderResponses, RejectInvitationData, RejectInvitationErrors, RejectInvitationResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RescheduleTaskData, RescheduleTaskErrors, RescheduleTaskResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RevokeAdvisorySuppressionData, RevokeAdvisorySuppressionErrors, RevokeAdvisorySuppressionResponses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, SendVerificationEmailData, SendVerificationEmailErrors, SendVerificationEmailResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetMemberRoleData, SetMemberRoleErrors, SetMemberRoleResponses, SetNotificationPreferenceData, SetNotificationPreferenceErrors, SetNotificationPreferenceResponses, SignInEmailData, SignInEmailErrors, SignInEmailResponses, SignInSocialData, SignInSocialErrors, SignInSocialResponses, SignInSsoData, SignInSsoErrors, SignInSsoResponses, SignOutData, SignOutErrors, SignOutResponses, SignUpEmailData, SignUpEmailErrors, SignUpEmailResponses, SsoCallbackData, SsoCallbackErrors, SsoCallbackResponses, SubscribeToEnvironmentData, SubscribeToEnvironmentErrors, SubscribeToEnvironmentResponses, SyncPackagesTokenData, SyncPackagesTokenErrors, SyncPackagesTokenResponses, TestShopSlackWebhookData, TestShopSlackWebhookErrors, TestShopSlackWebhookResponses, TestSlackWebhookData, TestSlackWebhookErrors, TestSlackWebhookResponses, UnlinkAccountData, UnlinkAccountErrors, UnlinkAccountResponses, UnsubscribeFromEnvironmentData, UnsubscribeFromEnvironmentErrors, UnsubscribeFromEnvironmentResponses, UpdateAccountMeData, UpdateAccountMeErrors, UpdateAccountMeResponses, UpdateAccountMonitoringSettingsData, UpdateAccountMonitoringSettingsErrors, UpdateAccountMonitoringSettingsResponses, UpdateEnvironmentData, UpdateEnvironmentErrors, UpdateEnvironmentResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdateShopData, UpdateShopErrors, UpdateShopResponses, UpdateShopSlackWebhookData, UpdateShopSlackWebhookErrors, UpdateShopSlackWebhookResponses, UpdateSitespeedSettingsData, UpdateSitespeedSettingsErrors, UpdateSitespeedSettingsResponses, UpdateSlackWebhookData, UpdateSlackWebhookErrors, UpdateSlackWebhookResponses, UpdateSsoProviderData, UpdateSsoProviderErrors, UpdateSsoProviderResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses } from './types.gen';
+import type { AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AcknowledgeEnvironmentAccountEventData, AcknowledgeEnvironmentAccountEventErrors, AcknowledgeEnvironmentAccountEventResponses, AdminBanUserData, AdminBanUserErrors, AdminBanUserResponses, AdminCreateAdvisoryData, AdminCreateAdvisoryErrors, AdminCreateAdvisoryResponses, AdminGetAdvisoryData, AdminGetAdvisoryErrors, AdminGetAdvisoryResponses, AdminGetAuditLogData, AdminGetAuditLogErrors, AdminGetAuditLogResponses, AdminGetEnvironmentDetailData, AdminGetEnvironmentDetailErrors, AdminGetEnvironmentDetailResponses, AdminGetEnvironmentsData, AdminGetEnvironmentsErrors, AdminGetEnvironmentsResponses, AdminGetGrowthData, AdminGetGrowthErrors, AdminGetGrowthResponses, AdminGetOrganizationDetailData, AdminGetOrganizationDetailErrors, AdminGetOrganizationDetailResponses, AdminGetOrganizationsData, AdminGetOrganizationsErrors, AdminGetOrganizationsResponses, AdminGetRecentActivityData, AdminGetRecentActivityErrors, AdminGetRecentActivityResponses, AdminGetShopwareVersionsData, AdminGetShopwareVersionsErrors, AdminGetShopwareVersionsResponses, AdminGetStatsData, AdminGetStatsErrors, AdminGetStatsResponses, AdminGetUserDetailData, AdminGetUserDetailErrors, AdminGetUserDetailResponses, AdminImpersonateData, AdminImpersonateErrors, AdminImpersonateResponses, AdminImportGhsaAdvisoryData, AdminImportGhsaAdvisoryErrors, AdminImportGhsaAdvisoryResponses, AdminLinkAdvisoryOfficialData, AdminLinkAdvisoryOfficialErrors, AdminLinkAdvisoryOfficialResponses, AdminListAdvisoriesData, AdminListAdvisoriesErrors, AdminListAdvisoriesResponses, AdminListUsersData, AdminListUsersErrors, AdminListUsersResponses, AdminPreviewAdvisoryImpactData, AdminPreviewAdvisoryImpactErrors, AdminPreviewAdvisoryImpactResponses, AdminPreviewGhsaImportData, AdminPreviewGhsaImportErrors, AdminPreviewGhsaImportResponses, AdminSetUserRoleData, AdminSetUserRoleErrors, AdminSetUserRoleResponses, AdminStopImpersonatingData, AdminStopImpersonatingErrors, AdminStopImpersonatingResponses, AdminSyncAdvisoriesData, AdminSyncAdvisoriesErrors, AdminSyncAdvisoriesResponses, AdminUnbanUserData, AdminUnbanUserErrors, AdminUnbanUserResponses, AdminUpdateAdvisoryData, AdminUpdateAdvisoryErrors, AdminUpdateAdvisoryResponses, CancelInvitationData, CancelInvitationErrors, CancelInvitationResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckExtensionCompatibilityData, CheckExtensionCompatibilityErrors, CheckExtensionCompatibilityResponses, ClearEnvironmentCacheData, ClearEnvironmentCacheErrors, ClearEnvironmentCacheResponses, ComposerAdvisoriesGetData, ComposerAdvisoriesGetErrors, ComposerAdvisoriesGetResponses, ComposerAdvisoriesPostData, ComposerAdvisoriesPostErrors, ComposerAdvisoriesPostResponses, CreateAdvisorySuppressionData, CreateAdvisorySuppressionErrors, CreateAdvisorySuppressionResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateCliDeploymentData, CreateCliDeploymentErrors, CreateCliDeploymentResponses, CreateEnvironmentData, CreateEnvironmentErrors, CreateEnvironmentResponses, CreateNotificationDestinationData, CreateNotificationDestinationErrors, CreateNotificationDestinationResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreatePackagesTokenData, CreatePackagesTokenErrors, CreatePackagesTokenResponses, CreateShopData, CreateShopErrors, CreateShopNotificationDestinationData, CreateShopNotificationDestinationErrors, CreateShopNotificationDestinationResponses, CreateShopResponses, DeleteAllNotificationsData, DeleteAllNotificationsErrors, DeleteAllNotificationsResponses, DeleteApiKeyData, DeleteApiKeyErrors, DeleteApiKeyResponses, DeleteDeploymentData, DeleteDeploymentErrors, DeleteDeploymentResponses, DeleteEnvironmentData, DeleteEnvironmentErrors, DeleteEnvironmentResponses, DeleteNotificationData, DeleteNotificationDestinationData, DeleteNotificationDestinationErrors, DeleteNotificationDestinationResponses, DeleteNotificationErrors, DeleteNotificationPreferenceData, DeleteNotificationPreferenceErrors, DeleteNotificationPreferenceResponses, DeleteNotificationResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeletePackagesTokenData, DeletePackagesTokenErrors, DeletePackagesTokenResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteShopData, DeleteShopErrors, DeleteShopNotificationDestinationData, DeleteShopNotificationDestinationErrors, DeleteShopNotificationDestinationResponses, DeleteShopResponses, DeleteSsoProviderData, DeleteSsoProviderErrors, DeleteSsoProviderResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DiscoverSsoData, DiscoverSsoErrors, DiscoverSsoResponses, ExchangeCodeData, ExchangeCodeErrors, ExchangeCodeResponses, ForgetPasswordData, ForgetPasswordErrors, ForgetPasswordResponses, GetAccountChangelogsData, GetAccountChangelogsErrors, GetAccountChangelogsResponses, GetAccountEnvironmentsData, GetAccountEnvironmentsErrors, GetAccountEnvironmentsResponses, GetAccountExtensionData, GetAccountExtensionErrors, GetAccountExtensionResponses, GetAccountExtensionsData, GetAccountExtensionsErrors, GetAccountExtensionsResponses, GetAccountMeData, GetAccountMeErrors, GetAccountMeResponses, GetAccountOrganizationsData, GetAccountOrganizationsErrors, GetAccountOrganizationsResponses, GetAccountShopsData, GetAccountShopsErrors, GetAccountShopsResponses, GetAccountSubscribedEnvironmentsData, GetAccountSubscribedEnvironmentsErrors, GetAccountSubscribedEnvironmentsResponses, GetAdvisoryData, GetAdvisoryErrors, GetAdvisoryResponses, GetApiKeyScopesData, GetApiKeyScopesErrors, GetApiKeyScopesResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetDeploymentData, GetDeploymentErrors, GetDeploymentResponses, GetDeploymentsData, GetDeploymentsErrors, GetDeploymentsResponses, GetEcosystemStatsData, GetEcosystemStatsErrors, GetEcosystemStatsResponses, GetEnvironmentAccountsData, GetEnvironmentAccountsErrors, GetEnvironmentAccountsResponses, GetEnvironmentChangelogsData, GetEnvironmentChangelogsErrors, GetEnvironmentChangelogsResponses, GetEnvironmentData, GetEnvironmentErrors, GetEnvironmentResponses, GetEnvironmentStatusEventsData, GetEnvironmentStatusEventsErrors, GetEnvironmentStatusEventsResponses, GetFullOrganizationData, GetFullOrganizationErrors, GetFullOrganizationResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetInstanceConfigData, GetInstanceConfigErrors, GetInstanceConfigResponses, GetNotificationEventTypesData, GetNotificationEventTypesErrors, GetNotificationEventTypesResponses, GetNotificationPreferencesData, GetNotificationPreferencesErrors, GetNotificationPreferencesResponses, GetNotificationsData, GetNotificationsErrors, GetNotificationsResponses, GetOrganizationEnvironmentsData, GetOrganizationEnvironmentsErrors, GetOrganizationEnvironmentsResponses, GetOrganizationShopsData, GetOrganizationShopsErrors, GetOrganizationShopsResponses, GetPackagesTokenConfigurationData, GetPackagesTokenConfigurationErrors, GetPackagesTokenConfigurationResponses, GetPackagesTokensData, GetPackagesTokensErrors, GetPackagesTokensResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetShopwareVersionsData, GetShopwareVersionsErrors, GetShopwareVersionsResponses, GetSsoProvidersData, GetSsoProvidersErrors, GetSsoProvidersResponses, GithubCallbackData, GithubCallbackErrors, GithubCallbackResponses, HasPermissionData, HasPermissionErrors, HasPermissionResponses, InviteMemberData, InviteMemberErrors, InviteMemberResponses, LeaveOrganizationData, LeaveOrganizationErrors, LeaveOrganizationResponses, LinkSocialData, LinkSocialErrors, LinkSocialResponses, ListAccountsData, ListAccountsErrors, ListAccountsResponses, ListAdvisoriesData, ListAdvisoriesErrors, ListAdvisoriesResponses, ListAdvisoryAffectedEnvironmentsData, ListAdvisoryAffectedEnvironmentsErrors, ListAdvisoryAffectedEnvironmentsResponses, ListAdvisoryPackagesData, ListAdvisoryPackagesErrors, ListAdvisoryPackagesResponses, ListNotificationDestinationsData, ListNotificationDestinationsErrors, ListNotificationDestinationsResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsResponses, ListOrganizationMembersData, ListOrganizationMembersErrors, ListOrganizationMembersResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListShopNotificationDestinationsData, ListShopNotificationDestinationsErrors, ListShopNotificationDestinationsResponses, ListSuppressionsData, ListSuppressionsErrors, ListSuppressionsResponses, ListUserOrganizationsData, ListUserOrganizationsErrors, ListUserOrganizationsResponses, ListUserPasskeysData, ListUserPasskeysErrors, ListUserPasskeysResponses, MarkNotificationsReadData, MarkNotificationsReadErrors, MarkNotificationsReadResponses, PasskeyLoginData, PasskeyLoginErrors, PasskeyLoginOptionsData, PasskeyLoginOptionsErrors, PasskeyLoginOptionsResponses, PasskeyLoginResponses, PasskeyRegisterData, PasskeyRegisterErrors, PasskeyRegisterOptionsData, PasskeyRegisterOptionsErrors, PasskeyRegisterOptionsResponses, PasskeyRegisterResponses, RefreshEnvironmentData, RefreshEnvironmentErrors, RefreshEnvironmentResponses, RegisterSsoProviderData, RegisterSsoProviderErrors, RegisterSsoProviderResponses, RejectInvitationData, RejectInvitationErrors, RejectInvitationResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RescheduleTaskData, RescheduleTaskErrors, RescheduleTaskResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RevokeAdvisorySuppressionData, RevokeAdvisorySuppressionErrors, RevokeAdvisorySuppressionResponses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, SendVerificationEmailData, SendVerificationEmailErrors, SendVerificationEmailResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetMemberRoleData, SetMemberRoleErrors, SetMemberRoleResponses, SetNotificationPreferenceData, SetNotificationPreferenceErrors, SetNotificationPreferenceResponses, SignInEmailData, SignInEmailErrors, SignInEmailResponses, SignInSocialData, SignInSocialErrors, SignInSocialResponses, SignInSsoData, SignInSsoErrors, SignInSsoResponses, SignOutData, SignOutErrors, SignOutResponses, SignUpEmailData, SignUpEmailErrors, SignUpEmailResponses, SsoCallbackData, SsoCallbackErrors, SsoCallbackResponses, SubscribeToEnvironmentData, SubscribeToEnvironmentErrors, SubscribeToEnvironmentResponses, SyncPackagesTokenData, SyncPackagesTokenErrors, SyncPackagesTokenResponses, TestNotificationDestinationData, TestNotificationDestinationErrors, TestNotificationDestinationResponses, TestShopNotificationDestinationData, TestShopNotificationDestinationErrors, TestShopNotificationDestinationResponses, UnlinkAccountData, UnlinkAccountErrors, UnlinkAccountResponses, UnsubscribeFromEnvironmentData, UnsubscribeFromEnvironmentErrors, UnsubscribeFromEnvironmentResponses, UpdateAccountMeData, UpdateAccountMeErrors, UpdateAccountMeResponses, UpdateAccountMonitoringSettingsData, UpdateAccountMonitoringSettingsErrors, UpdateAccountMonitoringSettingsResponses, UpdateEnvironmentData, UpdateEnvironmentErrors, UpdateEnvironmentResponses, UpdateNotificationDestinationData, UpdateNotificationDestinationErrors, UpdateNotificationDestinationResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdateShopData, UpdateShopErrors, UpdateShopNotificationDestinationData, UpdateShopNotificationDestinationErrors, UpdateShopNotificationDestinationResponses, UpdateShopResponses, UpdateSitespeedSettingsData, UpdateSitespeedSettingsErrors, UpdateSitespeedSettingsResponses, UpdateSsoProviderData, UpdateSsoProviderErrors, UpdateSsoProviderResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -1239,6 +1239,59 @@ export const getOrganizationEnvironments = <ThrowOnError extends boolean = false
 });
 
 /**
+ * List organization notification destinations
+ */
+export const listNotificationDestinations = <ThrowOnError extends boolean = false>(options: Options<ListNotificationDestinationsData, ThrowOnError>): RequestResult<ListNotificationDestinationsResponses, ListNotificationDestinationsErrors, ThrowOnError> => (options.client ?? client).get<ListNotificationDestinationsResponses, ListNotificationDestinationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/notification-destinations',
+    ...options
+});
+
+/**
+ * Create organization notification destinations
+ */
+export const createNotificationDestination = <ThrowOnError extends boolean = false>(options: Options<CreateNotificationDestinationData, ThrowOnError>): RequestResult<CreateNotificationDestinationResponses, CreateNotificationDestinationErrors, ThrowOnError> => (options.client ?? client).post<CreateNotificationDestinationResponses, CreateNotificationDestinationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/notification-destinations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete organization notification destinations
+ */
+export const deleteNotificationDestination = <ThrowOnError extends boolean = false>(options: Options<DeleteNotificationDestinationData, ThrowOnError>): RequestResult<DeleteNotificationDestinationResponses, DeleteNotificationDestinationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteNotificationDestinationResponses, DeleteNotificationDestinationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}',
+    ...options
+});
+
+/**
+ * Update organization notification destinations
+ */
+export const updateNotificationDestination = <ThrowOnError extends boolean = false>(options: Options<UpdateNotificationDestinationData, ThrowOnError>): RequestResult<UpdateNotificationDestinationResponses, UpdateNotificationDestinationErrors, ThrowOnError> => (options.client ?? client).put<UpdateNotificationDestinationResponses, UpdateNotificationDestinationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Test organization notification destinations
+ */
+export const testNotificationDestination = <ThrowOnError extends boolean = false>(options: Options<TestNotificationDestinationData, ThrowOnError>): RequestResult<TestNotificationDestinationResponses, TestNotificationDestinationErrors, ThrowOnError> => (options.client ?? client).post<TestNotificationDestinationResponses, TestNotificationDestinationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/test',
+    ...options
+});
+
+/**
  * Get all shops in an organization
  */
 export const getOrganizationShops = <ThrowOnError extends boolean = false>(options: Options<GetOrganizationShopsData, ThrowOnError>): RequestResult<GetOrganizationShopsResponses, GetOrganizationShopsErrors, ThrowOnError> => (options.client ?? client).get<GetOrganizationShopsResponses, GetOrganizationShopsErrors, ThrowOnError>({
@@ -1314,6 +1367,59 @@ export const deleteApiKey = <ThrowOnError extends boolean = false>(options: Opti
 });
 
 /**
+ * List shop notification destinations
+ */
+export const listShopNotificationDestinations = <ThrowOnError extends boolean = false>(options: Options<ListShopNotificationDestinationsData, ThrowOnError>): RequestResult<ListShopNotificationDestinationsResponses, ListShopNotificationDestinationsErrors, ThrowOnError> => (options.client ?? client).get<ListShopNotificationDestinationsResponses, ListShopNotificationDestinationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations',
+    ...options
+});
+
+/**
+ * Create shop notification destinations
+ */
+export const createShopNotificationDestination = <ThrowOnError extends boolean = false>(options: Options<CreateShopNotificationDestinationData, ThrowOnError>): RequestResult<CreateShopNotificationDestinationResponses, CreateShopNotificationDestinationErrors, ThrowOnError> => (options.client ?? client).post<CreateShopNotificationDestinationResponses, CreateShopNotificationDestinationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete shop notification destinations
+ */
+export const deleteShopNotificationDestination = <ThrowOnError extends boolean = false>(options: Options<DeleteShopNotificationDestinationData, ThrowOnError>): RequestResult<DeleteShopNotificationDestinationResponses, DeleteShopNotificationDestinationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteShopNotificationDestinationResponses, DeleteShopNotificationDestinationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}',
+    ...options
+});
+
+/**
+ * Update shop notification destinations
+ */
+export const updateShopNotificationDestination = <ThrowOnError extends boolean = false>(options: Options<UpdateShopNotificationDestinationData, ThrowOnError>): RequestResult<UpdateShopNotificationDestinationResponses, UpdateShopNotificationDestinationErrors, ThrowOnError> => (options.client ?? client).put<UpdateShopNotificationDestinationResponses, UpdateShopNotificationDestinationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Test shop notification destinations
+ */
+export const testShopNotificationDestination = <ThrowOnError extends boolean = false>(options: Options<TestShopNotificationDestinationData, ThrowOnError>): RequestResult<TestShopNotificationDestinationResponses, TestShopNotificationDestinationErrors, ThrowOnError> => (options.client ?? client).post<TestShopNotificationDestinationResponses, TestShopNotificationDestinationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}/test',
+    ...options
+});
+
+/**
  * List packages tokens for a shop
  */
 export const getPackagesTokens = <ThrowOnError extends boolean = false>(options: Options<GetPackagesTokensData, ThrowOnError>): RequestResult<GetPackagesTokensResponses, GetPackagesTokensErrors, ThrowOnError> => (options.client ?? client).get<GetPackagesTokensResponses, GetPackagesTokensErrors, ThrowOnError>({
@@ -1350,86 +1456,6 @@ export const deletePackagesToken = <ThrowOnError extends boolean = false>(option
 export const syncPackagesToken = <ThrowOnError extends boolean = false>(options: Options<SyncPackagesTokenData, ThrowOnError>): RequestResult<SyncPackagesTokenResponses, SyncPackagesTokenErrors, ThrowOnError> => (options.client ?? client).post<SyncPackagesTokenResponses, SyncPackagesTokenErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync',
-    ...options
-});
-
-/**
- * Remove the Slack webhook of a shop
- */
-export const deleteShopSlackWebhook = <ThrowOnError extends boolean = false>(options: Options<DeleteShopSlackWebhookData, ThrowOnError>): RequestResult<DeleteShopSlackWebhookResponses, DeleteShopSlackWebhookErrors, ThrowOnError> => (options.client ?? client).delete<DeleteShopSlackWebhookResponses, DeleteShopSlackWebhookErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook',
-    ...options
-});
-
-/**
- * Get whether a shop has a Slack webhook
- */
-export const getShopSlackWebhook = <ThrowOnError extends boolean = false>(options: Options<GetShopSlackWebhookData, ThrowOnError>): RequestResult<GetShopSlackWebhookResponses, GetShopSlackWebhookErrors, ThrowOnError> => (options.client ?? client).get<GetShopSlackWebhookResponses, GetShopSlackWebhookErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook',
-    ...options
-});
-
-/**
- * Set the Slack webhook of a shop
- */
-export const updateShopSlackWebhook = <ThrowOnError extends boolean = false>(options: Options<UpdateShopSlackWebhookData, ThrowOnError>): RequestResult<UpdateShopSlackWebhookResponses, UpdateShopSlackWebhookErrors, ThrowOnError> => (options.client ?? client).put<UpdateShopSlackWebhookResponses, UpdateShopSlackWebhookErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Post a test message to the Slack webhook of a shop
- */
-export const testShopSlackWebhook = <ThrowOnError extends boolean = false>(options: Options<TestShopSlackWebhookData, ThrowOnError>): RequestResult<TestShopSlackWebhookResponses, TestShopSlackWebhookErrors, ThrowOnError> => (options.client ?? client).post<TestShopSlackWebhookResponses, TestShopSlackWebhookErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook/test',
-    ...options
-});
-
-/**
- * Remove the Slack webhook of the organization
- */
-export const deleteSlackWebhook = <ThrowOnError extends boolean = false>(options: Options<DeleteSlackWebhookData, ThrowOnError>): RequestResult<DeleteSlackWebhookResponses, DeleteSlackWebhookErrors, ThrowOnError> => (options.client ?? client).delete<DeleteSlackWebhookResponses, DeleteSlackWebhookErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/slack-webhook',
-    ...options
-});
-
-/**
- * Get whether the organization has a Slack webhook
- */
-export const getSlackWebhook = <ThrowOnError extends boolean = false>(options: Options<GetSlackWebhookData, ThrowOnError>): RequestResult<GetSlackWebhookResponses, GetSlackWebhookErrors, ThrowOnError> => (options.client ?? client).get<GetSlackWebhookResponses, GetSlackWebhookErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/slack-webhook',
-    ...options
-});
-
-/**
- * Set the Slack webhook of the organization
- */
-export const updateSlackWebhook = <ThrowOnError extends boolean = false>(options: Options<UpdateSlackWebhookData, ThrowOnError>): RequestResult<UpdateSlackWebhookResponses, UpdateSlackWebhookErrors, ThrowOnError> => (options.client ?? client).put<UpdateSlackWebhookResponses, UpdateSlackWebhookErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/slack-webhook',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Post a test message to the Slack webhook of the organization
- */
-export const testSlackWebhook = <ThrowOnError extends boolean = false>(options: Options<TestSlackWebhookData, ThrowOnError>): RequestResult<TestSlackWebhookResponses, TestSlackWebhookErrors, ThrowOnError> => (options.client ?? client).post<TestSlackWebhookResponses, TestSlackWebhookErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/slack-webhook/test',
     ...options
 });
 

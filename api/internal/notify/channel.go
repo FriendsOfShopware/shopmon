@@ -2,16 +2,15 @@ package notify
 
 import "context"
 
-// ChannelName identifies a delivery channel. New channels (webhook, Slack, …)
-// add a value here and a Channel implementation; nothing else changes.
+// ChannelName identifies a delivery channel.
 type ChannelName string
 
 const (
 	ChannelInApp ChannelName = "in_app"
 	ChannelEmail ChannelName = "email"
-	// ChannelSlack is organization-level: it is not a per-recipient Channel
-	// and is dispatched once per event (see Dispatcher.dispatchSlack).
-	ChannelSlack ChannelName = "slack"
+	// ChannelDestination is scope-level: it is not a per-recipient Channel
+	// and is dispatched once per event (see Dispatcher.dispatchDestinations).
+	ChannelDestination ChannelName = "destination"
 )
 
 // Recipient is a user targeted by an event, resolved to the fields delivery and

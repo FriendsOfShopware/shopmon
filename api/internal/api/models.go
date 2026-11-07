@@ -1536,10 +1536,16 @@ type SitespeedSettingsRequest struct {
 	Urls    *[]string `json:"urls,omitempty"`
 }
 
-// SlackWebhookStatus defines model for SlackWebhookStatus.
-type SlackWebhookStatus struct {
-	CanManage  bool `json:"canManage"`
-	Configured bool `json:"configured"`
+// NotificationDestinationStatus lists safe destination metadata.
+type NotificationDestinationStatus struct {
+	CanManage    bool                      `json:"canManage"`
+	Destinations []NotificationDestination `json:"destinations"`
+}
+type NotificationDestination struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Provider string `json:"provider"`
+	Summary  string `json:"summary"`
 }
 
 // SsoDiscovery defines model for SsoDiscovery.
@@ -1783,9 +1789,9 @@ type UpdateShopRequest struct {
 	Name                 *string `json:"name,omitempty"`
 }
 
-// UpdateSlackWebhookRequest defines model for UpdateSlackWebhookRequest.
-type UpdateSlackWebhookRequest struct {
-	WebhookUrl string `json:"webhookUrl"`
+type SaveNotificationDestinationRequest struct {
+	Name string `json:"name" minLength:"1" maxLength:"100"`
+	DSN  string `json:"dsn" maxLength:"8192" doc:"Notification DSN. Leave empty on update to keep existing credentials."`
 }
 
 // UpdateSsoProviderRequest defines model for UpdateSsoProviderRequest.

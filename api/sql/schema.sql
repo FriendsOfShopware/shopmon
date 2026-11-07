@@ -700,21 +700,16 @@ CREATE TABLE "security_plugin_coverage" (
   "last_error" text
 );
 
--- Slack incoming webhooks per organization and per shop; both fire when set.
--- webhook_url is encrypted with APP_SECRET.
-CREATE TABLE "organization_slack_webhook" (
-  "organization_id" text PRIMARY KEY NOT NULL REFERENCES "organization"("id") ON DELETE cascade,
-  "webhook_url" text NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT NOW(),
-  "updated_at" timestamp NOT NULL DEFAULT NOW()
+CREATE TABLE notification_destination (
+  id text PRIMARY KEY,
+  organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+  shop_id integer REFERENCES shop(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  dsn text NOT NULL,
+  created_at timestamp NOT NULL DEFAULT NOW(),
+  updated_at timestamp NOT NULL DEFAULT NOW()
 );
-
-CREATE TABLE "shop_slack_webhook" (
-  "shop_id" integer PRIMARY KEY NOT NULL REFERENCES "shop"("id") ON DELETE cascade,
-  "webhook_url" text NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT NOW(),
-  "updated_at" timestamp NOT NULL DEFAULT NOW()
-);
+CREATE INDEX notification_destination_scope ON notification_destination (organization_id, shop_id);
 
 -- Account monitoring baseline. Shopmon keeps no readable directory of who has
 -- access; this table exists to diff against, so it can report *that* something

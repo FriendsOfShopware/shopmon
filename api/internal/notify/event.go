@@ -7,7 +7,7 @@
 //
 //   - Event       — what happened (typed, with structured params)
 //   - Preferences — who is told and on which channels (PreferenceResolver)
-//   - Channel     — how it is delivered (in-app, email, future: webhook/Slack)
+//   - Channel     — how it is delivered (in-app, email, external destinations)
 //   - Translator  — what it says, rendered per recipient locale
 //
 // Adding a new alert is "register an EventType + add translation keys". Adding a

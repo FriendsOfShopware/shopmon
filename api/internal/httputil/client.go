@@ -138,6 +138,17 @@ func WithTimeout(d time.Duration) func(*http.Client) {
 // validated by resolving the host and rejecting non-public IPs, and the dialed
 // address is pinned to the vetted IP to defeat DNS rebinding.
 func NewSSRFSafeHTTPClient(timeout time.Duration) *http.Client {
+	return newSSRFSafeHTTPClient(timeout, true)
+}
+
+// NewSecretHTTPClient applies the same network protections without HTTP tracing.
+// Notification URLs contain tokens in paths and queries; emitting HTTP spans
+// would disclose those credentials. Delivery outcomes are recorded separately.
+func NewSecretHTTPClient(timeout time.Duration) *http.Client {
+	return newSSRFSafeHTTPClient(timeout, false)
+}
+
+func newSSRFSafeHTTPClient(timeout time.Duration, trace bool) *http.Client {
 	dialer := &net.Dialer{Timeout: 10 * time.Second}
 
 	transport := &http.Transport{
@@ -181,9 +192,13 @@ func NewSSRFSafeHTTPClient(timeout time.Duration) *http.Client {
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
+	var wrapped http.RoundTripper = &userAgentTransport{base: transport, ua: UserAgentString()}
+	if trace {
+		wrapped = wrapTransport(transport)
+	}
 	return &http.Client{
 		Timeout:   timeout,
-		Transport: wrapTransport(transport),
+		Transport: wrapped,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 5 {
 				return fmt.Errorf("too many redirects")

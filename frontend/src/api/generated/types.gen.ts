@@ -1097,6 +1097,18 @@ export type Notification = {
     userId: string;
 };
 
+export type NotificationDestination = {
+    id: string;
+    name: string;
+    provider: string;
+    summary: string;
+};
+
+export type NotificationDestinationStatus = {
+    canManage: boolean;
+    destinations: Array<NotificationDestination>;
+};
+
 export type NotificationEventType = {
     defaultChannels: Array<string>;
     type: string;
@@ -1203,6 +1215,14 @@ export type RevokeSessionRequest = {
     sessionId: string;
 };
 
+export type SaveNotificationDestinationRequest = {
+    /**
+     * Notification DSN. Leave empty on update to keep existing credentials.
+     */
+    dsn: string;
+    name: string;
+};
+
 export type ScheduledTask = {
     id: string;
     lastExecutionTime?: string;
@@ -1280,11 +1300,6 @@ export type SitespeedDeployment = {
 export type SitespeedSettingsRequest = {
     enabled: boolean;
     urls?: Array<string>;
-};
-
-export type SlackWebhookStatus = {
-    canManage: boolean;
-    configured: boolean;
 };
 
 export type SocialSignInRequest = {
@@ -1408,10 +1423,6 @@ export type UpdateShopRequest = {
     description?: string;
     gitUrl?: string;
     name?: string;
-};
-
-export type UpdateSlackWebhookRequest = {
-    webhookUrl: string;
 };
 
 export type UpdateSsoProviderRequest = {
@@ -5484,6 +5495,264 @@ export type GetOrganizationEnvironmentsResponses = {
 
 export type GetOrganizationEnvironmentsResponse = GetOrganizationEnvironmentsResponses[keyof GetOrganizationEnvironmentsResponses];
 
+export type ListNotificationDestinationsData = {
+    body?: never;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations';
+};
+
+export type ListNotificationDestinationsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type ListNotificationDestinationsError = ListNotificationDestinationsErrors[keyof ListNotificationDestinationsErrors];
+
+export type ListNotificationDestinationsResponses = {
+    /**
+     * OK
+     */
+    200: NotificationDestinationStatus;
+};
+
+export type ListNotificationDestinationsResponse = ListNotificationDestinationsResponses[keyof ListNotificationDestinationsResponses];
+
+export type CreateNotificationDestinationData = {
+    body: SaveNotificationDestinationRequest;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations';
+};
+
+export type CreateNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type CreateNotificationDestinationError = CreateNotificationDestinationErrors[keyof CreateNotificationDestinationErrors];
+
+export type CreateNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type CreateNotificationDestinationResponse = CreateNotificationDestinationResponses[keyof CreateNotificationDestinationResponses];
+
+export type DeleteNotificationDestinationData = {
+    body?: never;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}';
+};
+
+export type DeleteNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteNotificationDestinationError = DeleteNotificationDestinationErrors[keyof DeleteNotificationDestinationErrors];
+
+export type DeleteNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteNotificationDestinationResponse = DeleteNotificationDestinationResponses[keyof DeleteNotificationDestinationResponses];
+
+export type UpdateNotificationDestinationData = {
+    body: SaveNotificationDestinationRequest;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}';
+};
+
+export type UpdateNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type UpdateNotificationDestinationError = UpdateNotificationDestinationErrors[keyof UpdateNotificationDestinationErrors];
+
+export type UpdateNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateNotificationDestinationResponse = UpdateNotificationDestinationResponses[keyof UpdateNotificationDestinationResponses];
+
+export type TestNotificationDestinationData = {
+    body?: never;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/test';
+};
+
+export type TestNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type TestNotificationDestinationError = TestNotificationDestinationErrors[keyof TestNotificationDestinationErrors];
+
+export type TestNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type TestNotificationDestinationResponse = TestNotificationDestinationResponses[keyof TestNotificationDestinationResponses];
+
 export type GetOrganizationShopsData = {
     body?: never;
     path: {
@@ -5805,6 +6074,269 @@ export type DeleteApiKeyResponses = {
 
 export type DeleteApiKeyResponse = DeleteApiKeyResponses[keyof DeleteApiKeyResponses];
 
+export type ListShopNotificationDestinationsData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations';
+};
+
+export type ListShopNotificationDestinationsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type ListShopNotificationDestinationsError = ListShopNotificationDestinationsErrors[keyof ListShopNotificationDestinationsErrors];
+
+export type ListShopNotificationDestinationsResponses = {
+    /**
+     * OK
+     */
+    200: NotificationDestinationStatus;
+};
+
+export type ListShopNotificationDestinationsResponse = ListShopNotificationDestinationsResponses[keyof ListShopNotificationDestinationsResponses];
+
+export type CreateShopNotificationDestinationData = {
+    body: SaveNotificationDestinationRequest;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations';
+};
+
+export type CreateShopNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type CreateShopNotificationDestinationError = CreateShopNotificationDestinationErrors[keyof CreateShopNotificationDestinationErrors];
+
+export type CreateShopNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type CreateShopNotificationDestinationResponse = CreateShopNotificationDestinationResponses[keyof CreateShopNotificationDestinationResponses];
+
+export type DeleteShopNotificationDestinationData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}';
+};
+
+export type DeleteShopNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteShopNotificationDestinationError = DeleteShopNotificationDestinationErrors[keyof DeleteShopNotificationDestinationErrors];
+
+export type DeleteShopNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteShopNotificationDestinationResponse = DeleteShopNotificationDestinationResponses[keyof DeleteShopNotificationDestinationResponses];
+
+export type UpdateShopNotificationDestinationData = {
+    body: SaveNotificationDestinationRequest;
+    path: {
+        orgId: string;
+        shopId: number;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}';
+};
+
+export type UpdateShopNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type UpdateShopNotificationDestinationError = UpdateShopNotificationDestinationErrors[keyof UpdateShopNotificationDestinationErrors];
+
+export type UpdateShopNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateShopNotificationDestinationResponse = UpdateShopNotificationDestinationResponses[keyof UpdateShopNotificationDestinationResponses];
+
+export type TestShopNotificationDestinationData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}/test';
+};
+
+export type TestShopNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type TestShopNotificationDestinationError = TestShopNotificationDestinationErrors[keyof TestShopNotificationDestinationErrors];
+
+export type TestShopNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type TestShopNotificationDestinationResponse = TestShopNotificationDestinationResponses[keyof TestShopNotificationDestinationResponses];
+
 export type GetPackagesTokensData = {
     body?: never;
     path: {
@@ -5972,370 +6504,6 @@ export type SyncPackagesTokenResponses = {
 };
 
 export type SyncPackagesTokenResponse = SyncPackagesTokenResponses[keyof SyncPackagesTokenResponses];
-
-export type DeleteShopSlackWebhookData = {
-    body?: never;
-    path: {
-        orgId: string;
-        shopId: number;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook';
-};
-
-export type DeleteShopSlackWebhookErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: ErrorResponse;
-    /**
-     * Not Found
-     */
-    404: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
-};
-
-export type DeleteShopSlackWebhookError = DeleteShopSlackWebhookErrors[keyof DeleteShopSlackWebhookErrors];
-
-export type DeleteShopSlackWebhookResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteShopSlackWebhookResponse = DeleteShopSlackWebhookResponses[keyof DeleteShopSlackWebhookResponses];
-
-export type GetShopSlackWebhookData = {
-    body?: never;
-    path: {
-        orgId: string;
-        shopId: number;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook';
-};
-
-export type GetShopSlackWebhookErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: ErrorResponse;
-    /**
-     * Not Found
-     */
-    404: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
-};
-
-export type GetShopSlackWebhookError = GetShopSlackWebhookErrors[keyof GetShopSlackWebhookErrors];
-
-export type GetShopSlackWebhookResponses = {
-    /**
-     * OK
-     */
-    200: SlackWebhookStatus;
-};
-
-export type GetShopSlackWebhookResponse = GetShopSlackWebhookResponses[keyof GetShopSlackWebhookResponses];
-
-export type UpdateShopSlackWebhookData = {
-    body: UpdateSlackWebhookRequest;
-    path: {
-        orgId: string;
-        shopId: number;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook';
-};
-
-export type UpdateShopSlackWebhookErrors = {
-    /**
-     * Bad Request
-     */
-    400: ErrorResponse;
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: ErrorResponse;
-    /**
-     * Not Found
-     */
-    404: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
-};
-
-export type UpdateShopSlackWebhookError = UpdateShopSlackWebhookErrors[keyof UpdateShopSlackWebhookErrors];
-
-export type UpdateShopSlackWebhookResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type UpdateShopSlackWebhookResponse = UpdateShopSlackWebhookResponses[keyof UpdateShopSlackWebhookResponses];
-
-export type TestShopSlackWebhookData = {
-    body?: never;
-    path: {
-        orgId: string;
-        shopId: number;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/shops/{shopId}/slack-webhook/test';
-};
-
-export type TestShopSlackWebhookErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: ErrorResponse;
-    /**
-     * Not Found
-     */
-    404: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
-    /**
-     * Bad Gateway
-     */
-    502: ErrorResponse;
-};
-
-export type TestShopSlackWebhookError = TestShopSlackWebhookErrors[keyof TestShopSlackWebhookErrors];
-
-export type TestShopSlackWebhookResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type TestShopSlackWebhookResponse = TestShopSlackWebhookResponses[keyof TestShopSlackWebhookResponses];
-
-export type DeleteSlackWebhookData = {
-    body?: never;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/slack-webhook';
-};
-
-export type DeleteSlackWebhookErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: ErrorResponse;
-    /**
-     * Not Found
-     */
-    404: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
-};
-
-export type DeleteSlackWebhookError = DeleteSlackWebhookErrors[keyof DeleteSlackWebhookErrors];
-
-export type DeleteSlackWebhookResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteSlackWebhookResponse = DeleteSlackWebhookResponses[keyof DeleteSlackWebhookResponses];
-
-export type GetSlackWebhookData = {
-    body?: never;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/slack-webhook';
-};
-
-export type GetSlackWebhookErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: ErrorResponse;
-    /**
-     * Not Found
-     */
-    404: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
-};
-
-export type GetSlackWebhookError = GetSlackWebhookErrors[keyof GetSlackWebhookErrors];
-
-export type GetSlackWebhookResponses = {
-    /**
-     * OK
-     */
-    200: SlackWebhookStatus;
-};
-
-export type GetSlackWebhookResponse = GetSlackWebhookResponses[keyof GetSlackWebhookResponses];
-
-export type UpdateSlackWebhookData = {
-    body: UpdateSlackWebhookRequest;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/slack-webhook';
-};
-
-export type UpdateSlackWebhookErrors = {
-    /**
-     * Bad Request
-     */
-    400: ErrorResponse;
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: ErrorResponse;
-    /**
-     * Not Found
-     */
-    404: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
-};
-
-export type UpdateSlackWebhookError = UpdateSlackWebhookErrors[keyof UpdateSlackWebhookErrors];
-
-export type UpdateSlackWebhookResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type UpdateSlackWebhookResponse = UpdateSlackWebhookResponses[keyof UpdateSlackWebhookResponses];
-
-export type TestSlackWebhookData = {
-    body?: never;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/slack-webhook/test';
-};
-
-export type TestSlackWebhookErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ErrorResponse;
-    /**
-     * Forbidden
-     */
-    403: ErrorResponse;
-    /**
-     * Not Found
-     */
-    404: ErrorResponse;
-    /**
-     * Unprocessable Entity
-     */
-    422: ErrorResponse;
-    /**
-     * Internal Server Error
-     */
-    500: ErrorResponse;
-    /**
-     * Bad Gateway
-     */
-    502: ErrorResponse;
-};
-
-export type TestSlackWebhookError = TestSlackWebhookErrors[keyof TestSlackWebhookErrors];
-
-export type TestSlackWebhookResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type TestSlackWebhookResponse = TestSlackWebhookResponses[keyof TestSlackWebhookResponses];
 
 export type GetSsoProvidersData = {
     body?: never;

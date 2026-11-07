@@ -10,7 +10,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/friendsofshopware/shopmon/api/internal/notification"
-	"github.com/friendsofshopware/shopmon/api/internal/organization/slackwebhook"
+	"github.com/friendsofshopware/shopmon/api/internal/organization/destination"
 	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 	"github.com/friendsofshopware/shopmon/api/internal/packagesmirror"
 	accountread "github.com/friendsofshopware/shopmon/api/internal/readmodel/account"
@@ -51,7 +51,7 @@ type Dependencies struct {
 	Deployments   *deployment.Service
 	Catalog       *catalog.Service
 	SSO           *organizationsso.Service
-	Slack         *slackwebhook.Service
+	Destinations  *destination.Service
 	Account       *accountread.Service
 	Admin         *adminread.Service
 	Environments  *environmentread.Service
@@ -69,7 +69,7 @@ type Handler struct {
 	deployments   *deployment.Service
 	catalog       *catalog.Service
 	sso           *organizationsso.Service
-	slack         *slackwebhook.Service
+	destinations  *destination.Service
 	account       *accountread.Service
 	admin         *adminread.Service
 	environments  *environmentread.Service
@@ -88,7 +88,7 @@ func New(dependencies Dependencies) *Handler {
 		deployments:   dependencies.Deployments,
 		catalog:       dependencies.Catalog,
 		sso:           dependencies.SSO,
-		slack:         dependencies.Slack,
+		destinations:  dependencies.Destinations,
 		account:       dependencies.Account,
 		admin:         dependencies.Admin,
 		environments:  dependencies.Environments,

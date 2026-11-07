@@ -17,14 +17,14 @@ type Dispatcher struct {
 	prefs    PreferenceResolver
 	locker   lockAcquirer
 	channels map[ChannelName]Channel
-	// slack is the organization-level channel; nil when not configured.
-	slack *slackChannel
+	// destination is the organization-level channel; nil when not configured.
+	destinations *destinationChannel
 }
 
 // NewDispatcher wires the default in-app and email channels, plus the
-// organization Slack channel when slackCfg is usable. mailSvc may be nil
+// organization and shop destinations when destinationCfg is usable. mailSvc may be nil
 // (email delivery becomes a no-op).
-func NewDispatcher(q *queries.Queries, mailSvc mail.Sender, slackCfg SlackConfig) *Dispatcher {
+func NewDispatcher(q *queries.Queries, mailSvc mail.Sender, destinationCfg DestinationConfig) *Dispatcher {
 	tr := NewTranslator()
 	d := &Dispatcher{
 		tr:     tr,
@@ -35,12 +35,12 @@ func NewDispatcher(q *queries.Queries, mailSvc mail.Sender, slackCfg SlackConfig
 			ChannelEmail: &emailChannel{mail: mailSvc, tr: tr},
 		},
 	}
-	if slackCfg.AppSecret != "" && slackCfg.Poster != nil {
-		d.slack = &slackChannel{
+	if destinationCfg.AppSecret != "" && destinationCfg.Poster != nil {
+		d.destinations = &destinationChannel{
 			store:     q,
-			poster:    slackCfg.Poster,
-			appSecret: slackCfg.AppSecret,
-			baseURL:   slackCfg.FrontendURL,
+			poster:    destinationCfg.Poster,
+			appSecret: destinationCfg.AppSecret,
+			baseURL:   destinationCfg.FrontendURL,
 			tr:        tr,
 		}
 	}
@@ -82,9 +82,9 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 	meta := metaFor(ev.Type)
 
 	d.dispatchRecipients(ctx, ev, meta, recipients, &res)
-	// Slack does not depend on anyone watching the environment. It runs last so
+	// Destination delivery does not depend on anyone watching the environment. It runs last so
 	// slow webhook posts never delay in-app and email delivery.
-	d.dispatchSlack(ctx, ev, meta, &res)
+	d.dispatchDestinations(ctx, ev, meta, &res)
 	return res
 }
 
@@ -164,18 +164,18 @@ func (d *Dispatcher) dispatchRecipients(ctx context.Context, ev Event, meta even
 	}
 }
 
-// dispatchSlack posts the event once to each configured Slack webhook (the
+// dispatchDestinations posts the event once to each configured destination (the
 // organization's and the shop's), deduped per webhook with the same window as
 // email so a flapping check does not flood the channel.
-func (d *Dispatcher) dispatchSlack(ctx context.Context, ev Event, meta eventMeta, res *DispatchResult) {
-	if d.slack == nil {
+func (d *Dispatcher) dispatchDestinations(ctx context.Context, ev Event, meta eventMeta, res *DispatchResult) {
+	if d.destinations == nil {
 		return
 	}
 
-	targets, err := d.slack.targets(ctx, ev)
+	targets, err := d.destinations.targets(ctx, ev)
 	if err != nil {
-		slog.Warn("notify: failed to load slack webhook", "event", ev.Type, "organizationId", ev.OrgID, "error", err)
-		metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelSlack))
+		slog.Warn("notify: failed to load notification destinations", "event", ev.Type, "organizationId", ev.OrgID, "error", err)
+		metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelDestination))
 		res.Failed++
 	}
 
@@ -186,7 +186,7 @@ func (d *Dispatcher) dispatchSlack(ctx context.Context, ev Event, meta eventMeta
 			if err != nil {
 				// Unknown lock state is a failure, not a skip: a skip would let the
 				// caller record the alert as delivered.
-				metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelSlack))
+				metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelDestination))
 				res.Failed++
 				continue
 			}
@@ -196,19 +196,19 @@ func (d *Dispatcher) dispatchSlack(ctx context.Context, ev Event, meta eventMeta
 			}
 		}
 
-		if err := d.slack.Send(ctx, target.url, ev); err != nil {
+		if err := d.destinations.Send(ctx, target.dsn, ev); err != nil {
 			// Without the release, the caller's retry would hit the lock, count as
-			// skipped, and record the alert as delivered although Slack never got it.
+			// skipped, and record the alert as delivered although the destination never got it.
 			if meta.emailDedupTTL > 0 {
 				d.locker.release(ctx, lockKey)
 			}
 			slog.Warn("notify: channel delivery failed",
-				"channel", ChannelSlack, "event", ev.Type, "organizationId", ev.OrgID, "error", err)
-			metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelSlack))
+				"channel", ChannelDestination, "event", ev.Type, "organizationId", ev.OrgID, "error", err)
+			metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelDestination))
 			res.Failed++
 			continue
 		}
-		metrics.RecordNotifyDelivery(ctx, metrics.OutcomeOK, string(ChannelSlack))
+		metrics.RecordNotifyDelivery(ctx, metrics.OutcomeOK, string(ChannelDestination))
 		res.Delivered++
 	}
 }

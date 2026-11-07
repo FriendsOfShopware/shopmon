@@ -15,7 +15,7 @@ import (
 
 // The webhook lookups are SQL joins (environment -> shop, organization), so
 // they are exercised against a real database rather than a fake store.
-func TestSlackDispatchResolvesOrganizationAndShopWebhooks(t *testing.T) {
+func TestDestinationDispatchResolvesOrganizationAndShopWebhooks(t *testing.T) {
 	env := testutil.Setup(t)
 	env.SeedUser(t, "user-1", "Owner", "owner@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
@@ -30,15 +30,13 @@ func TestSlackDispatchResolvesOrganizationAndShopWebhooks(t *testing.T) {
 		return e
 	}
 	ctx := context.Background()
-	require.NoError(t, env.Queries.UpsertOrganizationSlackWebhook(ctx, queries.UpsertOrganizationSlackWebhookParams{
-		OrganizationID: "org-1", WebhookUrl: encrypt("https://hooks.slack.com/services/org"),
-	}))
-	require.NoError(t, env.Queries.UpsertShopSlackWebhook(ctx, queries.UpsertShopSlackWebhookParams{
-		ShopID: int32(shopA), WebhookUrl: encrypt("https://hooks.slack.com/services/shop-a"),
-	}))
+	_, errSave := env.Queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: "org-destination", Name: "Organization", OrganizationID: "org-1", Dsn: encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg")})
+	require.NoError(t, errSave)
+	_, errSaveShop := env.Queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: "shop-destination", Name: "Shop", OrganizationID: "org-1", ShopID: int32(shopA), Dsn: encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop-a")})
+	require.NoError(t, errSaveShop)
 
-	poster := &testutil.SlackRecorder{}
-	d := notify.NewDispatcher(env.Queries, nil, notify.SlackConfig{
+	poster := &testutil.DestinationRecorder{}
+	d := notify.NewDispatcher(env.Queries, nil, notify.DestinationConfig{
 		AppSecret: env.Cfg.AppSecret, FrontendURL: "https://shopmon.example.test", Poster: poster,
 	})
 
@@ -59,32 +57,31 @@ func TestSlackDispatchResolvesOrganizationAndShopWebhooks(t *testing.T) {
 	res := d.Dispatch(ctx, event(envA), nil)
 	assert.Equal(t, 2, res.Delivered)
 	require.Len(t, poster.Posts, 2)
-	assert.Equal(t, "https://hooks.slack.com/services/org", poster.Posts[0].URL)
-	assert.Equal(t, "https://hooks.slack.com/services/shop-a", poster.Posts[1].URL)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", poster.Posts[0].DSN)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop-a", poster.Posts[1].DSN)
 
 	// Shop B has no webhook of its own: only the organization channel.
 	res = d.Dispatch(ctx, event(envB), nil)
 	assert.Equal(t, 1, res.Delivered)
 	require.Len(t, poster.Posts, 3)
-	assert.Equal(t, "https://hooks.slack.com/services/org", poster.Posts[2].URL)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", poster.Posts[2].DSN)
 }
 
 // The failed post must release its row in the lock table, so a retry within
-// the dedup window still reaches Slack.
-func TestSlackFailedPostReleasesLockInDatabase(t *testing.T) {
+// the dedup window still reaches Destination.
+func TestDestinationFailedPostReleasesLockInDatabase(t *testing.T) {
 	env := testutil.Setup(t)
 	env.SeedUser(t, "user-1", "Owner", "owner@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 
 	ctx := context.Background()
-	encrypted, err := crypto.Encrypt("https://hooks.slack.com/services/org", env.Cfg.AppSecret)
+	encrypted, err := crypto.Encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", env.Cfg.AppSecret)
 	require.NoError(t, err)
-	require.NoError(t, env.Queries.UpsertOrganizationSlackWebhook(ctx, queries.UpsertOrganizationSlackWebhookParams{
-		OrganizationID: "org-1", WebhookUrl: encrypted,
-	}))
+	_, errSave := env.Queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: "org-destination", Name: "Organization", OrganizationID: "org-1", Dsn: encrypted})
+	require.NoError(t, errSave)
 
-	poster := &testutil.SlackRecorder{Err: assert.AnError}
-	d := notify.NewDispatcher(env.Queries, nil, notify.SlackConfig{AppSecret: env.Cfg.AppSecret, Poster: poster})
+	poster := &testutil.DestinationRecorder{Err: assert.AnError}
+	d := notify.NewDispatcher(env.Queries, nil, notify.DestinationConfig{AppSecret: env.Cfg.AppSecret, Poster: poster})
 	ev := notify.Event{
 		Type:       notify.EventAuthError,
 		Level:      notify.LevelError,

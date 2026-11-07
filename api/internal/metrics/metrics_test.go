@@ -31,7 +31,7 @@ func TestNormalizeOutcomes(t *testing.T) {
 
 	assert.Equal(t, ChannelEmail, NormalizeNotifyChannel(ChannelEmail))
 	assert.Equal(t, ChannelInApp, NormalizeNotifyChannel(ChannelInApp))
-	assert.Equal(t, ChannelSlack, NormalizeNotifyChannel(ChannelSlack))
+	assert.Equal(t, ChannelDestination, NormalizeNotifyChannel(ChannelDestination))
 	assert.Equal(t, OutcomeUnknown, NormalizeNotifyChannel("webhook"))
 }
 
