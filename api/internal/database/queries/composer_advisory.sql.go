@@ -949,6 +949,65 @@ func (q *Queries) ListComposerAdvisoryPackagesForAdvisory(ctx context.Context, a
 	return items, nil
 }
 
+const listPublishedStoreComposerAdvisories = `-- name: ListPublishedStoreComposerAdvisories :many
+SELECT a.advisory_id, a.title, a.cve, a.link, a.sources,
+       a.severity_override, a.severity,
+       COALESCE(a.reported_at, a.created_at)::timestamp AS reported_at,
+       p.package_name, p.packagist_advisory_id, p.affected_versions
+FROM composer_advisory a
+JOIN composer_advisory_package p ON p.advisory_id = a.advisory_id
+WHERE a.is_visible = true AND p.package_name LIKE 'store.shopware.com/%'
+ORDER BY p.package_name, a.advisory_id
+`
+
+type ListPublishedStoreComposerAdvisoriesRow struct {
+	AdvisoryID          string           `json:"advisory_id"`
+	Title               string           `json:"title"`
+	Cve                 *string          `json:"cve"`
+	Link                *string          `json:"link"`
+	Sources             json.RawMessage  `json:"sources"`
+	SeverityOverride    *string          `json:"severity_override"`
+	Severity            *string          `json:"severity"`
+	ReportedAt          pgtype.Timestamp `json:"reported_at"`
+	PackageName         string           `json:"package_name"`
+	PackagistAdvisoryID *string          `json:"packagist_advisory_id"`
+	AffectedVersions    string           `json:"affected_versions"`
+}
+
+// Public Composer feed: filter package rows, not just their parent advisory,
+// so mixed-package advisories cannot expose unrelated packages.
+func (q *Queries) ListPublishedStoreComposerAdvisories(ctx context.Context) ([]ListPublishedStoreComposerAdvisoriesRow, error) {
+	rows, err := q.db.Query(ctx, listPublishedStoreComposerAdvisories)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPublishedStoreComposerAdvisoriesRow{}
+	for rows.Next() {
+		var i ListPublishedStoreComposerAdvisoriesRow
+		if err := rows.Scan(
+			&i.AdvisoryID,
+			&i.Title,
+			&i.Cve,
+			&i.Link,
+			&i.Sources,
+			&i.SeverityOverride,
+			&i.Severity,
+			&i.ReportedAt,
+			&i.PackageName,
+			&i.PackagistAdvisoryID,
+			&i.AffectedVersions,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVisibleComposerAdvisories = `-- name: ListVisibleComposerAdvisories :many
 SELECT advisory_id, title, link, cve, ghsa_id, severity, sources, reported_at, composer_repository, synced_at, created_at, updated_at, summary, description, cvss_score, cvss_vector, cwes, external_references, details_source, details_synced_at, github_synced_at, details_attempted_at, severity_override, is_visible, notes_public, notes_internal, remediation_summary, remediation_url, recommended_upgrade, shopware_impact_summary, affected_components, tags, enriched_at, enriched_by, first_patched_versions, origin, created_by
 FROM composer_advisory

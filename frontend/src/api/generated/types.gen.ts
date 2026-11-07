@@ -673,6 +673,24 @@ export type ChangePasswordRequest = {
     newPassword: string;
 };
 
+export type ComposerAdvisory = {
+    advisoryId: string;
+    affectedVersions: string;
+    cve: string | null;
+    link: string | null;
+    packageName: string;
+    reportedAt: string;
+    severity: string | null;
+    sources: Array<AdvisorySource>;
+    title: string;
+};
+
+export type ComposerAdvisoryResponse = {
+    advisories: {
+        [key: string]: Array<ComposerAdvisory>;
+    };
+};
+
 export type CreateAdvisoryRequest = {
     affectedComponents?: Array<string>;
     cve?: string;
@@ -2620,6 +2638,56 @@ export type ListAdvisoriesResponses = {
 };
 
 export type ListAdvisoriesResponse = ListAdvisoriesResponses[keyof ListAdvisoriesResponses];
+
+export type ComposerAdvisoriesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/advisories/composer';
+};
+
+export type ComposerAdvisoriesGetErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ComposerAdvisoriesGetError = ComposerAdvisoriesGetErrors[keyof ComposerAdvisoriesGetErrors];
+
+export type ComposerAdvisoriesGetResponses = {
+    /**
+     * OK
+     */
+    200: ComposerAdvisoryResponse;
+};
+
+export type ComposerAdvisoriesGetResponse = ComposerAdvisoriesGetResponses[keyof ComposerAdvisoriesGetResponses];
+
+export type ComposerAdvisoriesPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/advisories/composer';
+};
+
+export type ComposerAdvisoriesPostErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ComposerAdvisoriesPostError = ComposerAdvisoriesPostErrors[keyof ComposerAdvisoriesPostErrors];
+
+export type ComposerAdvisoriesPostResponses = {
+    /**
+     * OK
+     */
+    200: ComposerAdvisoryResponse;
+};
+
+export type ComposerAdvisoriesPostResponse = ComposerAdvisoriesPostResponses[keyof ComposerAdvisoriesPostResponses];
 
 export type ListAdvisoryPackagesData = {
     body?: never;
