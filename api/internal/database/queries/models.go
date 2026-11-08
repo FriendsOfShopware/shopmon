@@ -121,6 +121,15 @@ type Deployment struct {
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 }
 
+type DestinationNotificationPreference struct {
+	DestinationID string `json:"destination_id"`
+	ScopeType     string `json:"scope_type"`
+	ScopeID       string `json:"scope_id"`
+	EventType     string `json:"event_type"`
+	Channel       string `json:"channel"`
+	Enabled       bool   `json:"enabled"`
+}
+
 type Environment struct {
 	ID                       int32            `json:"id"`
 	OrganizationID           string           `json:"organization_id"`

@@ -227,7 +227,7 @@ func (h *Handler) destinationError(ctx context.Context, err error) error {
 	switch {
 	case errors.Is(err, organization.ErrMembershipNotFound), errors.Is(err, organization.ErrRoleNotAllowed):
 		return huma.Error403Forbidden(httputil.MsgForbidden)
-	case errors.Is(err, delivery.ErrInvalidDSN), errors.Is(err, destination.ErrInvalidName):
+	case errors.Is(err, delivery.ErrInvalidDSN), errors.Is(err, destination.ErrInvalidName), errors.Is(err, destination.ErrInvalidPreference):
 		return huma.Error400BadRequest(err.Error())
 	case errors.Is(err, destination.ErrShopNotFound), errors.Is(err, destination.ErrNotConfigured):
 		return huma.Error404NotFound(err.Error())

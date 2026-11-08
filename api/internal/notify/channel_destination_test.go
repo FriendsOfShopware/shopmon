@@ -17,19 +17,21 @@ const testAppSecret = "0123456789abcdef0123456789abcdef"
 // fakeWebhookStore returns encrypted webhooks per organization and per
 // environment's shop.
 type fakeWebhookStore struct {
-	webhooks     map[string]string
-	shopWebhooks map[int32]string
-	lookups      int
+	preferences     map[string][]queries.DestinationNotificationPreference
+	preferenceError error
+	webhooks        map[string]string
+	shopWebhooks    map[int32]string
+	lookups         int
 }
 
 func (s *fakeWebhookStore) GetEventNotificationDestinations(_ context.Context, arg queries.GetEventNotificationDestinationsParams) ([]queries.NotificationDestination, error) {
 	s.lookups++
 	var rows []queries.NotificationDestination
 	if dsn, ok := s.webhooks[arg.OrganizationID]; ok {
-		rows = append(rows, queries.NotificationDestination{Dsn: dsn})
+		rows = append(rows, queries.NotificationDestination{ID: "org", Dsn: dsn})
 	}
 	if dsn, ok := s.shopWebhooks[arg.EnvironmentID]; ok {
-		rows = append(rows, queries.NotificationDestination{Dsn: dsn})
+		rows = append(rows, queries.NotificationDestination{ID: "shop", Dsn: dsn})
 	}
 	return rows, nil
 }
@@ -310,4 +312,64 @@ func TestInvalidEnvironmentIDDoesNotSelectAnotherShop(t *testing.T) {
 	event.ScopeID = "999999999999999999"
 	res := d.Dispatch(t.Context(), event, nil)
 	assert.Zero(t, res.Delivered)
+}
+
+func (s *fakeWebhookStore) ListDestinationNotificationPreferences(_ context.Context, id string) ([]queries.DestinationNotificationPreference, error) {
+	return s.preferences[id], s.preferenceError
+}
+
+func TestDestinationPreferencesResolveDefaultsAndEnvironmentOverrides(t *testing.T) {
+	poster := &recordingPoster{}
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	store.preferences = map[string][]queries.DestinationNotificationPreference{
+		"org": {{ScopeType: "global", Channel: "destination", EventType: string(EventStatusDegraded), Enabled: false}},
+	}
+	event := orgDegradeEvent()
+	res := d.Dispatch(t.Context(), event, nil)
+	assert.Zero(t, res.Delivered)
+	assert.Zero(t, res.Failed)
+	assert.Empty(t, poster.posts)
+	// No dedup lock is acquired for an opted-out event. An explicit environment
+	// opt-in must therefore deliver immediately, even inside the same window.
+	store.preferences["org"] = append(store.preferences["org"], queries.DestinationNotificationPreference{ScopeType: "environment", ScopeID: "7", Channel: "destination", EventType: string(EventStatusDegraded), Enabled: true})
+	res = d.Dispatch(t.Context(), event, nil)
+	assert.Equal(t, 1, res.Delivered)
+	// Another environment continues to inherit the global opt-out.
+	event.ScopeID = "8"
+	event.DedupKey += "8"
+	res = d.Dispatch(t.Context(), event, nil)
+	assert.Zero(t, res.Delivered)
+	assert.Len(t, poster.posts, 1)
+}
+
+func TestDestinationOptOutDoesNotSuppressAnotherEnabledCopy(t *testing.T) {
+	poster := &recordingPoster{}
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	store.shopWebhooks[7] = encryptWebhook(t, orgWebhook)
+	store.preferences = map[string][]queries.DestinationNotificationPreference{"org": {{ScopeType: "global", Channel: "destination", Enabled: false}}}
+	res := d.Dispatch(t.Context(), orgDegradeEvent(), nil)
+	assert.Equal(t, 1, res.Delivered)
+	assert.Len(t, poster.posts, 1)
+}
+
+func TestDestinationPreferenceReadFailureIsRetryable(t *testing.T) {
+	poster := &recordingPoster{}
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	store.preferenceError = assert.AnError
+	res := d.Dispatch(t.Context(), orgDegradeEvent(), nil)
+	assert.Equal(t, 1, res.Failed)
+	assert.Empty(t, poster.posts)
+	store.preferenceError = nil
+	res = d.Dispatch(t.Context(), orgDegradeEvent(), nil)
+	assert.Equal(t, 1, res.Delivered)
+}
+
+func TestUnknownEventsNeverReachSharedDestinations(t *testing.T) {
+	poster := &recordingPoster{}
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	event := orgDegradeEvent()
+	event.Type = "unknown.event"
+	res := d.Dispatch(t.Context(), event, nil)
+	assert.Zero(t, res.Delivered)
+	assert.Zero(t, store.lookups)
 }

@@ -41,7 +41,7 @@ it("loads multiple provider summaries without secrets", async () => {
   expect(w.findAll("li")).toHaveLength(2);
   expect(w.text()).toContain("Telegram · 12345");
   expect(w.text()).toContain("Slack · Incoming webhook");
-  expect((w.vm as any).dsn).toBe("");
+  expect((w.vm as any).connection.token).toBe("");
   w.unmount();
 });
 it("creates a destination and clears credentials", async () => {
@@ -51,14 +51,15 @@ it("creates a destination and clears credentials", async () => {
   const vm = w.vm as any;
   vm.add();
   vm.name = " Alerts ";
-  vm.dsn = " telegram://token@default?channel=123 ";
-  expect(vm.detectedProvider.label).toBe("Telegram");
+  vm.chooseProvider("telegram");
+  vm.connection.token = " token ";
+  vm.connection.channel = "123";
   await vm.save();
   expect(api.createNotificationDestination).toHaveBeenCalledWith({
     path: { orgId: "org" },
     body: { name: "Alerts", dsn: "telegram://token@default?channel=123" },
   });
-  expect(vm.dsn).toBe("");
+  expect(vm.connection.token).toBe("");
   expect(vm.formOpen).toBe(false);
   expect(alerts.success).toHaveBeenCalled();
   w.unmount();
@@ -86,9 +87,11 @@ it("keeps input after a rejected save without displaying upstream secrets", asyn
   const vm = w.vm as any;
   vm.add();
   vm.name = "Alerts";
-  vm.dsn = "secret";
+  vm.chooseProvider("telegram");
+  vm.connection.token = "secret";
+  vm.connection.channel = "123";
   await vm.save();
-  expect(vm.dsn).toBe("secret");
+  expect(vm.connection.token).toBe("secret");
   expect(vm.formOpen).toBe(true);
   expect(alerts.error).toHaveBeenCalled();
   expect(alerts.error).not.toHaveBeenCalledWith("secret");
@@ -101,7 +104,9 @@ it("recovers from network failures and releases the busy state", async () => {
   const vm = w.vm as any;
   vm.add();
   vm.name = "Alerts";
-  vm.dsn = "secret";
+  vm.chooseProvider("telegram");
+  vm.connection.token = "secret";
+  vm.connection.channel = "123";
   await vm.save();
   expect(vm.isBusy).toBe(false);
   expect(vm.formOpen).toBe(true);
@@ -141,7 +146,9 @@ it("routes all shop operations through the shop endpoints", async () => {
   const vm = w.vm as any;
   vm.add();
   vm.name = "Alerts";
-  vm.dsn = "secret";
+  vm.chooseProvider("telegram");
+  vm.connection.token = "secret";
+  vm.connection.channel = "123";
   await vm.save();
   vm.edit(destination);
   await vm.save();
@@ -149,7 +156,7 @@ it("routes all shop operations through the shop endpoints", async () => {
   await vm.remove("dest-1");
   expect(api.createShopNotificationDestination).toHaveBeenCalledWith({
     path: { orgId: "org", shopId: 42 },
-    body: { name: "Alerts", dsn: "secret" },
+    body: { name: "Alerts", dsn: "telegram://secret@default?channel=123" },
   });
   for (const fn of [
     api.updateShopNotificationDestination,
@@ -182,13 +189,15 @@ it("respects read-only membership and clears canceled secrets", async () => {
   expect(vm.canManage).toBe(false);
   expect(w.find("button-stub").exists()).toBe(false);
   expect(w.text()).toContain("Only organization owners and admins");
-  vm.dsn = "secret";
+  vm.chooseProvider("telegram");
+  vm.connection.token = "secret";
+  vm.connection.channel = "123";
   vm.cancel();
-  expect(vm.dsn).toBe("");
+  expect(vm.connection.token).toBe("");
   w.unmount();
 });
 
-it("renders destination names as text and masks entered DSNs", async () => {
+it("renders destination names as text and masks connection credentials", async () => {
   vi.mocked(api.listNotificationDestinations).mockResolvedValue(
     status(true, [{ ...destination, name: "<img src=x onerror=alert(1)>" }]),
   );
@@ -199,5 +208,73 @@ it("renders destination names as text and masks entered DSNs", async () => {
   (w.vm as any).add();
   await flushPromises();
   expect(w.find('input-stub[type="password"]').exists()).toBe(true);
+  w.unmount();
+});
+
+it("builds a Slack DSN from a normal pasted webhook URL", async () => {
+  vi.mocked(api.createNotificationDestination).mockResolvedValue({} as any);
+  const w = mountCard();
+  await flushPromises();
+  const vm = w.vm as any;
+  vm.add();
+  vm.name = "Slack alerts";
+  vm.connection.webhookUrl = " https://hooks.slack.com/services/T/B/secret ";
+  await vm.save();
+  expect(api.createNotificationDestination).toHaveBeenCalledWith({
+    path: { orgId: "org" },
+    body: {
+      name: "Slack alerts",
+      dsn: "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2FT%2FB%2Fsecret",
+    },
+  });
+  expect(vm.connection.webhookUrl).toBe("");
+  w.unmount();
+});
+it("shows only fields for the chosen service and clears previous credentials", async () => {
+  const w = mountCard();
+  await flushPromises();
+  const vm = w.vm as any;
+  vm.add();
+  vm.connection.webhookUrl = "secret";
+  vm.chooseProvider("gotify");
+  await flushPromises();
+  expect(vm.connection.webhookUrl).toBe("");
+  expect(w.text()).toContain("Server URL");
+  expect(w.text()).toContain("Application token");
+  expect(w.text()).not.toContain("Webhook URL");
+  expect(w.text()).not.toContain("Connection DSN");
+  w.unmount();
+});
+it("validates a webhook before sending it to the API", async () => {
+  const w = mountCard();
+  await flushPromises();
+  const vm = w.vm as any;
+  vm.add();
+  vm.name = "Alerts";
+  vm.connection.webhookUrl = "https://example.com/secret";
+  await vm.save();
+  await flushPromises();
+  expect(api.createNotificationDestination).not.toHaveBeenCalled();
+  expect(w.find('[role="alert"]').text()).toContain("Slack incoming webhook URL");
+  expect(w.find('[role="alert"]').text()).not.toContain("secret");
+  w.unmount();
+});
+it("requires an explicit connection replacement when editing", async () => {
+  vi.mocked(api.updateNotificationDestination).mockResolvedValue({} as any);
+  const w = mountCard();
+  await flushPromises();
+  const vm = w.vm as any;
+  vm.edit(destination);
+  await flushPromises();
+  expect(w.text()).toContain("Your saved connection will be kept");
+  expect(w.find('input-stub[type="password"]').exists()).toBe(false);
+  vm.replaceConnection = true;
+  vm.connection.token = "new:token";
+  vm.connection.channel = "-123";
+  await vm.save();
+  expect(api.updateNotificationDestination).toHaveBeenCalledWith({
+    path: { orgId: "org", destinationId: "dest-1" },
+    body: { name: "Operations", dsn: "telegram://new%3Atoken@default?channel=-123" },
+  });
   w.unmount();
 });

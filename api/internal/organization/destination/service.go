@@ -5,7 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/friendsofshopware/shopmon/api/internal/notification"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
@@ -15,10 +17,11 @@ import (
 )
 
 var (
-	ErrNotConfigured  = errors.New("notification destination not found")
-	ErrShopNotFound   = errors.New("shop not found")
-	ErrDeliveryFailed = errors.New("notification test delivery failed")
-	ErrInvalidName    = errors.New("destination name must contain between 1 and 100 characters")
+	ErrInvalidPreference = errors.New("invalid destination preference")
+	ErrNotConfigured     = errors.New("notification destination not found")
+	ErrShopNotFound      = errors.New("shop not found")
+	ErrDeliveryFailed    = errors.New("notification test delivery failed")
+	ErrInvalidName       = errors.New("destination name must contain between 1 and 100 characters")
 )
 var managerRoles = []organization.Role{organization.RoleOwner, organization.RoleAdmin}
 
@@ -48,6 +51,11 @@ type Status struct {
 }
 
 type Repository interface {
+	ExistsInOrganization(context.Context, string, string) (bool, error)
+	EnvironmentMatches(context.Context, string, int32) (bool, error)
+	ListPreferences(context.Context, string) ([]notification.Preference, error)
+	SetPreference(context.Context, string, notification.Preference) error
+	DeletePreference(context.Context, string, notification.Preference) error
 	List(context.Context, Target) ([]Record, error)
 	Save(context.Context, Target, Record) error
 	Delete(context.Context, Target, string) error
@@ -201,4 +209,61 @@ func (s *Service) requireShop(ctx context.Context, target Target) error {
 		return ErrShopNotFound
 	}
 	return nil
+}
+
+// Preferences use the existing scope/event/channel model, owned by a destination.
+func (s *Service) ListPreferences(ctx context.Context, userID, orgID, id string) ([]notification.Preference, error) {
+	if _, err := s.authorizer.Membership(ctx, userID, orgID); err != nil {
+		return nil, err
+	}
+	if err := s.requireDestination(ctx, orgID, id); err != nil {
+		return nil, err
+	}
+	return s.repository.ListPreferences(ctx, id)
+}
+func (s *Service) requireDestination(ctx context.Context, orgID, id string) error {
+	ok, err := s.repository.ExistsInOrganization(ctx, orgID, id)
+	if err != nil {
+		return fmt.Errorf("find preference destination: %w", err)
+	}
+	if !ok {
+		return ErrNotConfigured
+	}
+	return nil
+}
+func (s *Service) SetPreference(ctx context.Context, userID, orgID, id string, pref notification.Preference, inherit bool) error {
+	if _, err := s.authorizer.RequireRole(ctx, userID, orgID, managerRoles...); err != nil {
+		return err
+	}
+	if err := s.requireDestination(ctx, orgID, id); err != nil {
+		return err
+	}
+	if pref.Channel != "destination" {
+		return ErrInvalidPreference
+	}
+	switch pref.ScopeType {
+	case "global":
+		if pref.ScopeID != "" {
+			return ErrInvalidPreference
+		}
+	case "environment":
+		envID, err := strconv.ParseInt(pref.ScopeID, 10, 32)
+		if err != nil || envID <= 0 {
+			return ErrInvalidPreference
+		}
+		ok, err := s.repository.EnvironmentMatches(ctx, id, int32(envID))
+		if err != nil {
+			return fmt.Errorf("check preference environment: %w", err)
+		}
+		if !ok {
+			return ErrShopNotFound
+		}
+		pref.ScopeID = strconv.FormatInt(envID, 10)
+	default:
+		return ErrInvalidPreference
+	}
+	if inherit {
+		return s.repository.DeletePreference(ctx, id, pref)
+	}
+	return s.repository.SetPreference(ctx, id, pref)
 }

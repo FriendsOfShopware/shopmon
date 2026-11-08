@@ -13,6 +13,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/delivery"
+	"github.com/friendsofshopware/shopmon/api/internal/notification"
 )
 
 type DestinationConfig struct {
@@ -31,6 +32,7 @@ type DestinationPoster interface {
 	Post(context.Context, string, string) error
 }
 type destinationStore interface {
+	ListDestinationNotificationPreferences(context.Context, string) ([]queries.DestinationNotificationPreference, error)
 	GetEventNotificationDestinations(context.Context, queries.GetEventNotificationDestinationsParams) ([]queries.NotificationDestination, error)
 }
 type destinationTarget struct{ dsn string }
@@ -49,7 +51,7 @@ type destinationChannel struct {
 }
 
 func (c *destinationChannel) targets(ctx context.Context, ev Event) ([]destinationTarget, error) {
-	if ev.OrgID == "" {
+	if ev.OrgID == "" || !metaFor(ev.Type).destinationEnabled {
 		return nil, nil
 	}
 	var envID int64
@@ -67,6 +69,20 @@ func (c *destinationChannel) targets(ctx context.Context, ev Event) ([]destinati
 	var errs []error
 	seen := map[string]bool{}
 	for _, row := range rows {
+		stored, err := c.store.ListDestinationNotificationPreferences(ctx, row.ID)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("load destination preferences %s: %w", row.ID, err))
+			continue
+		}
+		prefs := make([]notification.Preference, 0, len(stored))
+		for _, p := range stored {
+			prefs = append(prefs, notification.Preference{ScopeType: p.ScopeType, ScopeID: p.ScopeID, EventType: p.EventType, Channel: p.Channel, Enabled: p.Enabled})
+		}
+		// Apply preferences before decrypting, deduplicating or acquiring locks.
+		if !preferenceEnabled(prefs, ChannelDestination, ev) {
+			continue
+		}
+
 		dsn, err := crypto.Decrypt(row.Dsn, c.appSecret)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("decrypt destination %s: %w", row.ID, err))

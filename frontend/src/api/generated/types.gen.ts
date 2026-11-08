@@ -5701,6 +5701,151 @@ export type UpdateNotificationDestinationResponses = {
 
 export type UpdateNotificationDestinationResponse = UpdateNotificationDestinationResponses[keyof UpdateNotificationDestinationResponses];
 
+export type DeleteDestinationNotificationPreferenceData = {
+    body?: never;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: {
+        scopeType?: string;
+        scopeId?: string;
+        eventType?: string;
+        channel?: string;
+    };
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/preferences';
+};
+
+export type DeleteDestinationNotificationPreferenceErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteDestinationNotificationPreferenceError = DeleteDestinationNotificationPreferenceErrors[keyof DeleteDestinationNotificationPreferenceErrors];
+
+export type DeleteDestinationNotificationPreferenceResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteDestinationNotificationPreferenceResponse = DeleteDestinationNotificationPreferenceResponses[keyof DeleteDestinationNotificationPreferenceResponses];
+
+export type GetDestinationNotificationPreferencesData = {
+    body?: never;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/preferences';
+};
+
+export type GetDestinationNotificationPreferencesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetDestinationNotificationPreferencesError = GetDestinationNotificationPreferencesErrors[keyof GetDestinationNotificationPreferencesErrors];
+
+export type GetDestinationNotificationPreferencesResponses = {
+    /**
+     * OK
+     */
+    200: Array<NotificationPreference>;
+};
+
+export type GetDestinationNotificationPreferencesResponse = GetDestinationNotificationPreferencesResponses[keyof GetDestinationNotificationPreferencesResponses];
+
+export type SetDestinationNotificationPreferenceData = {
+    body: NotificationPreferenceInput;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/preferences';
+};
+
+export type SetDestinationNotificationPreferenceErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type SetDestinationNotificationPreferenceError = SetDestinationNotificationPreferenceErrors[keyof SetDestinationNotificationPreferenceErrors];
+
+export type SetDestinationNotificationPreferenceResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SetDestinationNotificationPreferenceResponse = SetDestinationNotificationPreferenceResponses[keyof SetDestinationNotificationPreferenceResponses];
+
 export type TestNotificationDestinationData = {
     body?: never;
     path: {

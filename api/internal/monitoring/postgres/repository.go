@@ -215,6 +215,9 @@ func (r *Repository) DeleteEnvironment(ctx context.Context, environmentID int32)
 	if err := txq.DeleteEnvironmentNotificationPreferences(ctx, envIDStr); err != nil {
 		return fmt.Errorf("delete environment notification preferences: %w", err)
 	}
+	if err := txq.DeleteEnvironmentDestinationNotificationPreferences(ctx, envIDStr); err != nil {
+		return fmt.Errorf("delete environment destination preferences: %w", err)
+	}
 	if err := txq.DeleteEnvironmentNotifications(ctx, envIDStr); err != nil {
 		return fmt.Errorf("delete environment notifications: %w", err)
 	}

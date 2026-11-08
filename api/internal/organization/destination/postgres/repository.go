@@ -2,7 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/friendsofshopware/shopmon/api/internal/notification"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/organization/destination"
@@ -48,4 +51,32 @@ func (r *Repository) Delete(ctx context.Context, target destination.Target, id s
 
 func (r *Repository) ShopBelongsToOrganization(ctx context.Context, orgID string, shopID int32) (bool, error) {
 	return r.queries.ShopBelongsToOrganization(ctx, queries.ShopBelongsToOrganizationParams{ID: shopID, OrganizationID: orgID})
+}
+
+func (r *Repository) ExistsInOrganization(ctx context.Context, orgID, id string) (bool, error) {
+	_, err := r.queries.GetNotificationDestinationInOrganization(ctx, queries.GetNotificationDestinationInOrganizationParams{ID: id, OrganizationID: orgID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+func (r *Repository) EnvironmentMatches(ctx context.Context, id string, environmentID int32) (bool, error) {
+	return r.queries.EnvironmentMatchesNotificationDestination(ctx, queries.EnvironmentMatchesNotificationDestinationParams{ID: id, ID_2: environmentID})
+}
+func (r *Repository) ListPreferences(ctx context.Context, id string) ([]notification.Preference, error) {
+	rows, err := r.queries.ListDestinationNotificationPreferences(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("list destination preferences: %w", err)
+	}
+	result := make([]notification.Preference, 0, len(rows))
+	for _, p := range rows {
+		result = append(result, notification.Preference{ScopeType: p.ScopeType, ScopeID: p.ScopeID, EventType: p.EventType, Channel: p.Channel, Enabled: p.Enabled})
+	}
+	return result, nil
+}
+func (r *Repository) SetPreference(ctx context.Context, id string, p notification.Preference) error {
+	return r.queries.UpsertDestinationNotificationPreference(ctx, queries.UpsertDestinationNotificationPreferenceParams{DestinationID: id, ScopeType: p.ScopeType, ScopeID: p.ScopeID, EventType: p.EventType, Enabled: p.Enabled})
+}
+func (r *Repository) DeletePreference(ctx context.Context, id string, p notification.Preference) error {
+	return r.queries.DeleteDestinationNotificationPreference(ctx, queries.DeleteDestinationNotificationPreferenceParams{DestinationID: id, ScopeType: p.ScopeType, ScopeID: p.ScopeID, EventType: p.EventType})
 }

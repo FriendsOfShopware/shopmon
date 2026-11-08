@@ -65,6 +65,25 @@ func TestDestinationDispatchResolvesOrganizationAndShopWebhooks(t *testing.T) {
 	assert.Equal(t, 1, res.Delivered)
 	require.Len(t, poster.Posts, 3)
 	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", poster.Posts[2].DSN)
+
+	// Preferences use the same inheritance rules in the real database path.
+	require.NoError(t, env.Queries.UpsertDestinationNotificationPreference(ctx, queries.UpsertDestinationNotificationPreferenceParams{DestinationID: "org-destination", ScopeType: "global", EventType: string(notify.EventStatusDegraded), Enabled: false}))
+	a := event(envA)
+	a.DedupKey += "-preferences"
+	res = d.Dispatch(ctx, a, nil)
+	assert.Equal(t, 1, res.Delivered) // shop destination remains enabled
+	b := event(envB)
+	b.DedupKey += "-preferences"
+	res = d.Dispatch(ctx, b, nil)
+	assert.Zero(t, res.Delivered)
+	require.NoError(t, env.Queries.UpsertDestinationNotificationPreference(ctx, queries.UpsertDestinationNotificationPreferenceParams{DestinationID: "org-destination", ScopeType: "environment", ScopeID: strconv.Itoa(envA), EventType: string(notify.EventStatusDegraded), Enabled: true}))
+	res = d.Dispatch(ctx, a, nil)
+	assert.Equal(t, 1, res.Delivered) // newly opted-in organization destination
+	assert.Equal(t, 1, res.Skipped)   // already-delivered shop destination
+	require.NoError(t, env.Queries.DeleteDestinationNotificationPreference(ctx, queries.DeleteDestinationNotificationPreferenceParams{DestinationID: "org-destination", ScopeType: "environment", ScopeID: strconv.Itoa(envA), EventType: string(notify.EventStatusDegraded)}))
+	a.DedupKey += "-inherited"
+	res = d.Dispatch(ctx, a, nil)
+	assert.Equal(t, 1, res.Delivered) // restoring inheritance disables the org copy
 }
 
 // The failed post must release its row in the lock table, so a retry within

@@ -123,9 +123,13 @@ instance with settings you did not choose.
 
 ### Notification destinations
 
-Organization owners and admins can add multiple named notification destinations on the organization page or in a shop's settings. Delivery uses [go-notifier](https://github.com/shyim/go-notifier). Organization destinations receive all organization alerts; shop destinations receive that shop's alerts as well. Identical DSNs receive only one copy of an event, even when configured at both scopes. No environment subscribers are required.
+Organization owners and admins can add multiple named notification destinations on the organization page or in a shop's settings. Delivery uses [go-notifier](https://github.com/shyim/go-notifier). Organization destinations can receive organization alerts; shop destinations receive that shop's alerts as well. Identical DSNs receive only one copy of an event, even when configured at both scopes. No environment subscribers are required. Shared destinations have their own admin-managed event preferences; a user's personal watch, email or in-app settings never control team delivery.
 
-Configure a connection DSN, then use **Send test** to verify delivery:
+Use **Event settings** beside a destination to enable or disable each registered event type. Defaults are enabled, matching personal notification preferences. In an environment's **Notification settings**, the **Shared destination settings** section offers **Inherit / On / Off** overrides for each destination. Inherit uses that destination's default; an environment override affects only that environment. This section is available even when you are not watching the environment. Members can view shared settings, but only organization owners and admins can change them. Test messages intentionally bypass event preferences to verify the connection.
+
+Choose a service in **Add destination**, then paste its webhook URL or enter the requested token and channel/server details. Shopmon builds and encodes the connection DSN automatically. Use **Send test** after saving to verify delivery.
+
+For API clients, the stored connection formats are:
 
 | Provider | DSN |
 |----------|-----|
@@ -136,9 +140,9 @@ Configure a connection DSN, then use **Send test** to verify delivery:
 | Gotify | `gotify://APP_TOKEN@SERVER_HOST` |
 | Microsoft Teams | `microsoftteams://WEBHOOK_ID@default?token=TOKEN` |
 
-URL-encode special characters in credentials and query values. For Slack webhooks, encode the complete `https://hooks.slack.com/services/…` URL as the `webhook_url` value. The Teams format above matches the pinned library's factory: for `https://outlook.office.com/webhook/ID/IncomingWebhook/TOKEN`, use `ID` and `TOKEN`.
+When configuring destinations through the API, URL-encode special characters in credentials and query values. For Slack webhooks, encode the complete `https://hooks.slack.com/services/…` URL as the `webhook_url` value. The Teams format above matches the pinned library's factory: for `https://outlook.office.com/webhook/ID/IncomingWebhook/TOKEN`, use `ID` and `TOKEN`.
 
-DSNs are encrypted with `APP_SECRET` and are never returned to the browser. Leave the DSN empty when editing a destination to keep its credentials. Changing `APP_SECRET` requires reconfiguring destinations. Saving alone does not send a message.
+DSNs are encrypted with `APP_SECRET` and are never returned to the browser. Editing a name keeps the existing credentials. Choose **Replace connection** to enter new credentials (API clients can leave the DSN empty to keep it). Changing `APP_SECRET` requires reconfiguring destinations. Saving alone does not send a message.
 
 The server (test messages) and worker (alerts) need outbound access to the configured services. Destinations must resolve to public addresses; private, loopback and link-local addresses and HTTP redirects are blocked. This also applies to self-hosted Gotify. HTTP tracing is disabled for these requests because provider URLs can contain credentials; delivery outcome metrics remain available.
 

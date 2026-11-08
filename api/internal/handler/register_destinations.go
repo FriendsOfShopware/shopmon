@@ -7,6 +7,11 @@ import (
 )
 
 func registerDestinations(api huma.API, h *Handler) {
+	const preferencesPath = "/organizations/{orgId}/notification-destinations/{destinationId}/preferences"
+	huma.Register(api, huma.Operation{OperationID: "getDestinationNotificationPreferences", Method: http.MethodGet, Path: preferencesPath, Summary: "List shared destination event preferences", Tags: []string{"Notification destinations"}, Errors: []int{401, 403, 404}}, h.GetDestinationNotificationPreferences)
+	huma.Register(api, huma.Operation{OperationID: "setDestinationNotificationPreference", Method: http.MethodPut, Path: preferencesPath, Summary: "Set a shared destination event preference", Tags: []string{"Notification destinations"}, DefaultStatus: http.StatusNoContent, Errors: []int{400, 401, 403, 404}}, h.SetDestinationNotificationPreference)
+	huma.Register(api, huma.Operation{OperationID: "deleteDestinationNotificationPreference", Method: http.MethodDelete, Path: preferencesPath, Summary: "Inherit a shared destination event preference", Tags: []string{"Notification destinations"}, DefaultStatus: http.StatusNoContent, Errors: []int{400, 401, 403, 404}}, h.DeleteDestinationNotificationPreference)
+
 	huma.Register(api, huma.Operation{
 		OperationID: "listNotificationDestinations",
 		Method:      http.MethodGet,
