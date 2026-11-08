@@ -31,7 +31,7 @@
           />
           <div class="min-w-0 flex-1">
             <p class="break-words text-sm font-medium">{{ destination.name }}</p>
-            <p class="break-all text-xs text-muted-foreground">
+            <p v-if="!destination.connectionError" class="break-all text-xs text-muted-foreground">
               {{ providerDetails(destination.provider)?.label ?? destination.provider }} ·
               {{
                 destination.summary === "Incoming webhook"
@@ -39,9 +39,18 @@
                   : destination.summary
               }}
             </p>
+            <p v-if="destination.connectionError" class="text-xs text-muted-foreground">
+              {{ $t("destinations.connectionError") }}
+            </p>
           </div>
-          <Badge class="text-xs">{{ $t("destinations.configured") }}</Badge>
-          <div v-if="canManage" class="flex flex-wrap gap-2">
+          <Badge class="text-xs">{{
+            $t(
+              destination.connectionError
+                ? "destinations.connectionErrorLabel"
+                : "destinations.configured",
+            )
+          }}</Badge>
+          <div class="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
@@ -56,6 +65,7 @@
               variant="outline"
               size="sm"
               :disabled="isBusy"
+              v-if="canManage"
               @click="sendTest(destination.id)"
               >{{ $t("destinations.test") }}</Button
             >
@@ -64,6 +74,7 @@
               variant="outline"
               size="sm"
               :disabled="isBusy"
+              v-if="canManage"
               @click="edit(destination)"
               >{{ $t("destinations.edit") }}</Button
             >
@@ -72,6 +83,7 @@
               variant="ghost"
               size="sm"
               :disabled="isBusy"
+              v-if="canManage"
               @click="remove(destination.id)"
               >{{ $t("destinations.remove") }}</Button
             >
@@ -401,6 +413,7 @@ function edit(destination: NotificationDestination) {
   cancel();
   editingId.value = destination.id;
   name.value = destination.name;
+  replaceConnection.value = destination.connectionError;
   connection.value = emptyConnection(
     providerDetails(destination.provider) ? (destination.provider as DestinationProvider) : "slack",
   );

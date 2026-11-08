@@ -34,7 +34,7 @@ func (h *Handler) ListNotificationDestinations(ctx context.Context, input *listN
 	}
 	result := api.NotificationDestinationStatus{CanManage: status.CanManage, Destinations: []api.NotificationDestination{}}
 	for _, d := range status.Destinations {
-		result.Destinations = append(result.Destinations, api.NotificationDestination{ID: d.ID, Name: d.Name, Provider: d.Provider, Summary: d.Summary})
+		result.Destinations = append(result.Destinations, api.NotificationDestination{ID: d.ID, Name: d.Name, Provider: d.Provider, Summary: d.Summary, ConnectionError: d.ConnectionError})
 	}
 	return &destinationOutput{Body: result}, nil
 }
@@ -129,7 +129,7 @@ func (h *Handler) ListShopNotificationDestinations(ctx context.Context, input *l
 	}
 	result := api.NotificationDestinationStatus{CanManage: status.CanManage, Destinations: []api.NotificationDestination{}}
 	for _, d := range status.Destinations {
-		result.Destinations = append(result.Destinations, api.NotificationDestination{ID: d.ID, Name: d.Name, Provider: d.Provider, Summary: d.Summary})
+		result.Destinations = append(result.Destinations, api.NotificationDestination{ID: d.ID, Name: d.Name, Provider: d.Provider, Summary: d.Summary, ConnectionError: d.ConnectionError})
 	}
 	return &destinationOutput{Body: result}, nil
 }

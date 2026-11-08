@@ -30,9 +30,9 @@ func TestDestinationDispatchResolvesOrganizationAndShopWebhooks(t *testing.T) {
 		return e
 	}
 	ctx := context.Background()
-	_, errSave := env.Queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: "org-destination", Name: "Organization", OrganizationID: "org-1", Dsn: encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg")})
+	_, errSave := env.Queries.CreateNotificationDestination(ctx, queries.CreateNotificationDestinationParams{ID: "org-destination", Name: "Organization", OrganizationID: "org-1", Dsn: encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg")})
 	require.NoError(t, errSave)
-	_, errSaveShop := env.Queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: "shop-destination", Name: "Shop", OrganizationID: "org-1", ShopID: int32(shopA), Dsn: encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop-a")})
+	_, errSaveShop := env.Queries.CreateNotificationDestination(ctx, queries.CreateNotificationDestinationParams{ID: "shop-destination", Name: "Shop", OrganizationID: "org-1", ShopID: int32(shopA), Dsn: encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop-a")})
 	require.NoError(t, errSaveShop)
 
 	poster := &testutil.DestinationRecorder{}
@@ -96,7 +96,7 @@ func TestDestinationFailedPostReleasesLockInDatabase(t *testing.T) {
 	ctx := context.Background()
 	encrypted, err := crypto.Encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", env.Cfg.AppSecret)
 	require.NoError(t, err)
-	_, errSave := env.Queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: "org-destination", Name: "Organization", OrganizationID: "org-1", Dsn: encrypted})
+	_, errSave := env.Queries.CreateNotificationDestination(ctx, queries.CreateNotificationDestinationParams{ID: "org-destination", Name: "Organization", OrganizationID: "org-1", Dsn: encrypted})
 	require.NoError(t, errSave)
 
 	poster := &testutil.DestinationRecorder{Err: assert.AnError}

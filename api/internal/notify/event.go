@@ -106,6 +106,9 @@ type Event struct {
 	// the per-event email dedup lock.
 	DedupKey string
 
+	// DestinationDedupKey identifies a delivery batch without changing the in-app upsert key.
+	DestinationDedupKey string
+
 	// TitleKey and MessageKey are catalog keys rendered with Params.
 	TitleKey   string
 	MessageKey string

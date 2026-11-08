@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/friendsofshopware/shopmon/api/internal/crypto"
+	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"strconv"
 	"testing"
 
@@ -886,4 +888,26 @@ func TestMarkAccountEventsNotifiedIsAllOrNothing(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, still, 2,
 		"a partial failure must leave the whole batch pending, so the retry keys the same")
+}
+
+type accountDestinationRecorder struct{ count int }
+
+func (p *accountDestinationRecorder) Post(context.Context, string, string) error {
+	p.count++
+	return nil
+}
+
+func TestAccountChangesReachDestinationsWithoutWatchers(t *testing.T) {
+	h, _, env := setupPersistTest(t)
+	seedOneFinding(t, h, env.ID)
+	const secret = "0123456789abcdef0123456789abcdef"
+	encrypted, err := crypto.Encrypt("slack://default?webhook_url=https://hooks.slack.com/services/T/B/token", secret)
+	require.NoError(t, err)
+	_, err = h.queries.CreateNotificationDestination(t.Context(), queries.CreateNotificationDestinationParams{ID: "shared", OrganizationID: env.OrganizationID, Name: "Shared", Dsn: encrypted})
+	require.NoError(t, err)
+	poster := &accountDestinationRecorder{}
+	h.notifier = notify.NewDispatcher(h.queries, nil, notify.DestinationConfig{AppSecret: secret, Poster: poster})
+	h.notifyAccountChanges(t.Context(), env)
+	assert.Equal(t, 1, poster.count)
+	assert.Zero(t, unnotifiedCount(t, h, env.ID))
 }

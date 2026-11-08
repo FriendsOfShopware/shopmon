@@ -128,6 +128,7 @@ type DestinationNotificationPreference struct {
 	EventType     string `json:"event_type"`
 	Channel       string `json:"channel"`
 	Enabled       bool   `json:"enabled"`
+	EnvironmentID *int32 `json:"environment_id"`
 }
 
 type Environment struct {

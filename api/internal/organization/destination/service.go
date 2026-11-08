@@ -39,10 +39,11 @@ type Record struct {
 }
 
 type Destination struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Provider string `json:"provider"`
-	Summary  string `json:"summary"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Provider        string `json:"provider"`
+	Summary         string `json:"summary"`
+	ConnectionError bool   `json:"connectionError"`
 }
 
 type Status struct {
@@ -57,7 +58,7 @@ type Repository interface {
 	SetPreference(context.Context, string, notification.Preference) error
 	DeletePreference(context.Context, string, notification.Preference) error
 	List(context.Context, Target) ([]Record, error)
-	Save(context.Context, Target, Record) error
+	Save(context.Context, Target, Record, bool) error
 	Delete(context.Context, Target, string) error
 	ShopBelongsToOrganization(context.Context, string, int32) (bool, error)
 }
@@ -96,15 +97,15 @@ func (s *Service) Status(ctx context.Context, userID string, target Target) (Sta
 	}
 	status := Status{CanManage: slices.Contains(managerRoles, role), Destinations: []Destination{}}
 	for _, row := range rows {
+		item := Destination{ID: row.ID, Name: row.Name, ConnectionError: true}
 		raw, err := crypto.Decrypt(row.DSN, s.appSecret)
-		if err != nil {
-			return Status{}, fmt.Errorf("decrypt destination: %w", err)
+		if err == nil {
+			details, describeErr := delivery.Describe(raw)
+			if describeErr == nil {
+				item.Provider, item.Summary, item.ConnectionError = details.Provider, details.Summary, false
+			}
 		}
-		details, err := delivery.Describe(raw)
-		if err != nil {
-			return Status{}, err
-		}
-		status.Destinations = append(status.Destinations, Destination{ID: row.ID, Name: row.Name, Provider: details.Provider, Summary: details.Summary})
+		status.Destinations = append(status.Destinations, item)
 	}
 	return status, nil
 }
@@ -132,14 +133,8 @@ func (s *Service) Save(ctx context.Context, userID string, target Target, id, na
 	if len([]rune(name)) < 1 || len([]rune(name)) > 100 {
 		return ErrInvalidName
 	}
-	var record Record
-	if id != "" {
-		var err error
-		record, err = s.find(ctx, target, id)
-		if err != nil {
-			return err
-		}
-	} else {
+	record := Record{ID: id}
+	if id == "" {
 		record.ID = uuid.NewString()
 	}
 	if dsn != "" || id == "" {
@@ -153,7 +148,7 @@ func (s *Service) Save(ctx context.Context, userID string, target Target, id, na
 		record.DSN = encrypted
 	}
 	record.Name = name
-	if err := s.repository.Save(ctx, target, record); err != nil {
+	if err := s.repository.Save(ctx, target, record, id == ""); err != nil {
 		return fmt.Errorf("save destination: %w", err)
 	}
 	return nil

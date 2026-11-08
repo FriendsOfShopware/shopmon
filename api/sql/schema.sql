@@ -818,5 +818,8 @@ CREATE TABLE destination_notification_preference (
   event_type text NOT NULL DEFAULT '',
   channel text NOT NULL DEFAULT 'destination' CHECK (channel = 'destination'),
   enabled boolean NOT NULL,
+  environment_id integer GENERATED ALWAYS AS
+    (CASE WHEN scope_type = 'environment' THEN scope_id::integer END) STORED
+    REFERENCES environment(id) ON DELETE CASCADE,
   PRIMARY KEY (destination_id, scope_type, scope_id, event_type, channel)
 );

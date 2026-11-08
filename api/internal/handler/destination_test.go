@@ -153,3 +153,30 @@ func TestNotificationDestinationRejectsInvalidSecrets(t *testing.T) {
 	}
 	assert.Empty(t, destinationStatus(t, env, destinationBase, token).Destinations)
 }
+
+func TestUnreadableDestinationCanBeRecoveredOrDeleted(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Org", "org", "user-1")
+	require.Equal(t, 204, destinationRequest(t, env, http.MethodPost, destinationBase, token, api.SaveNotificationDestinationRequest{Name: "Healthy", DSN: testDSN}).StatusCode)
+	_, err := env.Pool.Exec(t.Context(), "INSERT INTO notification_destination (id, organization_id, name, dsn) VALUES ('broken', 'org-1', 'Broken', 'corrupt')")
+	require.NoError(t, err)
+	status := destinationStatus(t, env, destinationBase, token)
+	require.Len(t, status.Destinations, 2)
+	for _, d := range status.Destinations {
+		assert.Equal(t, d.ID == "broken", d.ConnectionError)
+		if d.ConnectionError {
+			assert.Empty(t, d.Provider)
+			assert.Empty(t, d.Summary)
+		}
+	}
+	path := destinationBase + "/broken"
+	require.Equal(t, 204, destinationRequest(t, env, http.MethodPut, path, token, api.SaveNotificationDestinationRequest{Name: "Repaired", DSN: testDSN}).StatusCode)
+	for _, d := range destinationStatus(t, env, destinationBase, token).Destinations {
+		assert.False(t, d.ConnectionError)
+	}
+	require.Equal(t, 204, destinationRequest(t, env, http.MethodDelete, path, token, nil).StatusCode)
+	// A stale edit must not recreate a removed destination with enabled defaults.
+	require.Equal(t, 404, destinationRequest(t, env, http.MethodPut, path, token, api.SaveNotificationDestinationRequest{Name: "Stale", DSN: testDSN}).StatusCode)
+	require.Len(t, destinationStatus(t, env, destinationBase, token).Destinations, 1)
+}

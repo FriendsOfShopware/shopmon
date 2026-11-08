@@ -2,8 +2,11 @@ package advisory
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -63,14 +66,13 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 		return
 	}
 
-	subscribers, err := s.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
+	subscribers, subscriberErr := s.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
 		OrganizationID: env.OrganizationID,
 		EnvironmentID:  strconv.Itoa(int(environmentID)),
 	})
-	if err != nil {
+	if subscriberErr != nil {
 		slog.WarnContext(ctx, "failed to load advisory alert subscribers",
-			"environmentId", environmentID, "error", err)
-		return
+			"environmentId", environmentID, "error", subscriberErr)
 	}
 	// No subscribers still dispatches: the organization destinations does not
 	// depend on watchers. With nothing configured the result is empty, which
@@ -101,12 +103,16 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 		subjectKey = "email.advisoryDetected.subjectOne"
 	}
 
+	batch := slices.Clone(fresh)
+	slices.Sort(batch)
+	batchKey := fmt.Sprintf("%x", sha256.Sum256([]byte(strings.Join(batch, "\x00"))))
 	res := s.notifier.Dispatch(ctx, notify.Event{
-		Type:      notify.EventAdvisoryDetected,
-		Level:     notify.LevelWarning,
-		ScopeType: notify.ScopeEnvironment,
-		ScopeID:   strconv.Itoa(int(environmentID)),
-		OrgID:     env.OrganizationID,
+		DestinationDedupKey: "advisory_detected:" + strconv.Itoa(int(environmentID)) + ":" + batchKey,
+		Type:                notify.EventAdvisoryDetected,
+		Level:               notify.LevelWarning,
+		ScopeType:           notify.ScopeEnvironment,
+		ScopeID:             strconv.Itoa(int(environmentID)),
+		OrgID:               env.OrganizationID,
 		// Keyed per environment rather than per advisory, so the in-app upsert
 		// collapses a burst of new advisories into one entry.
 		DedupKey:        "advisory_detected:" + strconv.Itoa(int(environmentID)),
@@ -127,7 +133,7 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 	// retried. A dispatch that delivered nothing but failed nothing (every
 	// channel skipped by the email dedup lock or by recipient preference) has
 	// nothing to retry, so it counts as handled.
-	if res.Failed > 0 {
+	if res.Failed > 0 || subscriberErr != nil {
 		slog.WarnContext(ctx, "advisory alert partially failed; leaving advisories unnotified for retry",
 			"environmentId", environmentID, "delivered", res.Delivered,
 			"failed", res.Failed, "advisories", len(fresh))

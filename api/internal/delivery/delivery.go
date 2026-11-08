@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"unicode/utf16"
 
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	notifier "github.com/shyim/go-notifier"
@@ -128,9 +129,54 @@ func (c *Client) Post(ctx context.Context, dsn, text string) error {
 	case "discord", "microsoftteams":
 		text = strings.NewReplacer("\\", "\\\\", "*", "\\*", "_", "\\_", "~", "\\~", "`", "\\`", "[", "\\[", "]", "\\]", "<", "\\<", ">", "\\>", "@", "@\u200b").Replace(text)
 	}
+	if details.Provider == "discord" {
+		text = limitDiscordMessage(text)
+	}
 	_, err = transport.Send(ctx, notifier.NewChatMessage(text))
 	if err != nil {
 		return ErrDelivery
 	}
 	return nil
+}
+
+// Identity normalizes DSN encoding for deduplication. It contains credentials
+// and must only be used internally (or hashed), never logged or returned.
+func Identity(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	if u.Scheme == "slack" && u.Query().Get("webhook_url") != "" {
+		return "slack:" + u.Query().Get("webhook_url")
+	}
+	u.RawQuery = u.Query().Encode()
+	return u.String()
+}
+
+// Discord counts UTF-16 units. Bound the escaped payload, retaining the first
+// lines and the final action link when possible.
+func limitDiscordMessage(text string) string {
+	const limit = 2000
+	units := func(s string) int { return len(utf16.Encode([]rune(s))) }
+	if units(text) <= limit {
+		return text
+	}
+	tail := ""
+	if i := strings.LastIndex(text, "\n"); i >= 0 && strings.Contains(text[i:], "https://") && units(text[i:]) < limit/2 {
+		tail = text[i:]
+	}
+	budget := limit - units(tail) - 2
+	prefix := []rune{}
+	for _, r := range text {
+		n := 1
+		if r > 0xffff {
+			n = 2
+		}
+		if budget < n {
+			break
+		}
+		prefix = append(prefix, r)
+		budget -= n
+	}
+	return strings.TrimRight(string(prefix), "\\") + " …" + tail
 }

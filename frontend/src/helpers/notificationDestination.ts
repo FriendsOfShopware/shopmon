@@ -50,6 +50,7 @@ export function buildDestinationDSN(connection: DestinationConnection): string {
       return `telegram://${encodeURIComponent(token)}@default?${query({ channel })}`;
     case "discord": {
       const webhook = url(connection.webhookUrl, "invalidDiscordWebhook");
+      if (webhook.search) throw new Error("unsupportedDiscordOptions");
       const match = webhook.pathname.match(/^\/api\/(?:v\d+\/)?webhooks\/(\d+)\/([^/]+)\/?$/);
       if (
         !["discord.com", "discordapp.com", "canary.discord.com", "ptb.discord.com"].includes(

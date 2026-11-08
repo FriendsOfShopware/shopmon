@@ -9,6 +9,33 @@ import (
 	"context"
 )
 
+const createNotificationDestination = `-- name: CreateNotificationDestination :execrows
+INSERT INTO notification_destination (id, organization_id, shop_id, name, dsn)
+VALUES ($1, $2, NULLIF($5::integer, 0), $3, $4)
+`
+
+type CreateNotificationDestinationParams struct {
+	ID             string `json:"id"`
+	OrganizationID string `json:"organization_id"`
+	Name           string `json:"name"`
+	Dsn            string `json:"dsn"`
+	ShopID         int32  `json:"shop_id"`
+}
+
+func (q *Queries) CreateNotificationDestination(ctx context.Context, arg CreateNotificationDestinationParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createNotificationDestination,
+		arg.ID,
+		arg.OrganizationID,
+		arg.Name,
+		arg.Dsn,
+		arg.ShopID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteDestinationNotificationPreference = `-- name: DeleteDestinationNotificationPreference :exec
 DELETE FROM destination_notification_preference
 WHERE destination_id = $1 AND scope_type = $2 AND scope_id = $3 AND event_type = $4
@@ -134,7 +161,7 @@ func (q *Queries) GetNotificationDestinationInOrganization(ctx context.Context, 
 }
 
 const listDestinationNotificationPreferences = `-- name: ListDestinationNotificationPreferences :many
-SELECT destination_id, scope_type, scope_id, event_type, channel, enabled FROM destination_notification_preference WHERE destination_id = $1
+SELECT destination_id, scope_type, scope_id, event_type, channel, enabled, environment_id FROM destination_notification_preference WHERE destination_id = $1
 `
 
 func (q *Queries) ListDestinationNotificationPreferences(ctx context.Context, destinationID string) ([]DestinationNotificationPreference, error) {
@@ -153,6 +180,7 @@ func (q *Queries) ListDestinationNotificationPreferences(ctx context.Context, de
 			&i.EventType,
 			&i.Channel,
 			&i.Enabled,
+			&i.EnvironmentID,
 		); err != nil {
 			return nil, err
 		}
@@ -203,36 +231,6 @@ func (q *Queries) ListNotificationDestinations(ctx context.Context, arg ListNoti
 	return items, nil
 }
 
-const saveNotificationDestination = `-- name: SaveNotificationDestination :execrows
-INSERT INTO notification_destination (id, organization_id, shop_id, name, dsn)
-VALUES ($1, $2, NULLIF($5::integer, 0), $3, $4)
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, dsn = EXCLUDED.dsn, updated_at = NOW()
-WHERE notification_destination.organization_id = EXCLUDED.organization_id
-AND notification_destination.shop_id IS NOT DISTINCT FROM EXCLUDED.shop_id
-`
-
-type SaveNotificationDestinationParams struct {
-	ID             string `json:"id"`
-	OrganizationID string `json:"organization_id"`
-	Name           string `json:"name"`
-	Dsn            string `json:"dsn"`
-	ShopID         int32  `json:"shop_id"`
-}
-
-func (q *Queries) SaveNotificationDestination(ctx context.Context, arg SaveNotificationDestinationParams) (int64, error) {
-	result, err := q.db.Exec(ctx, saveNotificationDestination,
-		arg.ID,
-		arg.OrganizationID,
-		arg.Name,
-		arg.Dsn,
-		arg.ShopID,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const shopBelongsToOrganization = `-- name: ShopBelongsToOrganization :one
 SELECT EXISTS (SELECT 1 FROM shop WHERE id = $1 AND organization_id = $2)
 `
@@ -247,6 +245,35 @@ func (q *Queries) ShopBelongsToOrganization(ctx context.Context, arg ShopBelongs
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const updateNotificationDestination = `-- name: UpdateNotificationDestination :execrows
+UPDATE notification_destination SET name = $1,
+dsn = COALESCE(NULLIF($2::text, ''), dsn), updated_at = NOW()
+WHERE id = $3 AND organization_id = $4
+AND COALESCE(shop_id, 0)::integer = $5::integer
+`
+
+type UpdateNotificationDestinationParams struct {
+	Name           string `json:"name"`
+	Dsn            string `json:"dsn"`
+	ID             string `json:"id"`
+	OrganizationID string `json:"organization_id"`
+	ShopID         int32  `json:"shop_id"`
+}
+
+func (q *Queries) UpdateNotificationDestination(ctx context.Context, arg UpdateNotificationDestinationParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateNotificationDestination,
+		arg.Name,
+		arg.Dsn,
+		arg.ID,
+		arg.OrganizationID,
+		arg.ShopID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const upsertDestinationNotificationPreference = `-- name: UpsertDestinationNotificationPreference :exec

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/friendsofshopware/shopmon/api/internal/notification"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/organization/destination"
@@ -27,8 +28,14 @@ func (r *Repository) List(ctx context.Context, target destination.Target) ([]des
 	return result, nil
 }
 
-func (r *Repository) Save(ctx context.Context, target destination.Target, row destination.Record) error {
-	count, err := r.queries.SaveNotificationDestination(ctx, queries.SaveNotificationDestinationParams{ID: row.ID, OrganizationID: target.OrganizationID, ShopID: target.ShopID, Name: row.Name, Dsn: row.DSN})
+func (r *Repository) Save(ctx context.Context, target destination.Target, row destination.Record, create bool) error {
+	var count int64
+	var err error
+	if create {
+		count, err = r.queries.CreateNotificationDestination(ctx, queries.CreateNotificationDestinationParams{ID: row.ID, OrganizationID: target.OrganizationID, ShopID: target.ShopID, Name: row.Name, Dsn: row.DSN})
+	} else {
+		count, err = r.queries.UpdateNotificationDestination(ctx, queries.UpdateNotificationDestinationParams{ID: row.ID, OrganizationID: target.OrganizationID, ShopID: target.ShopID, Name: row.Name, Dsn: row.DSN})
+	}
 	if err != nil {
 		return fmt.Errorf("save destination: %w", err)
 	}
@@ -75,7 +82,15 @@ func (r *Repository) ListPreferences(ctx context.Context, id string) ([]notifica
 	return result, nil
 }
 func (r *Repository) SetPreference(ctx context.Context, id string, p notification.Preference) error {
-	return r.queries.UpsertDestinationNotificationPreference(ctx, queries.UpsertDestinationNotificationPreferenceParams{DestinationID: id, ScopeType: p.ScopeType, ScopeID: p.ScopeID, EventType: p.EventType, Enabled: p.Enabled})
+	err := r.queries.UpsertDestinationNotificationPreference(ctx, queries.UpsertDestinationNotificationPreferenceParams{DestinationID: id, ScopeType: p.ScopeType, ScopeID: p.ScopeID, EventType: p.EventType, Enabled: p.Enabled})
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		if pgErr.ConstraintName == "destination_notification_preference_environment_id_fkey" {
+			return destination.ErrShopNotFound
+		}
+		return destination.ErrNotConfigured
+	}
+	return err
 }
 func (r *Repository) DeletePreference(ctx context.Context, id string, p notification.Preference) error {
 	return r.queries.DeleteDestinationNotificationPreference(ctx, queries.DeleteDestinationNotificationPreferenceParams{DestinationID: id, ScopeType: p.ScopeType, ScopeID: p.ScopeID, EventType: p.EventType})

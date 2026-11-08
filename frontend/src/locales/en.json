@@ -1644,6 +1644,8 @@
     "acknowledgeStale": "The finding changed while you were looking at it — please review the current state"
   },
   "destinations": {
+    "connectionErrorLabel": "Connection unavailable",
+    "connectionError": "Connection unavailable — replace the connection to restore delivery.",
     "title": "Notification destinations",
     "description": "Send organization alerts to Slack, Telegram, Discord, Gotify or Microsoft Teams.",
     "shopDescription": "Send this shop’s alerts to additional destinations. Organization destinations also receive these alerts.",
@@ -1697,6 +1699,7 @@
       "requiredChannel": "Enter the destination chat or channel ID.",
       "invalidSlackWebhook": "Paste a complete Slack incoming webhook URL starting with https://hooks.slack.com/services/.",
       "requiredToken": "Enter the token for this service.",
+      "unsupportedDiscordOptions": "Discord webhook query options, including thread destinations, are not supported. Use a channel webhook URL without query parameters.",
       "invalidDiscordWebhook": "Paste a complete Discord webhook URL from your channel’s Integrations settings.",
       "invalidGotifyServer": "Enter an HTTPS server address without a path, query, or embedded credentials.",
       "invalidTeamsWebhook": "Enter an Outlook incoming webhook connector URL. Teams Workflow URLs are not supported yet.",

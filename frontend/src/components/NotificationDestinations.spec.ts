@@ -16,7 +16,13 @@ vi.mock("@/api/generated", () => ({
   deleteShopNotificationDestination: vi.fn(),
 }));
 import * as api from "@/api/generated";
-const destination = { id: "dest-1", name: "Operations", provider: "telegram", summary: "12345" };
+const destination = {
+  id: "dest-1",
+  name: "Operations",
+  provider: "telegram",
+  summary: "12345",
+  connectionError: false,
+};
 const status = (canManage = true, destinations = [destination]) =>
   ({ data: { canManage, destinations } }) as any;
 const mountCard = (shopId?: number) =>
@@ -187,7 +193,9 @@ it("respects read-only membership and clears canceled secrets", async () => {
   await flushPromises();
   const vm = w.vm as any;
   expect(vm.canManage).toBe(false);
-  expect(w.find("button-stub").exists()).toBe(false);
+  expect(w.findAll("button-stub")).toHaveLength(1);
+  await w.find("button-stub").trigger("click");
+  expect(w.findComponent({ name: "NotificationMatrix" }).props("disabled")).toBe(true);
   expect(w.text()).toContain("Only organization owners and admins");
   vm.chooseProvider("telegram");
   vm.connection.token = "secret";
@@ -276,5 +284,18 @@ it("requires an explicit connection replacement when editing", async () => {
     path: { orgId: "org", destinationId: "dest-1" },
     body: { name: "Operations", dsn: "telegram://new%3Atoken@default?channel=-123" },
   });
+  w.unmount();
+});
+
+it("lets admins replace an unreadable connection", async () => {
+  vi.mocked(api.listNotificationDestinations).mockResolvedValue(
+    status(true, [{ ...destination, provider: "", summary: "", connectionError: true }]),
+  );
+  const w = mountCard();
+  await flushPromises();
+  expect(w.text()).toContain("Connection unavailable");
+  (w.vm as any).edit({ ...destination, connectionError: true });
+  await flushPromises();
+  expect(w.find('input-stub[type="password"]').exists()).toBe(true);
   w.unmount();
 });

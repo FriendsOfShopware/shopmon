@@ -336,3 +336,9 @@ func TestDispatchCountsAnUnknownDedupStateAsFailed(t *testing.T) {
 		t.Errorf("in-app channel sent %d, want 1", len(inApp.sent))
 	}
 }
+
+func (l *fakeLocker) isHeld(_ context.Context, key string) (bool, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.held[key], l.err
+}

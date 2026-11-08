@@ -373,3 +373,49 @@ func TestUnknownEventsNeverReachSharedDestinations(t *testing.T) {
 	assert.Zero(t, res.Delivered)
 	assert.Zero(t, store.lookups)
 }
+
+func TestDestinationEquivalentWebhookEncodingsDeduplicate(t *testing.T) {
+	poster := &recordingPoster{}
+	d, store := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	store.shopWebhooks[7] = encryptWebhook(t, "slack://default?webhook_url=https://hooks.slack.com/services/org")
+	res := d.Dispatch(t.Context(), orgDegradeEvent(), nil)
+	assert.Equal(t, 1, res.Delivered)
+	require.Len(t, poster.posts, 1)
+	// A later edit of encoding alone must retain the completed marker.
+	store.webhooks["org-1"] = store.shopWebhooks[7]
+	res = d.Dispatch(t.Context(), orgDegradeEvent(), nil)
+	assert.Equal(t, 1, res.Skipped)
+	assert.Len(t, poster.posts, 1)
+}
+
+func TestDestinationPendingAttemptMustRetry(t *testing.T) {
+	poster := &recordingPoster{}
+	d, _ := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	event := orgDegradeEvent()
+	key := (destinationTarget{dsn: orgWebhook}).lockKey(event.DedupKey)
+	// Models both an active sender and a failed sender whose cleanup failed.
+	locker := &fakeLocker{held: map[string]bool{key: true}}
+	d.locker = locker
+	res := d.Dispatch(t.Context(), event, nil)
+	assert.Equal(t, 1, res.Failed)
+	assert.Zero(t, res.Skipped)
+	assert.Empty(t, poster.posts)
+	locker.release(t.Context(), key)
+	res = d.Dispatch(t.Context(), event, nil)
+	assert.Equal(t, 1, res.Delivered)
+	res = d.Dispatch(t.Context(), event, nil)
+	assert.Equal(t, 1, res.Skipped)
+}
+
+func TestDestinationSeparateBatchesKeepInAppKey(t *testing.T) {
+	poster := &recordingPoster{}
+	d, _ := newDestinationTestDispatcher(t, poster, map[string]string{"org-1": orgWebhook})
+	event := orgDegradeEvent()
+	event.Type = EventAdvisoryDetected
+	event.DestinationDedupKey = "batch-1"
+	assert.Equal(t, 1, d.Dispatch(t.Context(), event, nil).Delivered)
+	assert.Equal(t, 1, d.Dispatch(t.Context(), event, nil).Skipped)
+	event.DestinationDedupKey = "batch-2"
+	assert.Equal(t, 1, d.Dispatch(t.Context(), event, nil).Delivered)
+	assert.Len(t, poster.posts, 2)
+}

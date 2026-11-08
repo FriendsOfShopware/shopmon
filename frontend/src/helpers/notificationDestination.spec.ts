@@ -56,6 +56,14 @@ it("extracts the Teams connector ID and full token path", () => {
   expect(new URL(dsn).searchParams.get("token")).toBe("token/part");
 });
 it.each([
+  {
+    ...emptyConnection("discord"),
+    webhookUrl: "https://discord.com/api/webhooks/123/token?thread_id=456",
+  },
+  {
+    ...emptyConnection("discord"),
+    webhookUrl: "https://discord.com/api/webhooks/123/token?wait=true",
+  },
   { ...emptyConnection(), webhookUrl: "https://hooks.slack.com.evil.test/services/T/B/token" },
   { ...emptyConnection(), webhookUrl: "http://hooks.slack.com/services/T/B/token" },
   { ...emptyConnection(), webhookUrl: "https://user:pass@hooks.slack.com/services/T/B/token" },

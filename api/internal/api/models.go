@@ -1542,10 +1542,11 @@ type NotificationDestinationStatus struct {
 	Destinations []NotificationDestination `json:"destinations"`
 }
 type NotificationDestination struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Provider string `json:"provider"`
-	Summary  string `json:"summary"`
+	ConnectionError bool   `json:"connectionError"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Provider        string `json:"provider"`
+	Summary         string `json:"summary"`
 }
 
 // SsoDiscovery defines model for SsoDiscovery.

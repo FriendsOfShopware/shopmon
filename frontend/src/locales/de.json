@@ -1644,6 +1644,8 @@
     "acknowledgeStale": "Das Finding hat sich währenddessen geändert — bitte den aktuellen Stand prüfen"
   },
   "destinations": {
+    "connectionErrorLabel": "Verbindung nicht verfügbar",
+    "connectionError": "Verbindung nicht verfügbar — ersetze die Verbindung, um Benachrichtigungen wieder zuzustellen.",
     "title": "Benachrichtigungsziele",
     "description": "Organisationsmeldungen an Slack, Telegram, Discord, Gotify oder Microsoft Teams senden.",
     "shopDescription": "Meldungen dieses Shops an zusätzliche Ziele senden. Die Ziele der Organisation erhalten diese Meldungen ebenfalls.",
@@ -1697,6 +1699,7 @@
       "requiredChannel": "Gib die Chat- oder Kanal-ID des Ziels ein.",
       "invalidSlackWebhook": "Füge eine vollständige Slack-Webhook-URL ein, die mit https://hooks.slack.com/services/ beginnt.",
       "requiredToken": "Gib den Token für diesen Dienst ein.",
+      "unsupportedDiscordOptions": "Discord-Webhook-Abfrageoptionen, einschließlich Thread-Zielen, werden nicht unterstützt. Verwende eine Kanal-Webhook-URL ohne Abfrageparameter.",
       "invalidDiscordWebhook": "Füge eine vollständige Discord-Webhook-URL aus den Integrationseinstellungen des Kanals ein.",
       "invalidGotifyServer": "Gib eine HTTPS-Serveradresse ohne Pfad, Abfrageparameter oder eingebettete Zugangsdaten ein.",
       "invalidTeamsWebhook": "Gib eine Outlook-URL für eingehende Webhook-Konnektoren ein. Teams-Workflow-URLs werden noch nicht unterstützt.",

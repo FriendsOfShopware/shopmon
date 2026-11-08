@@ -38,7 +38,7 @@ type destinationStore interface {
 type destinationTarget struct{ dsn string }
 
 func (t destinationTarget) lockKey(dedupKey string) string {
-	sum := sha256.Sum256([]byte(t.dsn))
+	sum := sha256.Sum256([]byte(delivery.Identity(t.dsn)))
 	return "destination_" + hex.EncodeToString(sum[:]) + "_" + dedupKey
 }
 
@@ -88,9 +88,10 @@ func (c *destinationChannel) targets(ctx context.Context, ev Event) ([]destinati
 			errs = append(errs, fmt.Errorf("decrypt destination %s: %w", row.ID, err))
 			continue
 		}
-		if !seen[dsn] {
+		identity := delivery.Identity(dsn)
+		if !seen[identity] {
 			result = append(result, destinationTarget{dsn: dsn})
-			seen[dsn] = true
+			seen[identity] = true
 		}
 	}
 	return result, errors.Join(errs...)

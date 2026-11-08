@@ -2,7 +2,9 @@ package notify
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
@@ -180,35 +182,61 @@ func (d *Dispatcher) dispatchDestinations(ctx context.Context, ev Event, meta ev
 	}
 
 	for _, target := range targets {
-		lockKey := target.lockKey(ev.DedupKey)
-		if meta.emailDedupTTL > 0 {
-			acquired, err := d.locker.acquire(ctx, lockKey, meta.emailDedupTTL)
-			if err != nil {
-				// Unknown lock state is a failure, not a skip: a skip would let the
-				// caller record the alert as delivered.
-				metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelDestination))
-				res.Failed++
-				continue
-			}
-			if !acquired {
-				res.Skipped++
-				continue
-			}
-		}
-
-		if err := d.destinations.Send(ctx, target.dsn, ev); err != nil {
-			// Without the release, the caller's retry would hit the lock, count as
-			// skipped, and record the alert as delivered although the destination never got it.
-			if meta.emailDedupTTL > 0 {
-				d.locker.release(ctx, lockKey)
-			}
-			slog.Warn("notify: channel delivery failed",
-				"channel", ChannelDestination, "event", ev.Type, "organizationId", ev.OrgID, "error", err)
+		if err := d.deliverDestination(ctx, target, ev, meta, res); err != nil {
+			slog.Warn("notify: destination delivery failed", "event", ev.Type, "organizationId", ev.OrgID, "error", err)
 			metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelDestination))
 			res.Failed++
-			continue
 		}
-		metrics.RecordNotifyDelivery(ctx, metrics.OutcomeOK, string(ChannelDestination))
-		res.Delivered++
 	}
+}
+
+// A completed marker is written only after a successful send. A held attempt
+// without that marker is retryable, including when failed-send cleanup failed.
+func (d *Dispatcher) deliverDestination(ctx context.Context, target destinationTarget, ev Event, meta eventMeta, res *DispatchResult) error {
+	key := ev.DestinationDedupKey
+	if key == "" {
+		key = ev.DedupKey
+	}
+	lockKey := target.lockKey(key)
+	completedKey := lockKey + "_completed"
+	if meta.emailDedupTTL > 0 {
+		completed, err := d.locker.isHeld(ctx, completedKey)
+		if err != nil {
+			return err
+		}
+		if completed {
+			res.Skipped++
+			return nil
+		}
+		acquired, err := d.locker.acquire(ctx, lockKey, time.Minute)
+		if err != nil {
+			return err
+		}
+		if !acquired {
+			return fmt.Errorf("destination delivery in progress")
+		}
+		defer d.locker.release(ctx, lockKey)
+		// A concurrent sender may have completed between the first read and acquire.
+		completed, err = d.locker.isHeld(ctx, completedKey)
+		if err != nil {
+			return err
+		}
+		if completed {
+			res.Skipped++
+			return nil
+		}
+	}
+	sendCtx, cancel := context.WithTimeout(ctx, destinationTimeout)
+	defer cancel()
+	if err := d.destinations.Send(sendCtx, target.dsn, ev); err != nil {
+		return err
+	}
+	if meta.emailDedupTTL > 0 {
+		if _, err := d.locker.acquire(ctx, completedKey, meta.emailDedupTTL); err != nil {
+			return err
+		}
+	}
+	metrics.RecordNotifyDelivery(ctx, metrics.OutcomeOK, string(ChannelDestination))
+	res.Delivered++
+	return nil
 }

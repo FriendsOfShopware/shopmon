@@ -19,6 +19,7 @@ import (
 type lockAcquirer interface {
 	acquire(ctx context.Context, key string, ttl time.Duration) (bool, error)
 	release(ctx context.Context, key string)
+	isHeld(ctx context.Context, key string) (bool, error)
 }
 
 // queryLocker implements lockAcquirer via the shared `lock` table.
@@ -53,4 +54,8 @@ func (l queryLocker) release(ctx context.Context, key string) {
 	if err := l.q.ReleaseLock(ctx, key); err != nil {
 		slog.Error("notify: failed to release dedup lock", "key", key, "error", err)
 	}
+}
+
+func (l queryLocker) isHeld(ctx context.Context, key string) (bool, error) {
+	return l.q.IsLocked(ctx, key)
 }

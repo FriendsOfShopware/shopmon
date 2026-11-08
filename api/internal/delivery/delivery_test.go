@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf16"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -97,4 +98,17 @@ func TestPrivateEndpointsBlocked(t *testing.T) {
 	client := NewClient(time.Second)
 	err := client.Post(ctx, "gotify://secret@127.0.0.1", "Test")
 	require.ErrorIs(t, err, ErrDelivery)
+}
+
+func TestDiscordTruncatesEscapedPayloadAndKeepsLink(t *testing.T) {
+	client := newClient(&http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		var payload struct{ Content string }
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
+		assert.LessOrEqual(t, len(utf16.Encode([]rune(payload.Content))), 2000)
+		assert.True(t, strings.HasPrefix(payload.Content, "Summary"))
+		assert.True(t, strings.HasSuffix(payload.Content, "https://shopmon.example/environments/1"))
+		assert.Contains(t, payload.Content, " …")
+		return &http.Response{StatusCode: http.StatusNoContent, Body: io.NopCloser(strings.NewReader(`{"id":"123"}`)), Header: http.Header{}}, nil
+	})})
+	require.NoError(t, client.Post(t.Context(), "discord://token@default?webhook_id=123", "Summary\n"+strings.Repeat("*😀@", 1000)+"\nOpen: https://shopmon.example/environments/1"))
 }

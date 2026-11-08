@@ -1098,6 +1098,7 @@ export type Notification = {
 };
 
 export type NotificationDestination = {
+    connectionError: boolean;
     id: string;
     name: string;
     provider: string;
