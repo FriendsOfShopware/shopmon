@@ -71,6 +71,7 @@
     "@vitejs/plugin-vue": "6.0.10",
     "@vitest/coverage-v8": "^5.1.0",
     "@vitest/ui": "^5.0.0",
+    "@vue/server-renderer": "3.5.45",
     "@vue/test-utils": "^2.5.1",
     "beasties": "^0.5.5",
     "jsdom": "^31.0.0",
