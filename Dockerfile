@@ -4,6 +4,8 @@ FROM --platform=$BUILDPLATFORM node:26-alpine AS frontend-build
 
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/scripts/link-content-mapper-typescript.mjs ./scripts/
+COPY frontend/patches/ ./patches/
 RUN npm ci
 
 COPY frontend/ ./

@@ -135,8 +135,8 @@ const totalVersionCount = computed(() =>
 
 const userChartCanvas = ref<HTMLCanvasElement | null>(null);
 const shopChartCanvas = ref<HTMLCanvasElement | null>(null);
-let userChartInstance: Chart | null = null;
-let shopChartInstance: Chart | null = null;
+let userChartInstance: ReturnType<typeof createGrowthChart> = null;
+let shopChartInstance: ReturnType<typeof createGrowthChart> = null;
 
 function createGrowthChart(
   canvas: HTMLCanvasElement,
