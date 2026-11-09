@@ -121,6 +121,16 @@ type Deployment struct {
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 }
 
+type DestinationNotificationPreference struct {
+	DestinationID string `json:"destination_id"`
+	ScopeType     string `json:"scope_type"`
+	ScopeID       string `json:"scope_id"`
+	EventType     string `json:"event_type"`
+	Channel       string `json:"channel"`
+	Enabled       bool   `json:"enabled"`
+	EnvironmentID *int32 `json:"environment_id"`
+}
+
 type Environment struct {
 	ID                       int32            `json:"id"`
 	OrganizationID           string           `json:"organization_id"`
@@ -367,6 +377,16 @@ type Member struct {
 	UserID         string           `json:"user_id"`
 	Role           string           `json:"role"`
 	CreatedAt      pgtype.Timestamp `json:"created_at"`
+}
+
+type NotificationDestination struct {
+	ID             string           `json:"id"`
+	OrganizationID string           `json:"organization_id"`
+	ShopID         *int32           `json:"shop_id"`
+	Name           string           `json:"name"`
+	Dsn            string           `json:"dsn"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
 }
 
 type NotificationPreference struct {

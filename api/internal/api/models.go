@@ -1536,6 +1536,19 @@ type SitespeedSettingsRequest struct {
 	Urls    *[]string `json:"urls,omitempty"`
 }
 
+// NotificationDestinationStatus lists safe destination metadata.
+type NotificationDestinationStatus struct {
+	CanManage    bool                      `json:"canManage"`
+	Destinations []NotificationDestination `json:"destinations"`
+}
+type NotificationDestination struct {
+	ConnectionError bool   `json:"connectionError"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Provider        string `json:"provider"`
+	Summary         string `json:"summary"`
+}
+
 // SsoDiscovery defines model for SsoDiscovery.
 type SsoDiscovery struct {
 	AuthorizationEndpoint string   `json:"authorizationEndpoint"`
@@ -1775,6 +1788,11 @@ type UpdateShopRequest struct {
 	Description          *string `json:"description,omitempty"`
 	GitUrl               *string `json:"gitUrl,omitempty"`
 	Name                 *string `json:"name,omitempty"`
+}
+
+type SaveNotificationDestinationRequest struct {
+	Name string `json:"name" minLength:"1" maxLength:"100"`
+	DSN  string `json:"dsn" maxLength:"8192" doc:"Notification DSN. Leave empty on update to keep existing credentials."`
 }
 
 // UpdateSsoProviderRequest defines model for UpdateSsoProviderRequest.

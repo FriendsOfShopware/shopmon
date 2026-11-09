@@ -46,3 +46,7 @@ WHERE user_id = $1
 -- environment is deleted). scope_id is text, so there is no FK to cascade on.
 DELETE FROM notification_preference
 WHERE scope_type = 'environment' AND scope_id = $1;
+
+-- name: DeleteEnvironmentDestinationNotificationPreferences :exec
+DELETE FROM destination_notification_preference
+WHERE scope_type = 'environment' AND scope_id = $1;

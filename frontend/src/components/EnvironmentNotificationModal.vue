@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="open" @update:open="(v: boolean) => emit('update:open', v)">
-    <DialogContent class="max-w-2xl">
+    <DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
       <DialogHeader>
         <DialogTitle>{{ $t("environment.notificationSettings") }}</DialogTitle>
         <DialogDescription>{{ environment?.name }}</DialogDescription>
@@ -30,6 +30,13 @@
         <p v-else class="text-sm text-muted-foreground">
           {{ $t("environment.watchToConfigure") }}
         </p>
+        <EnvironmentDestinationPreferences
+          v-if="environment"
+          :key="environment.id"
+          :organization-id="environment.organizationId"
+          :shop-id="environment.shopId"
+          :environment-id="environment.id"
+        />
       </div>
 
       <DialogFooter>
@@ -47,6 +54,7 @@ import { watch } from "vue";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useNotificationPreferences } from "@/composables/useNotificationPreferences";
 
+import EnvironmentDestinationPreferences from "@/components/EnvironmentDestinationPreferences.vue";
 import NotificationMatrix from "@/components/NotificationMatrix.vue";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";

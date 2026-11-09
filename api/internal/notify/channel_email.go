@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
@@ -86,11 +87,11 @@ func frontendURL(base string, link Link) string {
 	switch link.Name {
 	case "account.environments.detail":
 		if id := link.Params["environmentId"]; id != "" {
-			return base + "/app/environments/" + id
+			return base + "/app/environments/" + url.PathEscape(id)
 		}
 	case "account.advisories.detail":
 		if id := link.Params["id"]; id != "" {
-			return base + "/app/advisories/" + id
+			return base + "/app/advisories/" + url.PathEscape(id)
 		}
 	}
 	return ""

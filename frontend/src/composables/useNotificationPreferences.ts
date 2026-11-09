@@ -1,3 +1,4 @@
+import { globalEventEnabled, environmentEventState } from "@/helpers/notificationPreferences";
 import { apiErrorMessage } from "@/helpers/apiError";
 import { ref } from "vue";
 import { i18n } from "@/i18n";
@@ -55,8 +56,10 @@ export function useNotificationPreferences() {
   }
 
   async function loadEventTypes() {
-    const { data } = await getNotificationEventTypes();
-    eventTypes.value = data ?? [];
+    const { data, error } = await getNotificationEventTypes();
+    if (error || !data) return false;
+    eventTypes.value = data;
+    return true;
   }
 
   async function loadAll() {
@@ -80,15 +83,7 @@ export function useNotificationPreferences() {
   // channel wildcard row, else enabled by default. Toggling writes an explicit
   // event-specific row so each cell is independently controllable.
   function eventChannelEnabled(eventType: string, channel: ChannelName): boolean {
-    const specific = preferences.value.find(
-      (p) => p.scopeType === "global" && p.eventType === eventType && p.channel === channel,
-    );
-    if (specific) return specific.enabled;
-    const wildcard = preferences.value.find(
-      (p) => p.scopeType === "global" && p.eventType === "" && p.channel === channel,
-    );
-    if (wildcard) return wildcard.enabled;
-    return true;
+    return globalEventEnabled(preferences.value, eventType, channel);
   }
 
   async function setEventChannel(eventType: string, channel: ChannelName, enabled: boolean) {
@@ -107,15 +102,7 @@ export function useNotificationPreferences() {
     eventType: string,
     channel: ChannelName,
   ): TriState {
-    const row = preferences.value.find(
-      (p) =>
-        p.scopeType === "environment" &&
-        p.scopeId === String(environmentId) &&
-        p.eventType === eventType &&
-        p.channel === channel,
-    );
-    if (!row) return "inherit";
-    return row.enabled ? "on" : "off";
+    return environmentEventState(preferences.value, environmentId, eventType, channel);
   }
 
   async function setEnvEventChannel(

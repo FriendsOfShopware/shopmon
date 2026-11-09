@@ -3,10 +3,12 @@ package advisory
 import (
 	"context"
 	"encoding/json"
+	"github.com/jackc/pgx/v5"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/friendsofshopware/shopmon/api/internal/crypto"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
@@ -122,7 +124,7 @@ func TestNotifyNewAdvisoriesEmailIncludesDetails(t *testing.T) {
 	svc := &Service{
 		pool:     env.Pool,
 		queries:  env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, mailSender),
+		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.DestinationConfig{}),
 	}
 	index := sbom.NewIndex([]sbom.AdvisoryPackage{{
 		AdvisoryID:       "CVE-2026-1234",
@@ -190,7 +192,7 @@ func TestNotifyNewAdvisoriesEmailPluralLinksToEnvironment(t *testing.T) {
 	svc := &Service{
 		pool:     env.Pool,
 		queries:  env.Queries,
-		notifier: notify.NewDispatcher(env.Queries, mailSender),
+		notifier: notify.NewDispatcher(env.Queries, mailSender, notify.DestinationConfig{}),
 	}
 	index := sbom.NewIndex([]sbom.AdvisoryPackage{
 		{AdvisoryID: "CVE-2026-1", PackageName: "shopware/core", AffectedVersions: ">=6.7.0.0,<6.7.10.1"},
@@ -222,4 +224,93 @@ func unfoldQuotedPrintable(raw []byte) string {
 	s = strings.ReplaceAll(s, "=\r\n", "")
 	s = strings.ReplaceAll(s, "=\n", "")
 	return s
+}
+
+// Nobody watches the environment, but the organization has a Destination channel:
+// the alert must still reach Destination and the advisory must be recorded as
+// notified, or the next pass would alert again.
+func TestNotifyNewAdvisoriesPostsToDestinationWithoutSubscribers(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+
+	env.SeedUser(t, "user-1", "Shyim", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Org One", "org-one", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Demo")
+	envID := int32(env.SeedEnvironment(t, "org-1", shopID, "Production", "https://example.com"))
+
+	_, err := env.Pool.Exec(ctx, `
+		INSERT INTO composer_advisory (advisory_id, title, cve, severity, is_visible)
+		VALUES ('CVE-2026-1234', 'SSE buffer grows unbounded', 'CVE-2026-1234', 'high', true)
+	`)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO environment_sbom_component (environment_id, package_name, version)
+		VALUES ($1, 'mcp/sdk', '1.2.3')
+	`, envID)
+	require.NoError(t, err)
+
+	encrypted, err := crypto.Encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", env.Cfg.AppSecret)
+	require.NoError(t, err)
+	_, errSave := env.Queries.CreateNotificationDestination(ctx, queries.CreateNotificationDestinationParams{ID: "org-destination", Name: "Organization", OrganizationID: "org-1", Dsn: encrypted})
+	require.NoError(t, errSave)
+	shopEncrypted, err := crypto.Encrypt("slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop", env.Cfg.AppSecret)
+	require.NoError(t, err)
+	_, errSaveShop := env.Queries.CreateNotificationDestination(ctx, queries.CreateNotificationDestinationParams{ID: "shop-destination", Name: "Shop", OrganizationID: "org-1", ShopID: int32(shopID), Dsn: shopEncrypted})
+	require.NoError(t, errSaveShop)
+
+	poster := &testutil.DestinationRecorder{}
+	svc := &Service{
+		pool:    env.Pool,
+		queries: env.Queries,
+		notifier: notify.NewDispatcher(env.Queries, nil, notify.DestinationConfig{
+			AppSecret: env.Cfg.AppSecret, Poster: poster,
+		}),
+	}
+	index := sbom.NewIndex([]sbom.AdvisoryPackage{{
+		AdvisoryID:       "CVE-2026-1234",
+		PackageName:      "mcp/sdk",
+		AffectedVersions: ">=1.0.0,<1.2.4",
+	}})
+
+	// A subscriber lookup outage must not block shared delivery or mark the
+	// batch handled. The successful destinations must deduplicate on retry.
+	svc.queries = queries.New(subscriberFailureDB{env.Pool})
+	_, err = svc.rematchEnvironment(ctx, envID, index)
+	require.NoError(t, err)
+	require.Len(t, poster.Posts, 2)
+	pending, err := env.Queries.ListNotifiedAdvisoryIDsForEnvironment(ctx, envID)
+	require.NoError(t, err)
+	assert.Empty(t, pending)
+	svc.queries = env.Queries
+
+	_, err = svc.rematchEnvironment(ctx, envID, index)
+	require.NoError(t, err)
+
+	require.Len(t, poster.Posts, 2)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Forg", poster.Posts[0].DSN)
+	assert.Equal(t, "slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2Fshop", poster.Posts[1].DSN)
+	assert.Contains(t, poster.Posts[0].Text, "CVE-2026-1234")
+	notified, err := env.Queries.ListNotifiedAdvisoryIDsForEnvironment(ctx, envID)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"CVE-2026-1234"}, notified)
+	// A distinct batch inside the same hour must reach both shared channels.
+	_, err = env.Pool.Exec(ctx, "INSERT INTO composer_advisory (advisory_id, title, is_visible) VALUES ('CVE-2026-5678', 'Another issue', true)")
+	require.NoError(t, err)
+	index = sbom.NewIndex([]sbom.AdvisoryPackage{
+		{AdvisoryID: "CVE-2026-1234", PackageName: "mcp/sdk", AffectedVersions: ">=1.0.0,<1.2.4"},
+		{AdvisoryID: "CVE-2026-5678", PackageName: "mcp/sdk", AffectedVersions: ">=1.0.0,<1.2.4"},
+	})
+	_, err = svc.rematchEnvironment(ctx, envID, index)
+	require.NoError(t, err)
+	assert.Len(t, poster.Posts, 4)
+
+}
+
+type subscriberFailureDB struct{ queries.DBTX }
+
+func (db subscriberFailureDB) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	if strings.Contains(sql, "-- name: GetEnvironmentNotificationSubscribers") {
+		return nil, assert.AnError
+	}
+	return db.DBTX.Query(ctx, sql, args...)
 }

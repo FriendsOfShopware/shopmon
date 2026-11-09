@@ -7,7 +7,7 @@
 //
 //   - Event       — what happened (typed, with structured params)
 //   - Preferences — who is told and on which channels (PreferenceResolver)
-//   - Channel     — how it is delivered (in-app, email, future: webhook/Slack)
+//   - Channel     — how it is delivered (in-app, email, external destinations)
 //   - Translator  — what it says, rendered per recipient locale
 //
 // Adding a new alert is "register an EventType + add translation keys". Adding a
@@ -105,6 +105,9 @@ type Event struct {
 	// user_notification upsert key (idempotent re-recording) and the basis for
 	// the per-event email dedup lock.
 	DedupKey string
+
+	// DestinationDedupKey identifies a delivery batch without changing the in-app upsert key.
+	DestinationDedupKey string
 
 	// TitleKey and MessageKey are catalog keys rendered with Params.
 	TitleKey   string
