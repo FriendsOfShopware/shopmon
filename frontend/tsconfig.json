@@ -12,6 +12,19 @@
     "jsx": "preserve",
     "types": ["vite/client", "unplugin-icons/types/vue", "vitest/globals"]
   },
+  // `npm run tsc` runs typescript-7 with --runExternalCode. The `typescript`
+  // package stays on 6.x so Vue's compiler can still import it.
+  "contentMappers": [
+    {
+      "package": "@vue/content-mapper",
+      "extensions": [".vue"],
+      "options": {
+        "target": 3.5,
+        "fallthroughAttributes": true,
+        "dataAttributes": ["data-*"]
+      }
+    }
+  ],
   "include": ["components.d.ts", "src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
   "exclude": ["node_modules", "dist"],
   "references": [{ "path": "./tsconfig.node.json" }]
