@@ -2665,7 +2665,9 @@ export type ComposerAdvisoriesGetResponses = {
 export type ComposerAdvisoriesGetResponse = ComposerAdvisoriesGetResponses[keyof ComposerAdvisoriesGetResponses];
 
 export type ComposerAdvisoriesPostData = {
-    body?: never;
+    body?: {
+        'packages[]'?: Array<string>;
+    };
     path?: never;
     query?: never;
     url: '/advisories/composer';
