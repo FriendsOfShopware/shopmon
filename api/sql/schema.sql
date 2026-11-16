@@ -700,6 +700,17 @@ CREATE TABLE "security_plugin_coverage" (
   "last_error" text
 );
 
+CREATE TABLE notification_destination (
+  id text PRIMARY KEY,
+  organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+  shop_id integer REFERENCES shop(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  dsn text NOT NULL,
+  created_at timestamp NOT NULL DEFAULT NOW(),
+  updated_at timestamp NOT NULL DEFAULT NOW()
+);
+CREATE INDEX notification_destination_scope ON notification_destination (organization_id, shop_id);
+
 -- Account monitoring baseline. Shopmon keeps no readable directory of who has
 -- access; this table exists to diff against, so it can report *that* something
 -- changed rather than who exists. All three account kinds share one table and
@@ -798,3 +809,17 @@ CREATE UNIQUE INDEX "idx_environment_account_event_one_open"
   ON "environment_account_event" ("environment_id", "account_type", "account_id", "change")
   WHERE "acknowledged_at" IS NULL AND "level" <> 'info';
 
+-- Shared destinations use the same scope/event/channel preference model as
+-- personal notifications, with a destination owner instead of a user owner.
+CREATE TABLE destination_notification_preference (
+  destination_id text NOT NULL REFERENCES notification_destination(id) ON DELETE CASCADE,
+  scope_type text NOT NULL CHECK (scope_type IN ('global', 'environment')),
+  scope_id text NOT NULL DEFAULT '',
+  event_type text NOT NULL DEFAULT '',
+  channel text NOT NULL DEFAULT 'destination' CHECK (channel = 'destination'),
+  enabled boolean NOT NULL,
+  environment_id integer GENERATED ALWAYS AS
+    (CASE WHEN scope_type = 'environment' THEN scope_id::integer END) STORED
+    REFERENCES environment(id) ON DELETE CASCADE,
+  PRIMARY KEY (destination_id, scope_type, scope_id, event_type, channel)
+);

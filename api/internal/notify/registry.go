@@ -6,6 +6,8 @@ import "time"
 // email subject key, and the email dedup window. It is the single source of
 // truth for how an event behaves.
 type eventMeta struct {
+	// destinationEnabled permits shared delivery for this registered event.
+	destinationEnabled bool
 	// defaultChannels are delivered when a recipient has no overriding
 	// preference (Phase 1: always used).
 	defaultChannels []ChannelName
@@ -24,52 +26,61 @@ type eventMeta struct {
 // matter of adding an entry here plus the matching translation keys.
 var registry = map[EventType]eventMeta{
 	EventStatusDegraded: {
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.statusDegraded.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.statusDegraded.subject",
+		emailDedupTTL:      time.Hour,
 	},
 	EventStatusRecovered: {
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.statusRecovered.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.statusRecovered.subject",
+		emailDedupTTL:      time.Hour,
 	},
 	EventAuthError: {
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.authError.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.authError.subject",
+		emailDedupTTL:      time.Hour,
 	},
 	EventAdvisoryDetected: {
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.advisoryDetected.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.advisoryDetected.subject",
+		emailDedupTTL:      time.Hour,
 	},
 	EventAccountChanged: {
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.accountChanged.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.accountChanged.subject",
+		emailDedupTTL:      time.Hour,
 	},
 	EventDataFetchError: {
 		// Data-fetch errors are re-recorded every scrape, so the email is gated
 		// behind a one-hour dedup lock to avoid spamming while a fetch keeps
 		// failing.
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.dataFetchError.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.dataFetchError.subject",
+		emailDedupTTL:      time.Hour,
 	},
 	EventScrapeIssue: {
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.scrapeIssue.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.scrapeIssue.subject",
+		emailDedupTTL:      time.Hour,
 	},
 	EventScrapeRecovered: {
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.scrapeRecovered.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.scrapeRecovered.subject",
+		emailDedupTTL:      time.Hour,
 	},
 	EventScrapePaused: {
-		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
-		emailSubjectKey: "email.scrapePaused.subject",
-		emailDedupTTL:   time.Hour,
+		destinationEnabled: true,
+		defaultChannels:    []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey:    "email.scrapePaused.subject",
+		emailDedupTTL:      time.Hour,
 	},
 }
 
@@ -79,7 +90,8 @@ func metaFor(t EventType) eventMeta {
 	if m, ok := registry[t]; ok {
 		return m
 	}
-	return eventMeta{defaultChannels: []ChannelName{ChannelInApp}}
+	return eventMeta{
+		defaultChannels: []ChannelName{ChannelInApp}}
 }
 
 // orderedEventTypes is the stable display order for ListEventTypes (registry is
@@ -112,6 +124,9 @@ func ListEventTypes() []EventTypeInfo {
 		channels := make([]string, 0, len(meta.defaultChannels))
 		for _, c := range meta.defaultChannels {
 			channels = append(channels, string(c))
+		}
+		if meta.destinationEnabled {
+			channels = append(channels, string(ChannelDestination))
 		}
 		out = append(out, EventTypeInfo{Type: string(t), DefaultChannels: channels})
 	}

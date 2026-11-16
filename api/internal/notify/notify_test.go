@@ -100,7 +100,7 @@ func (c *recordingChannel) Send(_ context.Context, _ Recipient, _ Event, msg Ren
 type fakeLocker struct {
 	mu   sync.Mutex
 	held map[string]bool
-	// err, when set, stands in for an unreachable lock store.
+	// err, when set, makes every acquire fail with an unknown lock state.
 	err error
 }
 
@@ -335,4 +335,10 @@ func TestDispatchCountsAnUnknownDedupStateAsFailed(t *testing.T) {
 	if len(inApp.sent) != 1 {
 		t.Errorf("in-app channel sent %d, want 1", len(inApp.sent))
 	}
+}
+
+func (l *fakeLocker) isHeld(_ context.Context, key string) (bool, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.held[key], l.err
 }

@@ -10,6 +10,16 @@ import (
 	"encoding/json"
 )
 
+const deleteEnvironmentDestinationNotificationPreferences = `-- name: DeleteEnvironmentDestinationNotificationPreferences :exec
+DELETE FROM destination_notification_preference
+WHERE scope_type = 'environment' AND scope_id = $1
+`
+
+func (q *Queries) DeleteEnvironmentDestinationNotificationPreferences(ctx context.Context, scopeID string) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentDestinationNotificationPreferences, scopeID)
+	return err
+}
+
 const deleteEnvironmentNotificationPreferences = `-- name: DeleteEnvironmentNotificationPreferences :exec
 DELETE FROM notification_preference
 WHERE scope_type = 'environment' AND scope_id = $1

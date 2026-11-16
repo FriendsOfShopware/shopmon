@@ -418,12 +418,6 @@ func (h *Service) notifyAccountChanges(ctx context.Context, env queries.GetAllEn
 		// would lose these alerts permanently over a transient lookup failure.
 		return
 	}
-	if len(recipients) == 0 {
-		// Nobody subscribes, so there is nothing to retry either. Marking the
-		// events keeps them from being reconsidered every hour.
-		h.markAccountEventsNotified(ctx, env.ID, pending)
-		return
-	}
 
 	reasons := make([]notify.StatusReason, 0, len(pending))
 	level := notify.LevelWarning

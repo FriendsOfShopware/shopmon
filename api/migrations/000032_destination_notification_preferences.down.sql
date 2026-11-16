@@ -1,0 +1,1 @@
+DROP TABLE destination_notification_preference;
