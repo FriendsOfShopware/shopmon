@@ -13,6 +13,7 @@ const { name, formMessageId } = useFormField();
 </script>
 
 <template>
+  <!-- @vue-ignore ErrorMessage forwards id to the rendered element -->
   <ErrorMessage
     :id="formMessageId"
     data-slot="form-message"

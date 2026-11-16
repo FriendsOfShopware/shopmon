@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [
     Vue(),
     Components({
+      dts: false,
       resolvers: [
         IconsResolver({
           prefix: "icon",
