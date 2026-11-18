@@ -95,8 +95,8 @@ func TestSyncKeepsVerifiedFixesWhenTheChangelogOmitsThem(t *testing.T) {
 
 	_, err := env.Pool.Exec(ctx, `
 		INSERT INTO security_plugin_verified_fix
-		    (ghsa_id, plugin_branch, plugin_version, shopware_branch, source)
-		VALUES ($1, '4', '4.0.17', '6.7', 'verified test release')
+		    (ghsa_id, plugin_branch, plugin_version, shopware_branch, release_url)
+		VALUES ($1, '4', '4.0.17', '6.7', 'https://example.com/security-plugin')
 	`, advisory)
 	require.NoError(t, err)
 

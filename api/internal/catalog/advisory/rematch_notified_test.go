@@ -191,8 +191,8 @@ func TestRematchRecognizesSecurityPluginBackport(t *testing.T) {
 	}))
 	_, err = env.Pool.Exec(ctx, `
 		INSERT INTO security_plugin_verified_fix
-		    (ghsa_id, plugin_branch, plugin_version, shopware_branch, source)
-		VALUES (upper($1), '4', '4.0.17', '6.7', 'verified test release')
+		    (ghsa_id, plugin_branch, plugin_version, shopware_branch, release_url)
+		VALUES (upper($1), '4', '4.0.17', '6.7', 'https://example.com/security-plugin')
 	`, ghsa)
 	require.NoError(t, err)
 	_, err = env.Pool.Exec(ctx, `INSERT INTO store_extension (name) VALUES ('SwagPlatformSecurity')`)

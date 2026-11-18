@@ -690,13 +690,13 @@ CREATE TABLE "security_plugin_fix" (
 
 CREATE INDEX idx_security_plugin_fix_branch ON security_plugin_fix ("plugin_branch");
 
--- Release mappings verified against Shopware's tagged plugin source.
+-- Verified backports with a link to the published release metadata.
 CREATE TABLE security_plugin_verified_fix (
   ghsa_id text NOT NULL,
   plugin_branch text NOT NULL,
   plugin_version text NOT NULL,
   shopware_branch text NOT NULL,
-  source text NOT NULL,
+  release_url text NOT NULL,
   PRIMARY KEY (ghsa_id, plugin_branch)
 );
 

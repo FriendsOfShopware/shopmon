@@ -432,7 +432,7 @@ type SecurityPluginVerifiedFix struct {
 	PluginBranch   string `json:"plugin_branch"`
 	PluginVersion  string `json:"plugin_version"`
 	ShopwareBranch string `json:"shopware_branch"`
-	Source         string `json:"source"`
+	ReleaseUrl     string `json:"release_url"`
 }
 
 type Session struct {
