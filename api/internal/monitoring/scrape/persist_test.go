@@ -309,10 +309,7 @@ func TestPersistScrapeResultPrunesStaleRows(t *testing.T) {
 	assert.Equal(t, 0, countRows(t, pool, "environment_check"), "checks not cleared on empty result")
 }
 
-// TestPersistScrapeResultEmptyExtensionsKeepsData guards the existing safety
-// behavior: a scrape that returned no extensions (likely a fetch error) must
-// not wipe previously stored extensions.
-func TestPersistScrapeResultEmptyExtensionsKeepsData(t *testing.T) {
+func TestPersistScrapeResultDistinguishesMissingAndEmptyExtensions(t *testing.T) {
 	h, pool, env := setupPersistTest(t)
 	ctx := context.Background()
 	seedStoreCatalog(t, pool)
@@ -327,6 +324,11 @@ func TestPersistScrapeResultEmptyExtensionsKeepsData(t *testing.T) {
 
 	assert.Equal(t, 1, countRows(t, pool, "environment_store_extension"))
 	assert.Equal(t, 1, countRows(t, pool, "environment_extension"))
+
+	res.extensions = []extensionEntry{}
+	require.NoError(t, h.persistScrapeResult(ctx, env, res), "persist a complete empty inventory")
+	assert.Zero(t, countRows(t, pool, "environment_store_extension"))
+	assert.Zero(t, countRows(t, pool, "environment_extension"))
 }
 
 // TestResolveExtensionsFromCatalog verifies classification and latest-version

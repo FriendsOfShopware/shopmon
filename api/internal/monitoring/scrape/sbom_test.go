@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/friendsofshopware/shopmon/api/internal/catalog/advisory"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/sbom"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
@@ -180,7 +181,7 @@ func TestLoadAdvisoryIndexMatchesInstalledPackages(t *testing.T) {
 
 	seedAdvisory(t, pool, "CVE-2026-300", "twig/twig", "<3.9.0")
 
-	index, err := loadAdvisoryIndex(ctx, h.queries)
+	index, err := advisory.LoadIndex(ctx, h.queries)
 	require.NoError(t, err)
 
 	matches := index.Match(map[string]string{"twig/twig": "3.8.0"})

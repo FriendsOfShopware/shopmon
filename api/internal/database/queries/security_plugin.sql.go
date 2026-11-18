@@ -48,6 +48,26 @@ func (q *Queries) DeleteSecurityPluginFixesNotIn(ctx context.Context, arg Delete
 	return err
 }
 
+const getActiveEnvironmentSecurityPluginVersion = `-- name: GetActiveEnvironmentSecurityPluginVersion :one
+SELECT COALESCE(
+    (SELECT CASE WHEN se.active AND se.installed THEN se.version ELSE '' END
+     FROM environment_store_extension se
+     WHERE se.environment_id = $1 AND se.extension_name = 'SwagPlatformSecurity'),
+    (SELECT CASE WHEN e.active AND e.installed THEN e.version ELSE '' END
+     FROM environment_extension e
+     WHERE e.environment_id = $1 AND e.name = 'SwagPlatformSecurity'),
+    ''
+)::text AS version
+`
+
+// Prefer the store record if present, including when it marks the plugin inactive.
+func (q *Queries) GetActiveEnvironmentSecurityPluginVersion(ctx context.Context, environmentID int32) (string, error) {
+	row := q.db.QueryRow(ctx, getActiveEnvironmentSecurityPluginVersion, environmentID)
+	var version string
+	err := row.Scan(&version)
+	return version, err
+}
+
 const listSecurityPluginCoverage = `-- name: ListSecurityPluginCoverage :many
 SELECT plugin_branch, min_parsed_version, max_parsed_version, ghsa_count, parsed_at, last_error FROM security_plugin_coverage ORDER BY plugin_branch
 `
@@ -80,25 +100,23 @@ func (q *Queries) ListSecurityPluginCoverage(ctx context.Context) ([]SecurityPlu
 }
 
 const listSecurityPluginFixes = `-- name: ListSecurityPluginFixes :many
-SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch, released_at, synced_at FROM security_plugin_fix ORDER BY ghsa_id, plugin_branch
+SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch FROM security_plugin_effective_fix ORDER BY ghsa_id, plugin_branch
 `
 
-func (q *Queries) ListSecurityPluginFixes(ctx context.Context) ([]SecurityPluginFix, error) {
+func (q *Queries) ListSecurityPluginFixes(ctx context.Context) ([]SecurityPluginEffectiveFix, error) {
 	rows, err := q.db.Query(ctx, listSecurityPluginFixes)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SecurityPluginFix{}
+	items := []SecurityPluginEffectiveFix{}
 	for rows.Next() {
-		var i SecurityPluginFix
+		var i SecurityPluginEffectiveFix
 		if err := rows.Scan(
 			&i.GhsaID,
 			&i.PluginBranch,
 			&i.PluginVersion,
 			&i.ShopwareBranch,
-			&i.ReleasedAt,
-			&i.SyncedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -111,27 +129,25 @@ func (q *Queries) ListSecurityPluginFixes(ctx context.Context) ([]SecurityPlugin
 }
 
 const listSecurityPluginFixesForGhsas = `-- name: ListSecurityPluginFixesForGhsas :many
-SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch, released_at, synced_at FROM security_plugin_fix
+SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch FROM security_plugin_effective_fix
 WHERE ghsa_id = ANY($1::text[])
 ORDER BY ghsa_id, plugin_branch
 `
 
-func (q *Queries) ListSecurityPluginFixesForGhsas(ctx context.Context, ghsaIds []string) ([]SecurityPluginFix, error) {
+func (q *Queries) ListSecurityPluginFixesForGhsas(ctx context.Context, ghsaIds []string) ([]SecurityPluginEffectiveFix, error) {
 	rows, err := q.db.Query(ctx, listSecurityPluginFixesForGhsas, ghsaIds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SecurityPluginFix{}
+	items := []SecurityPluginEffectiveFix{}
 	for rows.Next() {
-		var i SecurityPluginFix
+		var i SecurityPluginEffectiveFix
 		if err := rows.Scan(
 			&i.GhsaID,
 			&i.PluginBranch,
 			&i.PluginVersion,
 			&i.ShopwareBranch,
-			&i.ReleasedAt,
-			&i.SyncedAt,
 		); err != nil {
 			return nil, err
 		}

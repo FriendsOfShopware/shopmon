@@ -45,7 +45,7 @@ func TestRematchRetriesUnnotifiedAdvisories(t *testing.T) {
 		AffectedVersions: ">=6.4.0,<6.4.3",
 	}})
 
-	count, err := svc.rematchEnvironment(ctx, envID, index)
+	count, err := svc.rematchEnvironment(ctx, envID, index, nil)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 
@@ -59,7 +59,7 @@ func TestRematchRetriesUnnotifiedAdvisories(t *testing.T) {
 
 	// Second pass: the advisory is still un-notified, so it is offered again
 	// rather than being treated as already seen.
-	_, err = svc.rematchEnvironment(ctx, envID, index)
+	_, err = svc.rematchEnvironment(ctx, envID, index, nil)
 	require.NoError(t, err)
 
 	notified, err = env.Queries.ListNotifiedAdvisoryIDsForEnvironment(ctx, envID)
@@ -112,7 +112,7 @@ func TestRematchPrunesStaleNotificationMarkers(t *testing.T) {
 		AffectedVersions: ">=6.4.0,<6.4.3",
 	}})
 
-	_, err = svc.rematchEnvironment(ctx, envID, index)
+	_, err = svc.rematchEnvironment(ctx, envID, index, nil)
 	require.NoError(t, err)
 
 	notified, err := env.Queries.ListNotifiedAdvisoryIDsForEnvironment(ctx, envID)
@@ -162,4 +162,60 @@ func TestRematchMatchesEnvironmentRuntimeVersions(t *testing.T) {
 	assert.Equal(t, "SHOPMON-2026-0002", matches[1].AdvisoryID)
 	assert.Equal(t, "mysql", matches[1].PackageName)
 	assert.Equal(t, "8.0.36", matches[1].InstalledVersion)
+}
+
+func TestRematchRecognizesSecurityPluginBackport(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+	const ghsa = "GHSA-4frp-8844-m589"
+
+	env.SeedUser(t, "user-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Org One", "org-one", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Shop One")
+	envID := int32(env.SeedEnvironment(t, "org-1", shopID, "prod", "https://example.com"))
+
+	_, err := env.Pool.Exec(ctx, `UPDATE environment SET shopware_version = '6.7.16.0' WHERE id = $1`, envID)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO composer_advisory (advisory_id, title, ghsa_id, is_visible)
+		VALUES ($1, 'Core advisory', $1, true)
+	`, ghsa)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO composer_advisory_package (advisory_id, package_name, affected_versions)
+		VALUES ($1, 'shopware/core', '>=6.7.0.0,<6.7.16.1')
+	`, ghsa)
+	require.NoError(t, err)
+	require.NoError(t, env.Queries.UpsertEnvironmentSbomComponent(ctx, queries.UpsertEnvironmentSbomComponentParams{
+		EnvironmentID: envID, PackageName: "shopware/core", Version: "6.7.16.0",
+	}))
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO security_plugin_verified_fix
+		    (ghsa_id, plugin_branch, plugin_version, shopware_branch, source)
+		VALUES (upper($1), '4', '4.0.17', '6.7', 'verified test release')
+	`, ghsa)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(ctx, `INSERT INTO store_extension (name) VALUES ('SwagPlatformSecurity')`)
+	require.NoError(t, err)
+
+	svc := &Service{pool: env.Pool, queries: env.Queries}
+	for _, step := range []struct {
+		pluginVersion string
+		active        bool
+		wantMatches   int
+	}{
+		{pluginVersion: "4.0.16", active: true, wantMatches: 1},
+		{pluginVersion: "4.0.17", active: true, wantMatches: 0},
+		{pluginVersion: "4.0.17", active: false, wantMatches: 1},
+	} {
+		require.NoError(t, env.Queries.UpsertEnvironmentStoreExtension(ctx, queries.UpsertEnvironmentStoreExtensionParams{
+			EnvironmentID: envID, ExtensionName: "SwagPlatformSecurity", Version: step.pluginVersion,
+			Active: step.active, Installed: true,
+		}))
+		_, err = svc.rematchEnvironments(ctx)
+		require.NoError(t, err)
+		matches, err := env.Queries.GetEnvironmentAdvisoryMatches(ctx, envID)
+		require.NoError(t, err)
+		assert.Len(t, matches, step.wantMatches, "plugin %s (active: %t)", step.pluginVersion, step.active)
+	}
 }

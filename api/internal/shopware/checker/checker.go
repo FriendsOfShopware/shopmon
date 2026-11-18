@@ -147,14 +147,8 @@ type Input struct {
 	// shopware/* constraints against the core version alone.
 	InstalledPackages map[string]string
 	// SecurityPluginFixes maps each advisory to the minimum SwagPlatformSecurity
-	// version backporting it, per plugin branch. Empty means the map has not
-	// been derived yet, in which case every advisory resolves to unknown and is
-	// reported as before — never silently suppressed.
+	// version backporting it, per plugin branch.
 	SecurityPluginFixes []PluginFix
-	// SecurityPluginCoverage records how many advisory references each plugin
-	// branch yielded when parsed, so an unparsed branch is distinguishable from
-	// one that genuinely backports nothing.
-	SecurityPluginCoverage PluginCoverage
 }
 
 // FetchError is one upstream data set a checker could not retrieve during
