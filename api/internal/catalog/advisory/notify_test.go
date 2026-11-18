@@ -130,7 +130,7 @@ func TestNotifyNewAdvisoriesEmailIncludesDetails(t *testing.T) {
 		AffectedVersions: ">=1.0.0,<1.2.4",
 	}})
 
-	count, err := svc.rematchEnvironment(ctx, envID, index)
+	count, err := svc.rematchEnvironment(ctx, envID, index, nil)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 
@@ -197,7 +197,7 @@ func TestNotifyNewAdvisoriesEmailPluralLinksToEnvironment(t *testing.T) {
 		{AdvisoryID: "CVE-2026-2", PackageName: "shopware/core", AffectedVersions: ">=6.7.0.0,<6.7.9.0"},
 	})
 
-	count, err := svc.rematchEnvironment(ctx, envID, index)
+	count, err := svc.rematchEnvironment(ctx, envID, index, nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
 

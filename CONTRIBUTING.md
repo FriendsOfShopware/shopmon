@@ -147,6 +147,28 @@ If your changes require database modifications:
    mise run migrate
    ```
 
+### Verifying Security Plugin backports
+
+The public package feed lists plugin versions and their `shopware/core`
+requirements. When the changelog omits GHSA IDs, verify coverage in the
+published Security Plugin itself. [Shopware package feed](https://packages.shopware.com/feeds/package/store.shopware.com/swagplatformsecurity.json)
+
+Install and activate the exact plugin release on a test shop that runs an
+affected core version on the same branch. The free plugin is available through
+the Shopware Store with a standard Shopware account. In an existing project
+configured for the Store's Composer registry, pin the release with
+`composer require store.shopware.com/swagplatformsecurity:4.0.17` for the 6.7
+example below. In the test shop, open
+**Settings → Extensions → Security Plugin** and compare the advisory IDs or fix
+labels with the migration. A label can list multiple advisories for one fix.
+[Store listing](https://store.shopware.com/en/swag136939272659f/shopware-6-security-plugin.html) · [Shopware verification guide](https://developer.shopware.com/docs/guides/hosting/installation-updates/security-best-practices/security-plugin.html#how-fixes-work)
+
+| Shopware test version | Security Plugin release for migration `000031` |
+|---|---|
+| `6.5.8.19` | `2.0.27` |
+| `6.6.10.31` | `3.0.21` |
+| `6.7.16.0` | `4.0.17` |
+
 ## Code Style
 
 ### API (Go)

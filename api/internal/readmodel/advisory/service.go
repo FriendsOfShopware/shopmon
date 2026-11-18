@@ -181,7 +181,7 @@ func (s *Service) Get(ctx context.Context, advisoryID string, visibleOnly bool) 
 	view := AdvisoryView{Advisory: row, Packages: packages}
 	if row.GhsaID != nil && *row.GhsaID != "" {
 		if fixes, err := s.securityPluginFixesByGhsa(ctx, []string{*row.GhsaID}); err == nil {
-			view.SecurityPluginFixes = fixes[*row.GhsaID]
+			view.SecurityPluginFixes = fixes[strings.ToUpper(*row.GhsaID)]
 		}
 	}
 	return view, nil

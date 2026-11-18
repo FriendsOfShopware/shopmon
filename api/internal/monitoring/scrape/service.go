@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/catalog/advisory"
 	"github.com/friendsofshopware/shopmon/api/internal/catalog/storemodel"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -288,6 +289,9 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		slog.Warn("failed to fetch Shopware apps", "environmentId", env.ID, "error", fr.appErr)
 		missing.Extensions = true
 	}
+	if extensions == nil && !missing.Extensions {
+		extensions = []extensionEntry{}
+	}
 
 	var scheduledTasks []shopwareScheduledTask
 	if fr.taskErr == nil {
@@ -404,12 +408,20 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	if err != nil {
 		return fmt.Errorf("load security advisories: %w", err)
 	}
-	securityPluginFixes, securityPluginCoverage := loadSecurityPluginFixes(ctx, h.queries)
+	securityPluginFixes, err := advisory.LoadSecurityPluginFixes(ctx, h.queries)
+	if err != nil {
+		return fmt.Errorf("load security plugin fixes: %w", err)
+	}
+
+	securityPlugin := checker.FindSecurityPlugin(checkerExtensions)
 
 	// The SBOM needs the extension list to know whether FroshTools is present,
 	// so it is fetched after the parallel block rather than inside it. Failures
 	// are absorbed by fetchSbom and never fail the scrape.
 	sbomRes := h.fetchSbom(ctx, env, client, extensions)
+	sbomRes.matches = checker.NewPluginFixIndex(securityPluginFixes).ExcludeMitigatedMatches(
+		sbomRes.matches, shopConfig.Version, securityPlugin,
+	)
 
 	// Accounts are read for the same reason and under the same rules as the
 	// SBOM: FroshTools-only endpoint, every failure non-fatal.
@@ -440,9 +452,8 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		// Composer package inventory from the FroshTools SBOM. Empty when the
 		// shop cannot serve one, in which case checkSecurity falls back to
 		// matching the Shopware core version only.
-		InstalledPackages:      withRuntimePackageVersions(sbomPackageVersions(sbomRes), env.PhpVersion, env.DatabaseVersion),
-		SecurityPluginFixes:    securityPluginFixes,
-		SecurityPluginCoverage: securityPluginCoverage,
+		InstalledPackages:   withRuntimePackageVersions(sbomPackageVersions(sbomRes), env.PhpVersion, env.DatabaseVersion),
+		SecurityPluginFixes: securityPluginFixes,
 	}
 
 	_, checkSpan := tracer.Start(ctx, "environment.scrape.run_checks")
@@ -752,13 +763,13 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	txQueries := h.queries.WithTx(tx)
+	if _, err := txQueries.LockEnvironmentForAdvisoryMatch(ctx, env.ID); err != nil {
+		return fmt.Errorf("lock environment for scrape: %w", err)
+	}
 
-	// Split extensions into store-known (linked to the shared catalog) and
-	// unknown (environment_extension), then prune rows no longer present. Skipped
-	// entirely when the shop returned no extensions (likely a fetch error) so a
-	// transient failure does not wipe stored extensions. The catalog itself is
-	// never written here; that is the StoreExtensionSync job's responsibility.
-	if len(res.extensions) > 0 {
+	// Preserve missing rows on a partial fetch. A complete empty inventory
+	// removes the old rows, including any security plugin the shop removed.
+	if res.extensions != nil {
 		storeNames := make([]string, 0, len(res.extensions))
 		unknownNames := make([]string, 0, len(res.extensions))
 		for _, ext := range res.extensions {
@@ -793,17 +804,19 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 			}
 		}
 
-		if err := txQueries.DeleteEnvironmentStoreExtensionsNotIn(ctx, queries.DeleteEnvironmentStoreExtensionsNotInParams{
-			EnvironmentID: env.ID,
-			Column2:       storeNames,
-		}); err != nil {
-			return fmt.Errorf("delete stale store extensions: %w", err)
-		}
-		if err := txQueries.DeleteEnvironmentExtensionsNotIn(ctx, queries.DeleteEnvironmentExtensionsNotInParams{
-			EnvironmentID: env.ID,
-			Column2:       unknownNames,
-		}); err != nil {
-			return fmt.Errorf("delete stale environment extensions: %w", err)
+		if !res.missing.Extensions {
+			if err := txQueries.DeleteEnvironmentStoreExtensionsNotIn(ctx, queries.DeleteEnvironmentStoreExtensionsNotInParams{
+				EnvironmentID: env.ID,
+				Column2:       storeNames,
+			}); err != nil {
+				return fmt.Errorf("delete stale store extensions: %w", err)
+			}
+			if err := txQueries.DeleteEnvironmentExtensionsNotIn(ctx, queries.DeleteEnvironmentExtensionsNotInParams{
+				EnvironmentID: env.ID,
+				Column2:       unknownNames,
+			}); err != nil {
+				return fmt.Errorf("delete stale environment extensions: %w", err)
+			}
 		}
 	}
 

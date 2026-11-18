@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 )
@@ -16,7 +17,11 @@ func (s *Service) securityPluginFixesByGhsa(ctx context.Context, ghsaIDs []strin
 		return map[string][]api.AdvisorySecurityPluginFix{}, nil
 	}
 
-	rows, err := s.queries.ListSecurityPluginFixesForGhsas(ctx, ghsaIDs)
+	keys := make([]string, len(ghsaIDs))
+	for i, id := range ghsaIDs {
+		keys[i] = strings.ToUpper(id)
+	}
+	rows, err := s.queries.ListSecurityPluginFixesForGhsas(ctx, keys)
 	if err != nil {
 		return nil, fmt.Errorf("list security plugin fixes: %w", err)
 	}

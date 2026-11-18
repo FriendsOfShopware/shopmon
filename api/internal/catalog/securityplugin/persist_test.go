@@ -87,3 +87,30 @@ func TestPersistLeavesUnacceptedBranchesAlone(t *testing.T) {
 	assert.Equal(t, "2.0.9", byBranch["2"], "an unaccepted branch must not be pruned")
 	assert.Equal(t, "4.0.11", byBranch["4"])
 }
+
+func TestSyncKeepsVerifiedFixesWhenTheChangelogOmitsThem(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+	const advisory = "GHSA-4FRP-8844-M589"
+
+	_, err := env.Pool.Exec(ctx, `
+		INSERT INTO security_plugin_verified_fix
+		    (ghsa_id, plugin_branch, plugin_version, shopware_branch, release_url)
+		VALUES ($1, '4', '4.0.17', '6.7', 'https://example.com/security-plugin')
+	`, advisory)
+	require.NoError(t, err)
+
+	svc := &Service{pool: env.Pool, queries: env.Queries}
+	coverage := []Coverage{{Branch: "4", GhsaCount: 1}}
+	require.NoError(t, svc.persist(ctx, []Fix{{GhsaID: advisory, Branch: "4", PluginVersion: "4.0.10"}}, coverage, []string{"4"}))
+	rows, err := env.Queries.ListSecurityPluginFixesForGhsas(ctx, []string{advisory})
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	assert.Equal(t, "4.0.17", rows[0].PluginVersion)
+
+	require.NoError(t, svc.persist(ctx, nil, coverage, []string{"4"}))
+	rows, err = env.Queries.ListSecurityPluginFixesForGhsas(ctx, []string{advisory})
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	assert.Equal(t, "4.0.17", rows[0].PluginVersion)
+}

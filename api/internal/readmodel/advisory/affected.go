@@ -3,6 +3,7 @@ package advisory
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -203,7 +204,7 @@ func (s *Service) ListScoped(ctx context.Context, params ScopedListParams) ([]Ad
 	if fixes, err := s.securityPluginFixesByGhsa(ctx, ghsaIDsOf(views)); err == nil {
 		for i := range views {
 			if ghsa := views[i].Advisory.GhsaID; ghsa != nil {
-				views[i].SecurityPluginFixes = fixes[*ghsa]
+				views[i].SecurityPluginFixes = fixes[strings.ToUpper(*ghsa)]
 			}
 		}
 	}

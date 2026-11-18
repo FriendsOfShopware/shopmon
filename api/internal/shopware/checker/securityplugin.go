@@ -1,10 +1,14 @@
 package checker
 
 import (
+	"slices"
 	"strings"
 
+	"github.com/friendsofshopware/shopmon/api/internal/shopware/sbom"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
+
+const SecurityPluginName = "SwagPlatformSecurity"
 
 // PluginFix is the minimum SwagPlatformSecurity version on one branch that
 // backports a given advisory.
@@ -13,11 +17,6 @@ type PluginFix struct {
 	Branch        string
 	PluginVersion string
 }
-
-// PluginCoverage records which plugin branches have been parsed, and how many
-// advisory references each yielded. A branch with zero references was still
-// parsed; a branch that is absent never was. The checker must not conflate them.
-type PluginCoverage map[string]int
 
 // CoverageState is how an advisory relates to the security plugin for one shop.
 type CoverageState string
@@ -34,11 +33,9 @@ const (
 	// CoverageNotInstalled: a backport exists for this shop's line but the
 	// plugin is absent or inactive. Installing it is a valid remediation.
 	CoverageNotInstalled CoverageState = "notInstalled"
-	// CoverageNotBackported: the branch was parsed and does not carry this
-	// advisory, so only a core upgrade closes it.
-	CoverageNotBackported CoverageState = "notBackported"
-	// CoverageUnknown: no GHSA, an unmapped Shopware line, or an unparsed
-	// branch. Nothing can be claimed, so the advisory is reported as before.
+	// CoverageUnverified: the installed plugin has no confirmed backport in the catalog.
+	CoverageUnverified CoverageState = "unverified"
+	// CoverageUnknown: the advisory cannot be evaluated against the plugin.
 	CoverageUnknown CoverageState = "unknown"
 )
 
@@ -53,11 +50,11 @@ type PluginResolution struct {
 	InstalledVersion string
 }
 
-// pluginFixIndex is fixes keyed by GHSA then branch.
-type pluginFixIndex map[string]map[string]string
+// PluginFixIndex indexes backports by GHSA and plugin branch.
+type PluginFixIndex map[string]map[string]string
 
-func buildPluginFixIndex(fixes []PluginFix) pluginFixIndex {
-	index := make(pluginFixIndex, len(fixes))
+func NewPluginFixIndex(fixes []PluginFix) PluginFixIndex {
+	index := make(PluginFixIndex, len(fixes))
 	for _, fix := range fixes {
 		ghsa := strings.ToUpper(strings.TrimSpace(fix.GhsaID))
 		if ghsa == "" || fix.Branch == "" {
@@ -71,68 +68,49 @@ func buildPluginFixIndex(fixes []PluginFix) pluginFixIndex {
 	return index
 }
 
-// resolveByPlugin decides how the security plugin relates to one advisory.
-//
-// Every ambiguous branch resolves toward reporting rather than suppressing.
-// Claiming a shop is protected is a statement about its security posture, and
-// the cost of being wrong is asymmetric: a redundant warning is noise, while a
-// wrongly suppressed advisory hides a live vulnerability.
-func resolveByPlugin(
-	adv SecurityAdvisory,
-	shopwareVersion string,
-	ext *Extension,
-	index pluginFixIndex,
-	coverage PluginCoverage,
-) PluginResolution {
-	ghsa := strings.ToUpper(strings.TrimSpace(adv.GHSA))
-	if ghsa == "" {
-		// Without a GHSA there is no join key to the plugin's changelog. Do not
-		// infer one from the CVE: a wrong join here would suppress a real
-		// vulnerability.
-		return PluginResolution{State: CoverageUnknown}
-	}
-
-	branch := pluginBranchForShopware(shopwareVersion)
-	if branch == "" {
-		return PluginResolution{State: CoverageUnknown}
-	}
-
-	// A branch we have never parsed tells us nothing. An old plugin release
-	// whose changelogs predate GHSA labelling likewise cannot be credited.
-	parsedRefs, parsed := coverage[branch]
-	if !parsed || parsedRefs == 0 {
-		return PluginResolution{State: CoverageUnknown}
-	}
-
-	required, hasFix := index[ghsa][branch]
-	if !hasFix {
-		return PluginResolution{State: CoverageNotBackported}
-	}
-
+// ExcludeMitigatedMatches removes first-party package matches covered by the
+// installed security plugin. It reuses the backing array of matches.
+func (index PluginFixIndex) ExcludeMitigatedMatches(matches []sbom.Match, shopwareVersion string, ext *Extension) []sbom.Match {
 	if ext == nil || !ext.Active || !ext.Installed || ext.Version == "" {
-		return PluginResolution{State: CoverageNotInstalled, RequiredVersion: required}
+		return matches
+	}
+	return slices.DeleteFunc(matches, func(match sbom.Match) bool {
+		return isShopwarePackage(match.PackageName) &&
+			resolveByPlugin(match.GHSA, shopwareVersion, ext, index).State == CoverageCovered
+	})
+}
+
+// resolveByPlugin evaluates release coverage for an installed security plugin.
+func resolveByPlugin(ghsa, shopwareVersion string, ext *Extension, index PluginFixIndex) PluginResolution {
+	ghsa = strings.ToUpper(strings.TrimSpace(ghsa))
+	branch := pluginBranchForShopware(shopwareVersion)
+	if ghsa == "" || branch == "" {
+		return PluginResolution{State: CoverageUnknown}
 	}
 
-	// The plugin's major version is its branch. A plugin from another line — a
-	// 4.x build on a 6.6 shop, say — does not contain this branch's backports,
-	// however high its version number compares, so a cross-branch comparison
-	// must never be credited as coverage.
+	required := index[ghsa][branch]
+	if ext == nil || !ext.Active || !ext.Installed || ext.Version == "" {
+		if required != "" {
+			return PluginResolution{State: CoverageNotInstalled, RequiredVersion: required}
+		}
+		return PluginResolution{State: CoverageUnknown}
+	}
 	if pluginMajor(ext.Version) != branch {
 		return PluginResolution{State: CoverageUnknown}
 	}
+	if required == "" {
+		return PluginResolution{State: CoverageUnverified}
+	}
 
-	if version.Compare(ext.Version, required) >= 0 {
-		return PluginResolution{
-			State:            CoverageCovered,
-			RequiredVersion:  required,
-			InstalledVersion: ext.Version,
-		}
+	covered, err := version.Satisfies(ext.Version, ">="+required)
+	if err != nil {
+		return PluginResolution{State: CoverageUnverified}
 	}
-	return PluginResolution{
-		State:            CoverageOutdated,
-		RequiredVersion:  required,
-		InstalledVersion: ext.Version,
+	state := CoverageOutdated
+	if covered {
+		state = CoverageCovered
 	}
+	return PluginResolution{State: state, RequiredVersion: required, InstalledVersion: ext.Version}
 }
 
 // pluginBranchForShopware maps a Shopware version onto the plugin branch that
@@ -166,9 +144,9 @@ func pluginMajor(pluginVersion string) string {
 	return pluginVersion
 }
 
-func findExtension(extensions []Extension, name string) *Extension {
+func FindSecurityPlugin(extensions []Extension) *Extension {
 	for i := range extensions {
-		if extensions[i].Name == name {
+		if extensions[i].Name == SecurityPluginName {
 			return &extensions[i]
 		}
 	}

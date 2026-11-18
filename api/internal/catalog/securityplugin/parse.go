@@ -1,11 +1,7 @@
 // Package securityplugin derives which SwagPlatformSecurity release backports
 // which security advisory.
 //
-// The Shopware Security Plugin closes core vulnerabilities without a core
-// upgrade. Its documentation states that "every fix in the plugin corresponds
-// to a published security advisory and is identified by its GHSA id", and those
-// ids appear in the store changelog Shopmon already syncs — so the mapping is a
-// parsing problem, not an integration one.
+// The store changelog provides release metadata for documented backports.
 package securityplugin
 
 import (
@@ -40,8 +36,7 @@ type Fix struct {
 	ReleasedAt    *time.Time
 }
 
-// Coverage records what was parsed for a branch, so callers can distinguish a
-// branch that genuinely backports nothing from one that was never parsed.
+// Coverage records what was parsed for a branch to detect changelog regressions.
 type Coverage struct {
 	Branch           string
 	MinParsedVersion string
