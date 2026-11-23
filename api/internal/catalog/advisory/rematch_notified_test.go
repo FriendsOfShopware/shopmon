@@ -2,6 +2,7 @@ package advisory
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -189,12 +190,12 @@ func TestRematchRecognizesSecurityPluginBackport(t *testing.T) {
 	require.NoError(t, env.Queries.UpsertEnvironmentSbomComponent(ctx, queries.UpsertEnvironmentSbomComponentParams{
 		EnvironmentID: envID, PackageName: "shopware/core", Version: "6.7.16.0",
 	}))
-	_, err = env.Pool.Exec(ctx, `
-		INSERT INTO security_plugin_verified_fix
-		    (ghsa_id, plugin_branch, plugin_version, shopware_branch, release_url)
-		VALUES (upper($1), '4', '4.0.17', '6.7', 'https://example.com/security-plugin')
-	`, ghsa)
-	require.NoError(t, err)
+	require.NoError(t, env.Queries.UpsertSecurityPluginFix(ctx, queries.UpsertSecurityPluginFixParams{
+		GhsaID:         strings.ToUpper(ghsa),
+		PluginBranch:   "4",
+		PluginVersion:  "4.0.17",
+		ShopwareBranch: "6.7",
+	}))
 	_, err = env.Pool.Exec(ctx, `INSERT INTO store_extension (name) VALUES ('SwagPlatformSecurity')`)
 	require.NoError(t, err)
 

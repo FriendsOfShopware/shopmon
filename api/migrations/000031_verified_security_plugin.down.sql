@@ -1,2 +1,0 @@
-DROP VIEW security_plugin_effective_fix;
-DROP TABLE security_plugin_verified_fix;

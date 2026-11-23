@@ -100,23 +100,25 @@ func (q *Queries) ListSecurityPluginCoverage(ctx context.Context) ([]SecurityPlu
 }
 
 const listSecurityPluginFixes = `-- name: ListSecurityPluginFixes :many
-SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch FROM security_plugin_effective_fix ORDER BY ghsa_id, plugin_branch
+SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch, released_at, synced_at FROM security_plugin_fix ORDER BY ghsa_id, plugin_branch
 `
 
-func (q *Queries) ListSecurityPluginFixes(ctx context.Context) ([]SecurityPluginEffectiveFix, error) {
+func (q *Queries) ListSecurityPluginFixes(ctx context.Context) ([]SecurityPluginFix, error) {
 	rows, err := q.db.Query(ctx, listSecurityPluginFixes)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SecurityPluginEffectiveFix{}
+	items := []SecurityPluginFix{}
 	for rows.Next() {
-		var i SecurityPluginEffectiveFix
+		var i SecurityPluginFix
 		if err := rows.Scan(
 			&i.GhsaID,
 			&i.PluginBranch,
 			&i.PluginVersion,
 			&i.ShopwareBranch,
+			&i.ReleasedAt,
+			&i.SyncedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -129,25 +131,27 @@ func (q *Queries) ListSecurityPluginFixes(ctx context.Context) ([]SecurityPlugin
 }
 
 const listSecurityPluginFixesForGhsas = `-- name: ListSecurityPluginFixesForGhsas :many
-SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch FROM security_plugin_effective_fix
+SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch, released_at, synced_at FROM security_plugin_fix
 WHERE ghsa_id = ANY($1::text[])
 ORDER BY ghsa_id, plugin_branch
 `
 
-func (q *Queries) ListSecurityPluginFixesForGhsas(ctx context.Context, ghsaIds []string) ([]SecurityPluginEffectiveFix, error) {
+func (q *Queries) ListSecurityPluginFixesForGhsas(ctx context.Context, ghsaIds []string) ([]SecurityPluginFix, error) {
 	rows, err := q.db.Query(ctx, listSecurityPluginFixesForGhsas, ghsaIds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []SecurityPluginEffectiveFix{}
+	items := []SecurityPluginFix{}
 	for rows.Next() {
-		var i SecurityPluginEffectiveFix
+		var i SecurityPluginFix
 		if err := rows.Scan(
 			&i.GhsaID,
 			&i.PluginBranch,
 			&i.PluginVersion,
 			&i.ShopwareBranch,
+			&i.ReleasedAt,
+			&i.SyncedAt,
 		); err != nil {
 			return nil, err
 		}

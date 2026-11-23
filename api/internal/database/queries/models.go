@@ -411,13 +411,6 @@ type SecurityPluginCoverage struct {
 	LastError        *string          `json:"last_error"`
 }
 
-type SecurityPluginEffectiveFix struct {
-	GhsaID         string `json:"ghsa_id"`
-	PluginBranch   string `json:"plugin_branch"`
-	PluginVersion  string `json:"plugin_version"`
-	ShopwareBranch string `json:"shopware_branch"`
-}
-
 type SecurityPluginFix struct {
 	GhsaID         string           `json:"ghsa_id"`
 	PluginBranch   string           `json:"plugin_branch"`
@@ -425,14 +418,6 @@ type SecurityPluginFix struct {
 	ShopwareBranch string           `json:"shopware_branch"`
 	ReleasedAt     pgtype.Timestamp `json:"released_at"`
 	SyncedAt       pgtype.Timestamp `json:"synced_at"`
-}
-
-type SecurityPluginVerifiedFix struct {
-	GhsaID         string `json:"ghsa_id"`
-	PluginBranch   string `json:"plugin_branch"`
-	PluginVersion  string `json:"plugin_version"`
-	ShopwareBranch string `json:"shopware_branch"`
-	ReleaseUrl     string `json:"release_url"`
 }
 
 type Session struct {

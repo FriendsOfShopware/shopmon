@@ -690,27 +690,6 @@ CREATE TABLE "security_plugin_fix" (
 
 CREATE INDEX idx_security_plugin_fix_branch ON security_plugin_fix ("plugin_branch");
 
--- Verified backports with a link to the published release metadata.
-CREATE TABLE security_plugin_verified_fix (
-  ghsa_id text NOT NULL,
-  plugin_branch text NOT NULL,
-  plugin_version text NOT NULL,
-  shopware_branch text NOT NULL,
-  release_url text NOT NULL,
-  PRIMARY KEY (ghsa_id, plugin_branch)
-);
-
-CREATE VIEW security_plugin_effective_fix AS
-SELECT ghsa_id, plugin_branch, plugin_version, shopware_branch
-FROM security_plugin_verified_fix
-UNION ALL
-SELECT f.ghsa_id, f.plugin_branch, f.plugin_version, f.shopware_branch
-FROM security_plugin_fix f
-WHERE NOT EXISTS (
-  SELECT 1 FROM security_plugin_verified_fix v
-  WHERE v.ghsa_id = f.ghsa_id AND v.plugin_branch = f.plugin_branch
-);
-
 -- Parse bookkeeping for changelog sync.
 CREATE TABLE "security_plugin_coverage" (
   "plugin_branch" text PRIMARY KEY NOT NULL,

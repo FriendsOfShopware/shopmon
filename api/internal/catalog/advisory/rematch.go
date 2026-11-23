@@ -183,7 +183,7 @@ func LoadIndex(ctx context.Context, q *queries.Queries) (*sbom.Index, error) {
 	return sbom.NewIndex(advPkgs), nil
 }
 
-// LoadSecurityPluginFixes reads the combined verified and changelog backport map.
+// LoadSecurityPluginFixes reads the changelog-derived backport map.
 func LoadSecurityPluginFixes(ctx context.Context, q *queries.Queries) ([]checker.PluginFix, error) {
 	fixRows, err := q.ListSecurityPluginFixes(ctx)
 	if err != nil {

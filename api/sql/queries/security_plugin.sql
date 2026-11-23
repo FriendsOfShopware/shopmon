@@ -56,10 +56,10 @@ ON CONFLICT (plugin_branch) DO UPDATE SET
 SELECT * FROM security_plugin_coverage ORDER BY plugin_branch;
 
 -- name: ListSecurityPluginFixes :many
-SELECT * FROM security_plugin_effective_fix ORDER BY ghsa_id, plugin_branch;
+SELECT * FROM security_plugin_fix ORDER BY ghsa_id, plugin_branch;
 
 -- name: ListSecurityPluginFixesForGhsas :many
-SELECT * FROM security_plugin_effective_fix
+SELECT * FROM security_plugin_fix
 WHERE ghsa_id = ANY(sqlc.arg('ghsa_ids')::text[])
 ORDER BY ghsa_id, plugin_branch;
 
