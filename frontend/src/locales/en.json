@@ -102,14 +102,16 @@
       "advisoryPackageShopmon": "Shopmon advisory: {title} — {package} {installedVersion}",
       "advisoryAlert": "{severity}: {title} ({id}) — {package} {installedVersion}",
       "advisoryAlertShopmon": "{severity}: Shopmon advisory: {title} ({id}) — {package} {installedVersion}",
-      "advisoryMitigated": "{title} ({cve}) — backported by SwagPlatformSecurity {securityPluginFixVersion}",
-      "advisoryMitigatedShopmon": "Shopmon advisory: {title} ({cve}) — backported by SwagPlatformSecurity {securityPluginFixVersion}",
+      "advisoryMitigated": "{title} ({cve}) — backport included in SwagPlatformSecurity {securityPluginVersion}",
+      "advisoryMitigatedShopmon": "Shopmon advisory: {title} ({cve}) — backport included in SwagPlatformSecurity {securityPluginVersion}",
       "advisoryPluginOutdated": "{title} ({cve}) — SwagPlatformSecurity {securityPluginFixVersion} backports the fix, you have {securityPluginVersion}",
       "advisoryPluginOutdatedShopmon": "Shopmon advisory: {title} ({cve}) — SwagPlatformSecurity {securityPluginFixVersion} backports the fix, you have {securityPluginVersion}",
       "advisoryInstallPlugin": "{title} ({cve}) — installable fix: SwagPlatformSecurity {securityPluginFixVersion}",
       "advisoryInstallPluginShopmon": "Shopmon advisory: {title} ({cve}) — installable fix: SwagPlatformSecurity {securityPluginFixVersion}",
       "advisoryNotBackported": "{title} ({cve}) — not backported by SwagPlatformSecurity; a Shopware upgrade is required",
-      "advisoryNotBackportedShopmon": "Shopmon advisory: {title} ({cve}) — not backported by SwagPlatformSecurity; a Shopware upgrade is required"
+      "advisoryNotBackportedShopmon": "Shopmon advisory: {title} ({cve}) — not backported by SwagPlatformSecurity; a Shopware upgrade is required",
+      "advisoryPluginUnverified": "{title} ({cve}) — Security Plugin backport unverified",
+      "advisoryPluginUnverifiedShopmon": "Shopmon advisory: {title} ({cve}) — Security Plugin backport unverified"
     },
     "frosh": {
       "phpGood": "PHP version is up to date",

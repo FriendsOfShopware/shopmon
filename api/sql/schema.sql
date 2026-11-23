@@ -690,7 +690,7 @@ CREATE TABLE "security_plugin_fix" (
 
 CREATE INDEX idx_security_plugin_fix_branch ON security_plugin_fix ("plugin_branch");
 
--- Parse bookkeeping, so "no fix row" can be told apart from "never parsed".
+-- Parse bookkeeping for changelog sync.
 CREATE TABLE "security_plugin_coverage" (
   "plugin_branch" text PRIMARY KEY NOT NULL,
   "min_parsed_version" text NOT NULL DEFAULT '',

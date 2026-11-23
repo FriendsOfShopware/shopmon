@@ -171,6 +171,13 @@ WHERE (e.php_version IS NOT NULL AND e.php_version <> '')
    )
 ORDER BY environment_id;
 
+-- name: LockEnvironmentForAdvisoryMatch :one
+-- Serialize match replacement with scrapes that update the inventory and plugin.
+SELECT shopware_version, php_version, database_version
+FROM environment
+WHERE id = $1
+FOR NO KEY UPDATE;
+
 -- User-facing advisory listing with an "affects my shops" scope, sorting, and
 -- a per-row affected-environment count.
 --

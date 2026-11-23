@@ -108,112 +108,37 @@ func TestMatchAdvisoriesPackageLookupIsCaseInsensitive(t *testing.T) {
 	assert.Equal(t, "CVE-2026-4", matched[0].ID)
 }
 
-// The security plugin backports individual advisories, so resolution is
-// per-GHSA. Versions below mirror the real store data: GHSA-xvhc-gm7j-mhmc is
-// fixed in 4.0.10 on the 6.7 line, and GHSA-gq96-5pfx-f4vc exists only there.
 func TestResolveByPluginStates(t *testing.T) {
 	t.Parallel()
 
-	index := buildPluginFixIndex([]PluginFix{
-		{GhsaID: "GHSA-XVHC-GM7J-MHMC", Branch: "4", PluginVersion: "4.0.10"},
-		{GhsaID: "GHSA-XVHC-GM7J-MHMC", Branch: "3", PluginVersion: "3.0.15"},
-		{GhsaID: "GHSA-GQ96-5PFX-F4VC", Branch: "4", PluginVersion: "4.0.10"},
+	const advisory = "GHSA-4frp-8844-m589"
+	index := NewPluginFixIndex([]PluginFix{
+		{GhsaID: advisory, Branch: "4", PluginVersion: "4.0.17"},
 	})
-	coverage := PluginCoverage{"4": 26, "3": 21, "2": 22}
-	adv := SecurityAdvisory{ID: "CVE-1", GHSA: "GHSA-xvhc-gm7j-mhmc"}
-
-	plugin := func(version string) *Extension {
-		return &Extension{Name: swagPlatformSecurity, Active: true, Installed: true, Version: version}
+	plugin := func(ver string, active bool) *Extension {
+		return &Extension{Name: SecurityPluginName, Active: active, Installed: true, Version: ver}
 	}
 
 	cases := []struct {
-		name            string
-		shopwareVersion string
-		advisory        SecurityAdvisory
-		ext             *Extension
-		coverage        PluginCoverage
-		want            CoverageState
-		wantRequired    string
+		name string
+		ghsa string
+		ext  *Extension
+		want CoverageState
 	}{
-		{
-			name:            "plugin at or above the fix version covers it",
-			shopwareVersion: "6.7.8.2", advisory: adv, ext: plugin("4.0.10"),
-			coverage: coverage, want: CoverageCovered, wantRequired: "4.0.10",
-		},
-		{
-			name:            "a newer plugin still covers it",
-			shopwareVersion: "6.7.8.2", advisory: adv, ext: plugin("4.0.12"),
-			coverage: coverage, want: CoverageCovered, wantRequired: "4.0.10",
-		},
-		{
-			name:            "an older plugin leaves the shop exposed",
-			shopwareVersion: "6.7.8.2", advisory: adv, ext: plugin("4.0.9"),
-			coverage: coverage, want: CoverageOutdated, wantRequired: "4.0.10",
-		},
-		{
-			name:            "an inactive plugin backports nothing",
-			shopwareVersion: "6.7.8.2", advisory: adv,
-			ext:      &Extension{Name: swagPlatformSecurity, Active: false, Installed: true, Version: "4.0.12"},
-			coverage: coverage, want: CoverageNotInstalled, wantRequired: "4.0.10",
-		},
-		{
-			name:            "no plugin at all, but a backport exists",
-			shopwareVersion: "6.7.8.2", advisory: adv, ext: nil,
-			coverage: coverage, want: CoverageNotInstalled, wantRequired: "4.0.10",
-		},
-		{
-			// The decisive case: this advisory is fixed only on the 4.x branch,
-			// so a 6.6 shop cannot close it with the plugin at all.
-			name:            "branch-only advisory is not backportable on an older line",
-			shopwareVersion: "6.6.10.0",
-			advisory:        SecurityAdvisory{ID: "CVE-2", GHSA: "GHSA-gq96-5pfx-f4vc"},
-			ext:             plugin("3.0.16"), coverage: coverage, want: CoverageNotBackported,
-		},
-		{
-			name:            "an unmapped Shopware line is unknown, never covered",
-			shopwareVersion: "6.4.20.0", advisory: adv, ext: plugin("4.0.12"),
-			coverage: coverage, want: CoverageUnknown,
-		},
-		{
-			// The 4.x plugin does not contain the 6.6 line's backports, however
-			// high its version number compares against the 3.x fix release.
-			name:            "a plugin from a newer branch is never credited as coverage",
-			shopwareVersion: "6.6.10.0", advisory: adv, ext: plugin("4.0.10"),
-			coverage: coverage, want: CoverageUnknown,
-		},
-		{
-			name:            "a plugin from an older branch is unknown, not outdated",
-			shopwareVersion: "6.7.8.2", advisory: adv, ext: plugin("3.0.20"),
-			coverage: coverage, want: CoverageUnknown,
-		},
-		{
-			name:            "an unparsed branch is unknown, never not-backported",
-			shopwareVersion: "6.7.8.2", advisory: adv, ext: plugin("4.0.12"),
-			coverage: PluginCoverage{}, want: CoverageUnknown,
-		},
-		{
-			// A branch parsed with zero references predates GHSA labelling, so
-			// its silence is not evidence either way.
-			name:            "a branch with no references is unknown",
-			shopwareVersion: "6.7.8.2", advisory: adv, ext: plugin("4.0.12"),
-			coverage: PluginCoverage{"4": 0}, want: CoverageUnknown,
-		},
-		{
-			name:            "an advisory without a GHSA cannot be resolved",
-			shopwareVersion: "6.7.8.2",
-			advisory:        SecurityAdvisory{ID: "CVE-3", CVE: "CVE-3"},
-			ext:             plugin("4.0.12"), coverage: coverage, want: CoverageUnknown,
-		},
+		{"verified release covers the advisory", advisory, plugin("4.0.17", true), CoverageCovered},
+		{"later release covers the advisory", advisory, plugin("4.0.18", true), CoverageCovered},
+		{"earlier release needs an update", advisory, plugin("4.0.16", true), CoverageOutdated},
+		{"undocumented backport stays unverified", "GHSA-ABCD-1234-WXYZ", plugin("4.0.17", true), CoverageUnverified},
+		{"incompatible plugin branch", advisory, plugin("3.0.21", true), CoverageUnknown},
+		{"plugin is inactive and a backport exists", advisory, plugin("4.0.17", false), CoverageNotInstalled},
+		{"plugin is absent and a backport exists", advisory, nil, CoverageNotInstalled},
+		{"advisory has no GHSA", "", plugin("4.0.17", true), CoverageUnknown},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			got := resolveByPlugin(tc.advisory, tc.shopwareVersion, tc.ext, index, tc.coverage)
-			assert.Equal(t, tc.want, got.State)
-			if tc.wantRequired != "" {
-				assert.Equal(t, tc.wantRequired, got.RequiredVersion)
-			}
+			assert.Equal(t, tc.want, resolveByPlugin(tc.ghsa, "6.7.8.2", tc.ext, index).State)
 		})
 	}
 }
@@ -250,14 +175,13 @@ func TestCheckSecurityReportsPluginMitigation(t *testing.T) {
 	input := Input{
 		Config: ShopConfig{Version: "6.7.8.2"},
 		Extensions: []Extension{
-			{Name: swagPlatformSecurity, Active: true, Installed: true, Version: "4.0.12"},
+			{Name: SecurityPluginName, Active: true, Installed: true, Version: "4.0.12"},
 		},
 		SecurityAdvisories: []SecurityAdvisory{{
 			ID: "CVE-M", Title: "Mitigated", CVE: "CVE-M", GHSA: "GHSA-xvhc-gm7j-mhmc", Severity: "high",
 			Packages: []SecurityAdvisoryPackage{{PackageName: "shopware/core", AffectedVersions: "<6.7.10.1"}},
 		}},
-		SecurityPluginFixes:    []PluginFix{{GhsaID: "GHSA-XVHC-GM7J-MHMC", Branch: "4", PluginVersion: "4.0.10"}},
-		SecurityPluginCoverage: PluginCoverage{"4": 26},
+		SecurityPluginFixes: []PluginFix{{GhsaID: "GHSA-XVHC-GM7J-MHMC", Branch: "4", PluginVersion: "4.0.10"}},
 	}
 
 	output := NewOutput(nil)
@@ -267,7 +191,7 @@ func TestCheckSecurityReportsPluginMitigation(t *testing.T) {
 	require.Len(t, result.Checks, 1)
 	assert.Equal(t, StatusGreen, result.Checks[0].Level)
 	assert.Equal(t, "check.security.advisoryMitigated", result.Checks[0].MessageKey)
-	assert.Equal(t, "4.0.10", result.Checks[0].MessageParams["securityPluginFixVersion"])
+	assert.Equal(t, "4.0.12", result.Checks[0].MessageParams["securityPluginVersion"])
 	assert.Equal(t, StatusGreen, result.Status, "a mitigated advisory must not degrade shop status")
 }
 
@@ -279,14 +203,13 @@ func TestCheckSecurityReportsOutdatedPlugin(t *testing.T) {
 	input := Input{
 		Config: ShopConfig{Version: "6.7.8.2"},
 		Extensions: []Extension{
-			{Name: swagPlatformSecurity, Active: true, Installed: true, Version: "4.0.9"},
+			{Name: SecurityPluginName, Active: true, Installed: true, Version: "4.0.9"},
 		},
 		SecurityAdvisories: []SecurityAdvisory{{
 			ID: "CVE-O", Title: "Outdated", CVE: "CVE-O", GHSA: "GHSA-xvhc-gm7j-mhmc", Severity: "high",
 			Packages: []SecurityAdvisoryPackage{{PackageName: "shopware/core", AffectedVersions: "<6.7.10.1"}},
 		}},
-		SecurityPluginFixes:    []PluginFix{{GhsaID: "GHSA-XVHC-GM7J-MHMC", Branch: "4", PluginVersion: "4.0.10"}},
-		SecurityPluginCoverage: PluginCoverage{"4": 26},
+		SecurityPluginFixes: []PluginFix{{GhsaID: "GHSA-XVHC-GM7J-MHMC", Branch: "4", PluginVersion: "4.0.10"}},
 	}
 
 	output := NewOutput(nil)
@@ -298,15 +221,13 @@ func TestCheckSecurityReportsOutdatedPlugin(t *testing.T) {
 	assert.Equal(t, "check.security.advisoryPluginOutdated", result.Checks[0].MessageKey)
 }
 
-// Without a synced backport map nothing may be claimed, so behaviour matches
-// what it was before the plugin was modelled at all.
-func TestCheckSecurityWithoutPluginMapReportsAsBefore(t *testing.T) {
+func TestCheckSecurityReportsUnverifiedPluginCoverage(t *testing.T) {
 	t.Parallel()
 
 	input := Input{
 		Config: ShopConfig{Version: "6.7.8.2"},
 		Extensions: []Extension{
-			{Name: swagPlatformSecurity, Active: true, Installed: true, Version: "4.0.12"},
+			{Name: SecurityPluginName, Active: true, Installed: true, Version: "4.0.12"},
 		},
 		SecurityAdvisories: []SecurityAdvisory{{
 			ID: "CVE-U", Title: "Unknown", CVE: "CVE-U", GHSA: "GHSA-xvhc-gm7j-mhmc", Severity: "high",
@@ -320,7 +241,7 @@ func TestCheckSecurityWithoutPluginMapReportsAsBefore(t *testing.T) {
 
 	require.Len(t, result.Checks, 1)
 	assert.Equal(t, StatusRed, result.Checks[0].Level)
-	assert.Equal(t, "check.security.advisoryCve", result.Checks[0].MessageKey)
+	assert.Equal(t, "check.security.advisoryPluginUnverified", result.Checks[0].MessageKey)
 }
 
 func TestCheckSecurityEmitsErrorsAndWarnings(t *testing.T) {

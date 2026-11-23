@@ -33,7 +33,6 @@ type SecurityAdvisoryPackage struct {
 }
 
 const (
-	swagPlatformSecurity = "SwagPlatformSecurity"
 	// shopwarePackagePrefix marks first-party Composer packages, whose version
 	// is known from /_info/config even when no SBOM is available.
 	shopwarePackagePrefix = "shopware/"
@@ -59,24 +58,25 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 		return
 	}
 
-	// SwagPlatformSecurity backports individual core fixes. Each is resolved
-	// against the installed plugin version rather than suppressing every
-	// advisory whenever the plugin happens to be current — that older rule both
-	// hid advisories the plugin does not fix and showed ones it does.
-	securityPlugin := findExtension(input.Extensions, swagPlatformSecurity)
-	fixIndex := buildPluginFixIndex(input.SecurityPluginFixes)
+	// Evaluate documented backports against the active plugin's release.
+	securityPlugin := FindSecurityPlugin(input.Extensions)
+	fixIndex := NewPluginFixIndex(input.SecurityPluginFixes)
 
 	matched := matchAdvisories(shopwareVersion, input.InstalledPackages, input.SecurityAdvisories)
 	for _, adv := range matched {
 		id := securityCheckID(adv.SecurityAdvisory)
-		params := map[string]any{"title": adv.Title, "cve": adv.CVE, "id": adv.ID}
+		displayID := adv.CVE
+		if displayID == "" {
+			displayID = adv.GHSA
+		}
+		params := map[string]any{"title": adv.Title, "cve": displayID, "id": adv.ID}
 		messageKey := advisoryMessageKey("check.security.advisory", adv.Origin)
 		if adv.CVE != "" {
 			messageKey = advisoryMessageKey("check.security.advisoryCve", adv.Origin)
 		}
 		// When the hit came from a dependency rather than the core itself, name
 		// the package so the check is actionable.
-		isDependency := adv.PackageName != "" && !strings.HasPrefix(adv.PackageName, shopwarePackagePrefix)
+		isDependency := adv.PackageName != "" && !isShopwarePackage(adv.PackageName)
 		if isDependency {
 			params["package"] = adv.PackageName
 			params["installedVersion"] = adv.InstalledVersion
@@ -88,15 +88,12 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 		// never resolved by it.
 		resolution := PluginResolution{State: CoverageUnknown}
 		if !isDependency {
-			resolution = resolveByPlugin(adv.SecurityAdvisory, shopwareVersion, securityPlugin, fixIndex, input.SecurityPluginCoverage)
+			resolution = resolveByPlugin(adv.GHSA, shopwareVersion, securityPlugin, fixIndex)
 		}
 
 		switch resolution.State {
 		case CoverageCovered:
-			// Report the mitigation instead of dropping the row: a green check
-			// naming the plugin version is auditable, a missing row is not.
 			params["securityPluginVersion"] = resolution.InstalledVersion
-			params["securityPluginFixVersion"] = resolution.RequiredVersion
 			output.Success(id, advisoryMessageKey("check.security.advisoryMitigated", adv.Origin), params, SourceSecurity, link)
 			continue
 		case CoverageOutdated:
@@ -108,8 +105,8 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 		case CoverageNotInstalled:
 			params["securityPluginFixVersion"] = resolution.RequiredVersion
 			messageKey = advisoryMessageKey("check.security.advisoryInstallPlugin", adv.Origin)
-		case CoverageNotBackported:
-			messageKey = advisoryMessageKey("check.security.advisoryNotBackported", adv.Origin)
+		case CoverageUnverified:
+			messageKey = advisoryMessageKey("check.security.advisoryPluginUnverified", adv.Origin)
 		}
 
 		switch strings.ToLower(adv.Severity) {
@@ -150,9 +147,10 @@ func matchAdvisories(shopwareVersion string, installed map[string]string, adviso
 	return out
 }
 
-// advisoryMatch reports the first package of adv that is installed at a
-// vulnerable version, together with that version.
+// advisoryMatch prefers a vulnerable dependency when both it and a core package
+// match, since a Security Plugin backport only mitigates the core package.
 func advisoryMatch(shopwareVersion string, installed map[string]string, adv SecurityAdvisory) (string, string, bool) {
+	var corePackage, coreVersion string
 	for _, pkg := range adv.Packages {
 		constraint := strings.TrimSpace(pkg.AffectedVersions)
 		// Both empty and "*" mean "everything" to version.Satisfies, and "*" is
@@ -169,7 +167,7 @@ func advisoryMatch(shopwareVersion string, installed map[string]string, adv Secu
 		// getting core advisories.
 		installedVersion, known := lookupInstalledVersion(installed, pkg.PackageName)
 		if !known {
-			if !strings.HasPrefix(pkg.PackageName, shopwarePackagePrefix) {
+			if !isShopwarePackage(pkg.PackageName) {
 				continue
 			}
 			installedVersion = shopwareVersion
@@ -185,11 +183,21 @@ func advisoryMatch(shopwareVersion string, installed map[string]string, adv Secu
 				"constraint", constraint, "error", err)
 			continue
 		}
-		if ok {
+		if !ok {
+			continue
+		}
+		if !isShopwarePackage(pkg.PackageName) {
 			return pkg.PackageName, installedVersion, true
 		}
+		if corePackage == "" {
+			corePackage, coreVersion = pkg.PackageName, installedVersion
+		}
 	}
-	return "", "", false
+	return corePackage, coreVersion, corePackage != ""
+}
+
+func isShopwarePackage(name string) bool {
+	return strings.HasPrefix(strings.ToLower(name), shopwarePackagePrefix)
 }
 
 // lookupInstalledVersion resolves a package name against the SBOM inventory.

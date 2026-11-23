@@ -48,6 +48,26 @@ func (q *Queries) DeleteSecurityPluginFixesNotIn(ctx context.Context, arg Delete
 	return err
 }
 
+const getActiveEnvironmentSecurityPluginVersion = `-- name: GetActiveEnvironmentSecurityPluginVersion :one
+SELECT COALESCE(
+    (SELECT CASE WHEN se.active AND se.installed THEN se.version ELSE '' END
+     FROM environment_store_extension se
+     WHERE se.environment_id = $1 AND se.extension_name = 'SwagPlatformSecurity'),
+    (SELECT CASE WHEN e.active AND e.installed THEN e.version ELSE '' END
+     FROM environment_extension e
+     WHERE e.environment_id = $1 AND e.name = 'SwagPlatformSecurity'),
+    ''
+)::text AS version
+`
+
+// Prefer the store record if present, including when it marks the plugin inactive.
+func (q *Queries) GetActiveEnvironmentSecurityPluginVersion(ctx context.Context, environmentID int32) (string, error) {
+	row := q.db.QueryRow(ctx, getActiveEnvironmentSecurityPluginVersion, environmentID)
+	var version string
+	err := row.Scan(&version)
+	return version, err
+}
+
 const listSecurityPluginCoverage = `-- name: ListSecurityPluginCoverage :many
 SELECT plugin_branch, min_parsed_version, max_parsed_version, ghsa_count, parsed_at, last_error FROM security_plugin_coverage ORDER BY plugin_branch
 `

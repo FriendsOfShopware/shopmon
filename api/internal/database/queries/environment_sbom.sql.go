@@ -764,6 +764,27 @@ func (q *Queries) ListNotifiedAdvisoryIDsForEnvironment(ctx context.Context, env
 	return items, nil
 }
 
+const lockEnvironmentForAdvisoryMatch = `-- name: LockEnvironmentForAdvisoryMatch :one
+SELECT shopware_version, php_version, database_version
+FROM environment
+WHERE id = $1
+FOR NO KEY UPDATE
+`
+
+type LockEnvironmentForAdvisoryMatchRow struct {
+	ShopwareVersion string  `json:"shopware_version"`
+	PhpVersion      *string `json:"php_version"`
+	DatabaseVersion *string `json:"database_version"`
+}
+
+// Serialize match replacement with scrapes that update the inventory and plugin.
+func (q *Queries) LockEnvironmentForAdvisoryMatch(ctx context.Context, id int32) (LockEnvironmentForAdvisoryMatchRow, error) {
+	row := q.db.QueryRow(ctx, lockEnvironmentForAdvisoryMatch, id)
+	var i LockEnvironmentForAdvisoryMatchRow
+	err := row.Scan(&i.ShopwareVersion, &i.PhpVersion, &i.DatabaseVersion)
+	return i, err
+}
+
 const markEnvironmentAdvisoriesNotified = `-- name: MarkEnvironmentAdvisoriesNotified :exec
 INSERT INTO environment_advisory_notified (environment_id, advisory_id, notified_at)
 SELECT $1, unnest($2::text[]), NOW()

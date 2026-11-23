@@ -12,6 +12,7 @@ import (
 // AdvisoryPackage is one package/constraint pair belonging to an advisory.
 type AdvisoryPackage struct {
 	AdvisoryID       string
+	GHSA             string
 	PackageName      string
 	AffectedVersions string
 }
@@ -19,6 +20,7 @@ type AdvisoryPackage struct {
 // Match is a vulnerable package found in an environment's SBOM.
 type Match struct {
 	AdvisoryID       string
+	GHSA             string
 	PackageName      string
 	InstalledVersion string
 	AffectedVersions string
@@ -77,6 +79,7 @@ func (i *Index) Match(installed map[string]string) []Match {
 			}
 			out = append(out, Match{
 				AdvisoryID:       adv.AdvisoryID,
+				GHSA:             adv.GHSA,
 				PackageName:      adv.PackageName,
 				InstalledVersion: installedVersion,
 				AffectedVersions: adv.AffectedVersions,

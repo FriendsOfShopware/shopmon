@@ -102,14 +102,16 @@
       "advisoryPackageShopmon": "Shopmon-Meldung: {title} — {package} {installedVersion}",
       "advisoryAlert": "{severity}: {title} ({id}) — {package} {installedVersion}",
       "advisoryAlertShopmon": "{severity}: Shopmon-Meldung: {title} ({id}) — {package} {installedVersion}",
-      "advisoryMitigated": "{title} ({cve}) — durch SwagPlatformSecurity {securityPluginFixVersion} zurückportiert",
-      "advisoryMitigatedShopmon": "Shopmon-Meldung: {title} ({cve}) — durch SwagPlatformSecurity {securityPluginFixVersion} zurückportiert",
+      "advisoryMitigated": "{title} ({cve}) — Fix in SwagPlatformSecurity {securityPluginVersion} enthalten",
+      "advisoryMitigatedShopmon": "Shopmon-Meldung: {title} ({cve}) — Fix in SwagPlatformSecurity {securityPluginVersion} enthalten",
       "advisoryPluginOutdated": "{title} ({cve}) — SwagPlatformSecurity {securityPluginFixVersion} enthält den Fix, installiert ist {securityPluginVersion}",
       "advisoryPluginOutdatedShopmon": "Shopmon-Meldung: {title} ({cve}) — SwagPlatformSecurity {securityPluginFixVersion} enthält den Fix, installiert ist {securityPluginVersion}",
       "advisoryInstallPlugin": "{title} ({cve}) — installierbarer Fix: SwagPlatformSecurity {securityPluginFixVersion}",
       "advisoryInstallPluginShopmon": "Shopmon-Meldung: {title} ({cve}) — installierbarer Fix: SwagPlatformSecurity {securityPluginFixVersion}",
       "advisoryNotBackported": "{title} ({cve}) — nicht von SwagPlatformSecurity abgedeckt; ein Shopware-Upgrade ist nötig",
-      "advisoryNotBackportedShopmon": "Shopmon-Meldung: {title} ({cve}) — nicht von SwagPlatformSecurity abgedeckt; ein Shopware-Upgrade ist nötig"
+      "advisoryNotBackportedShopmon": "Shopmon-Meldung: {title} ({cve}) — nicht von SwagPlatformSecurity abgedeckt; ein Shopware-Upgrade ist nötig",
+      "advisoryPluginUnverified": "{title} ({cve}) — Backport im Security Plugin nicht bestätigt",
+      "advisoryPluginUnverifiedShopmon": "Shopmon-Meldung: {title} ({cve}) — Backport im Security Plugin nicht bestätigt"
     },
     "frosh": {
       "phpGood": "PHP-Version ist aktuell",

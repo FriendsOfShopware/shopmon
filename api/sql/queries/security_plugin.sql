@@ -62,3 +62,15 @@ SELECT * FROM security_plugin_fix ORDER BY ghsa_id, plugin_branch;
 SELECT * FROM security_plugin_fix
 WHERE ghsa_id = ANY(sqlc.arg('ghsa_ids')::text[])
 ORDER BY ghsa_id, plugin_branch;
+
+-- name: GetActiveEnvironmentSecurityPluginVersion :one
+-- Prefer the store record if present, including when it marks the plugin inactive.
+SELECT COALESCE(
+    (SELECT CASE WHEN se.active AND se.installed THEN se.version ELSE '' END
+     FROM environment_store_extension se
+     WHERE se.environment_id = $1 AND se.extension_name = 'SwagPlatformSecurity'),
+    (SELECT CASE WHEN e.active AND e.installed THEN e.version ELSE '' END
+     FROM environment_extension e
+     WHERE e.environment_id = $1 AND e.name = 'SwagPlatformSecurity'),
+    ''
+)::text AS version;

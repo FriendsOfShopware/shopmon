@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/friendsofshopware/shopmon/api/internal/catalog/advisory"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/sbom"
@@ -122,43 +123,11 @@ func (h *Service) matchAdvisories(ctx context.Context, environmentID int32, inst
 		return nil, nil
 	}
 
-	index, err := loadAdvisoryIndex(ctx, h.queries)
+	index, err := advisory.LoadIndex(ctx, h.queries)
 	if err != nil {
 		return nil, fmt.Errorf("load advisory index: %w", err)
 	}
 	return index.Match(installed), nil
-}
-
-// loadAdvisoryIndex builds a package-name-keyed index over the visible advisory
-// catalog.
-func loadAdvisoryIndex(ctx context.Context, q *queries.Queries) (*sbom.Index, error) {
-	rows, err := q.ListVisibleComposerAdvisories(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) == 0 {
-		return sbom.NewIndex(nil), nil
-	}
-
-	ids := make([]string, 0, len(rows))
-	for _, row := range rows {
-		ids = append(ids, row.AdvisoryID)
-	}
-
-	pkgRows, err := q.ListComposerAdvisoryPackagesForAdvisories(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	advPkgs := make([]sbom.AdvisoryPackage, 0, len(pkgRows))
-	for _, p := range pkgRows {
-		advPkgs = append(advPkgs, sbom.AdvisoryPackage{
-			AdvisoryID:       p.AdvisoryID,
-			PackageName:      p.PackageName,
-			AffectedVersions: p.AffectedVersions,
-		})
-	}
-	return sbom.NewIndex(advPkgs), nil
 }
 
 func hasActiveFroshTools(extensions []extensionEntry) bool {
@@ -374,36 +343,4 @@ func (h *Service) suppressedCheckIDs(ctx context.Context, environmentID int32) [
 		out = append(out, checker.SecurityCheckID(cve, ghsa, row.AdvisoryID))
 	}
 	return out
-}
-
-// loadSecurityPluginFixes reads the SwagPlatformSecurity backport map. A failure
-// degrades to an empty map, which makes every advisory resolve to "unknown" and
-// therefore be reported — the safe direction, since the alternative would be
-// crediting shops with fixes we cannot prove they have.
-func loadSecurityPluginFixes(ctx context.Context, q *queries.Queries) ([]checker.PluginFix, checker.PluginCoverage) {
-	fixRows, err := q.ListSecurityPluginFixes(ctx)
-	if err != nil {
-		slog.WarnContext(ctx, "failed to load security plugin fixes", "error", err)
-		return nil, nil
-	}
-	coverageRows, err := q.ListSecurityPluginCoverage(ctx)
-	if err != nil {
-		slog.WarnContext(ctx, "failed to load security plugin coverage", "error", err)
-		return nil, nil
-	}
-
-	fixes := make([]checker.PluginFix, 0, len(fixRows))
-	for _, row := range fixRows {
-		fixes = append(fixes, checker.PluginFix{
-			GhsaID:        row.GhsaID,
-			Branch:        row.PluginBranch,
-			PluginVersion: row.PluginVersion,
-		})
-	}
-
-	coverage := make(checker.PluginCoverage, len(coverageRows))
-	for _, row := range coverageRows {
-		coverage[row.PluginBranch] = int(row.GhsaCount)
-	}
-	return fixes, coverage
 }
