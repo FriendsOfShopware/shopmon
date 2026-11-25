@@ -63,12 +63,18 @@ func TestFrontendURLResolvesKnownRoutes(t *testing.T) {
 			Name:   "account.advisories.detail",
 			Params: map[string]string{"id": "CVE-2026-1"},
 		}))
+	assert.Equal(t, "https://app.example.test/app/environments/42/accounts",
+		frontendURL("https://app.example.test", Link{
+			Name:   "account.environments.detail.accounts",
+			Params: map[string]string{"environmentId": "42"},
+		}))
 	assert.Empty(t, frontendURL("https://app.example.test", Link{Name: "account.dashboard"}))
 	assert.Empty(t, frontendURL("", Link{Name: "account.advisories.detail", Params: map[string]string{"id": "x"}}))
 }
 
 func TestActionTextKey(t *testing.T) {
 	assert.Equal(t, "email.viewEnvironment", actionTextKey("account.environments.detail"))
+	assert.Equal(t, "email.viewEnvironment", actionTextKey("account.environments.detail.accounts"))
 	assert.Equal(t, "email.viewAdvisory", actionTextKey("account.advisories.detail"))
 	assert.Equal(t, "email.viewDetails", actionTextKey("account.dashboard"))
 }

@@ -42,6 +42,20 @@ func TestValidateProvidersAndRedactSecrets(t *testing.T) {
 	}
 }
 
+func TestDescribeRejectsCustomHostsForFixedProviders(t *testing.T) {
+	for _, dsn := range []string{
+		"slack://xoxb-secret@attacker.example?channel=C123",
+		"slack://xoxb-secret@default:8443?channel=C123",
+		"telegram://123:secret@attacker.example?channel=456",
+		"discord://secret@attacker.example?webhook_id=123",
+	} {
+		t.Run(dsn, func(t *testing.T) {
+			_, err := Describe(dsn)
+			require.ErrorIs(t, err, ErrInvalidDSN)
+		})
+	}
+}
+
 func TestProviderDeliveryPayloads(t *testing.T) {
 	for _, tc := range []struct{ dsn, host, response, field string }{
 		{"slack://default?webhook_url=https%3A%2F%2Fhooks.slack.com%2Fservices%2FT%2FB%2Fsecret", "hooks.slack.com", "ok", "text"},

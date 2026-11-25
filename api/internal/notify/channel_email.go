@@ -69,7 +69,7 @@ func (c *emailChannel) alertAction(locale string, ev Event) *mail.AlertAction {
 
 func actionTextKey(route string) string {
 	switch route {
-	case "account.environments.detail":
+	case "account.environments.detail", "account.environments.detail.accounts":
 		return "email.viewEnvironment"
 	case "account.advisories.detail":
 		return "email.viewAdvisory"
@@ -88,6 +88,10 @@ func frontendURL(base string, link Link) string {
 	case "account.environments.detail":
 		if id := link.Params["environmentId"]; id != "" {
 			return base + "/app/environments/" + url.PathEscape(id)
+		}
+	case "account.environments.detail.accounts":
+		if id := link.Params["environmentId"]; id != "" {
+			return base + "/app/environments/" + url.PathEscape(id) + "/accounts"
 		}
 	case "account.advisories.detail":
 		if id := link.Params["id"]; id != "" {

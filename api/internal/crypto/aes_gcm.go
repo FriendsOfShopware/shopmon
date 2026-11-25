@@ -63,6 +63,12 @@ func Decrypt(encrypted string, key string) (string, error) {
 		return "", fmt.Errorf("create gcm: %w", err)
 	}
 
+	// Open panics on a nonce of the wrong size, which a corrupted stored value
+	// could reach; report it as an ordinary decryption error instead.
+	if len(iv) != aesGCM.NonceSize() {
+		return "", fmt.Errorf("decode iv: want %d bytes, got %d", aesGCM.NonceSize(), len(iv))
+	}
+
 	plaintext, err := aesGCM.Open(nil, iv, ciphertext, nil)
 	if err != nil {
 		return "", fmt.Errorf("decrypt: %w", err)

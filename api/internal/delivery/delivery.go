@@ -64,17 +64,20 @@ func Describe(raw string) (Details, error) {
 			}
 			result.Summary = "Incoming webhook"
 		} else {
-			if dsn.GetOption("channel") == "" {
+			if !defaultEndpoint(dsn) || dsn.GetOption("channel") == "" {
 				return Details{}, ErrInvalidDSN
 			}
 			result.Summary = dsn.GetOption("channel")
 		}
 	case "telegram":
-		if dsn.GetOption("channel") == "" {
+		if !defaultEndpoint(dsn) || dsn.GetOption("channel") == "" {
 			return Details{}, ErrInvalidDSN
 		}
 		result.Summary = dsn.GetOption("channel")
 	case "discord":
+		if !defaultEndpoint(dsn) {
+			return Details{}, ErrInvalidDSN
+		}
 		result.Summary = dsn.GetOption("webhook_id")
 	case "gotify":
 		if dsn.GetHost() == "default" {
@@ -87,6 +90,13 @@ func Describe(raw string) (Details, error) {
 		return Details{}, ErrInvalidDSN
 	}
 	return result, nil
+}
+
+// defaultEndpoint reports whether the DSN keeps the provider's own API host.
+// The Slack (token form), Telegram and Discord factories post the credentials
+// and alert text to any other host the DSN names.
+func defaultEndpoint(dsn *notifier.DSN) bool {
+	return dsn.GetHost() == "default" && dsn.GetPort() == 0
 }
 
 func (c *Client) transport(raw string) (notifier.TransportInterface, Details, error) {
