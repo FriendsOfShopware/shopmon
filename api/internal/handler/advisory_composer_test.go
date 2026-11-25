@@ -49,7 +49,11 @@ func TestComposerAdvisoryFeed(t *testing.T) {
 			assert.NotContains(t, string(raw), "CVE-HIDDEN")
 			var body api.ComposerAdvisoryResponse
 			require.NoError(t, json.Unmarshal(raw, &body))
-			require.Len(t, body.Advisories, 2)
+			if method == http.MethodGet {
+				require.Len(t, body.Advisories, 2)
+			} else {
+				require.Len(t, body.Advisories, 1)
+			}
 			require.Len(t, body.Advisories[pkg], 103)
 			upstream := body.Advisories[pkg][101]
 			assert.Equal(t, "PKSA-CVE-PUBLIC-0", upstream.AdvisoryID)
@@ -76,4 +80,53 @@ func TestComposerAdvisoryFeedEmpty(t *testing.T) {
 	var body map[string]json.RawMessage
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
 	assert.JSONEq(t, `{}`, string(body["advisories"]))
+}
+
+func TestComposerAdvisoryPackageFilters(t *testing.T) {
+	env := testutil.Setup(t)
+	const first = "store.shopware.com/first"
+	const second = "store.shopware.com/second"
+	seedAdvisory(t, env.Queries, "CVE-MULTI", []string{first, second}, true, nil)
+	seedAdvisory(t, env.Queries, "CVE-UNRELATED", []string{"store.shopware.com/unrelated"}, true, nil)
+	for _, tt := range []struct {
+		name string
+		form string
+		want []string
+	}{
+		{"brackets", "packages%5B%5D=store.shopware.com%2Ffirst", []string{first}},
+		{"indexed", "packages%5B0%5D=store.shopware.com%2Ffirst", []string{first}},
+		{"multiple brackets", "packages[]=store.shopware.com/first&packages[]=store.shopware.com/second", []string{first, second}},
+		{"multiple indexed", "packages[0]=store.shopware.com/first&packages[1]=store.shopware.com/second", []string{first, second}},
+		{"duplicates", "packages[]=store.shopware.com/first&packages[]=store.shopware.com/first", []string{first}},
+		{"uppercase", "packages[]=STORE.SHOPWARE.COM/FIRST", []string{first}},
+		{"unknown", "packages[]=store.shopware.com/unknown", nil},
+		{"empty", "", nil},
+		{"empty name", "packages[]=", nil},
+		{"unrelated field", "other[]=store.shopware.com/first", nil},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			req := testutil.NewRequest(t, http.MethodPost, env.Server.URL+"/api/advisories/composer", strings.NewReader(tt.form))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+			require.Equal(t, http.StatusOK, resp.StatusCode)
+			var body api.ComposerAdvisoryResponse
+			require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
+			require.NotNil(t, body.Advisories)
+			require.Len(t, body.Advisories, len(tt.want))
+			for _, name := range tt.want {
+				require.Len(t, body.Advisories[name], 1)
+				assert.Equal(t, name, body.Advisories[name][0].PackageName)
+			}
+		})
+	}
+	t.Run("malformed form", func(t *testing.T) {
+		req := testutil.NewRequest(t, http.MethodPost, env.Server.URL+"/api/advisories/composer", strings.NewReader("packages[]=%zz"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
 }

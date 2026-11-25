@@ -7,16 +7,35 @@ import (
 )
 
 func registerAdvisories(api huma.API, h *Handler) {
-	for _, method := range []string{http.MethodGet, http.MethodPost} {
-		huma.Register(api, huma.Operation{
-			OperationID: "composerAdvisories" + method,
-			Method:      method,
-			Path:        "/advisories/composer",
-			Summary:     "Export published store package advisories in Composer format",
-			Description: "Returns all published store.shopware.com/ package advisories without pagination. POST supports Composer security-advisories api-url clients; package filters are ignored and the complete feed is returned.",
-			Tags:        []string{"Advisories"},
-			Security:    []map[string][]string{},
-		}, h.ComposerAdvisories)
+	huma.Register(api, huma.Operation{
+		OperationID: "composerAdvisoriesGET",
+		Method:      http.MethodGet,
+		Path:        "/advisories/composer",
+		Summary:     "Export published store package advisories in Composer format",
+		Description: "Returns all published store.shopware.com/ package advisories without pagination.",
+		Tags:        []string{"Advisories"},
+		Security:    []map[string][]string{},
+	}, h.ComposerAdvisories)
+
+	composerRequestBody := &huma.RequestBody{}
+	huma.Register(api, huma.Operation{
+		RequestBody: composerRequestBody,
+		OperationID: "composerAdvisoriesPOST",
+		Method:      http.MethodPost,
+		Path:        "/advisories/composer",
+		Summary:     "Get published store package advisories for requested packages",
+		Description: "Accepts form-encoded packages[] or indexed packages[0] fields and returns only advisories for those packages. An empty package list returns an empty advisories object.",
+		Tags:        []string{"Advisories"},
+		Security:    []map[string][]string{},
+	}, h.ComposerAdvisoriesForPackages)
+	// Huma defaults RawBody to a required binary upload. Describe the form
+	// after registration, while retaining raw parsing for PHP's indexed keys.
+	composerRequestBody.Required = false
+	composerRequestBody.Content["application/x-www-form-urlencoded"].Schema = &huma.Schema{
+		Type: "object",
+		Properties: map[string]*huma.Schema{
+			"packages[]": {Type: "array", Items: &huma.Schema{Type: "string"}},
+		},
 	}
 
 	huma.Register(api, huma.Operation{
