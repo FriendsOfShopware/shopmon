@@ -68,7 +68,7 @@ services:
       POSTGRES_USER: shopmon
       POSTGRES_PASSWORD: shopmon
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
 
 volumes:
   db-data:
@@ -321,7 +321,7 @@ services:
       POSTGRES_USER: shopmon
       POSTGRES_PASSWORD: shopmon
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
 
 volumes:
   db-data:
