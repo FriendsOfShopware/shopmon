@@ -2,7 +2,9 @@ package notify
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
@@ -17,13 +19,16 @@ type Dispatcher struct {
 	prefs    PreferenceResolver
 	locker   lockAcquirer
 	channels map[ChannelName]Channel
+	// destination is the organization-level channel; nil when not configured.
+	destinations *destinationChannel
 }
 
-// NewDispatcher wires the default in-app and email channels. mailSvc may be nil
+// NewDispatcher wires the default in-app and email channels, plus the
+// organization and shop destinations when destinationCfg is usable. mailSvc may be nil
 // (email delivery becomes a no-op).
-func NewDispatcher(q *queries.Queries, mailSvc mail.Sender) *Dispatcher {
+func NewDispatcher(q *queries.Queries, mailSvc mail.Sender, destinationCfg DestinationConfig) *Dispatcher {
 	tr := NewTranslator()
-	return &Dispatcher{
+	d := &Dispatcher{
 		tr:     tr,
 		prefs:  queryResolver{q: q},
 		locker: queryLocker{q: q},
@@ -32,6 +37,16 @@ func NewDispatcher(q *queries.Queries, mailSvc mail.Sender) *Dispatcher {
 			ChannelEmail: &emailChannel{mail: mailSvc, tr: tr},
 		},
 	}
+	if destinationCfg.AppSecret != "" && destinationCfg.Poster != nil {
+		d.destinations = &destinationChannel{
+			store:     q,
+			poster:    destinationCfg.Poster,
+			appSecret: destinationCfg.AppSecret,
+			baseURL:   destinationCfg.FrontendURL,
+			tr:        tr,
+		}
+	}
+	return d
 }
 
 // Translator exposes the shared catalog so callers can render text outside the
@@ -66,11 +81,21 @@ func (r DispatchResult) Delivery() bool {
 // state and must not mark a failed alert as sent.
 func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipient) DispatchResult {
 	var res DispatchResult
-	if len(recipients) == 0 {
-		return res
-	}
-
 	meta := metaFor(ev.Type)
+
+	d.dispatchRecipients(ctx, ev, meta, recipients, &res)
+	// Destination delivery does not depend on anyone watching the environment. It runs last so
+	// slow webhook posts never delay in-app and email delivery.
+	d.dispatchDestinations(ctx, ev, meta, &res)
+	return res
+}
+
+// dispatchRecipients delivers the event to each recipient on their resolved
+// channels.
+func (d *Dispatcher) dispatchRecipients(ctx context.Context, ev Event, meta eventMeta, recipients []Recipient, res *DispatchResult) {
+	if len(recipients) == 0 {
+		return
+	}
 
 	// Email dedup is decided once per event (not per recipient): acquire the
 	// lock up front and skip the email channel for everyone when it is held.
@@ -113,6 +138,7 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 		for _, name := range channels {
 			if name == ChannelEmail && !emailAllowed {
 				if lockUnknown {
+					metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(name))
 					res.Failed++
 				} else {
 					res.Skipped++
@@ -138,6 +164,79 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 			res.Delivered++
 		}
 	}
+}
 
-	return res
+// dispatchDestinations posts the event once to each configured destination (the
+// organization's and the shop's), deduped per webhook with the same window as
+// email so a flapping check does not flood the channel.
+func (d *Dispatcher) dispatchDestinations(ctx context.Context, ev Event, meta eventMeta, res *DispatchResult) {
+	if d.destinations == nil {
+		return
+	}
+
+	targets, err := d.destinations.targets(ctx, ev)
+	if err != nil {
+		slog.Warn("notify: failed to load notification destinations", "event", ev.Type, "organizationId", ev.OrgID, "error", err)
+		metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelDestination))
+		res.Failed++
+	}
+
+	for _, target := range targets {
+		if err := d.deliverDestination(ctx, target, ev, meta, res); err != nil {
+			slog.Warn("notify: destination delivery failed", "event", ev.Type, "organizationId", ev.OrgID, "error", err)
+			metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(ChannelDestination))
+			res.Failed++
+		}
+	}
+}
+
+// A completed marker is written only after a successful send. A held attempt
+// without that marker is retryable, including when failed-send cleanup failed.
+func (d *Dispatcher) deliverDestination(ctx context.Context, target destinationTarget, ev Event, meta eventMeta, res *DispatchResult) error {
+	key := ev.DestinationDedupKey
+	if key == "" {
+		key = ev.DedupKey
+	}
+	lockKey := target.lockKey(key)
+	completedKey := lockKey + "_completed"
+	if meta.emailDedupTTL > 0 {
+		completed, err := d.locker.isHeld(ctx, completedKey)
+		if err != nil {
+			return err
+		}
+		if completed {
+			res.Skipped++
+			return nil
+		}
+		acquired, err := d.locker.acquire(ctx, lockKey, time.Minute)
+		if err != nil {
+			return err
+		}
+		if !acquired {
+			return fmt.Errorf("destination delivery in progress")
+		}
+		defer d.locker.release(ctx, lockKey)
+		// A concurrent sender may have completed between the first read and acquire.
+		completed, err = d.locker.isHeld(ctx, completedKey)
+		if err != nil {
+			return err
+		}
+		if completed {
+			res.Skipped++
+			return nil
+		}
+	}
+	sendCtx, cancel := context.WithTimeout(ctx, destinationTimeout)
+	defer cancel()
+	if err := d.destinations.Send(sendCtx, target.dsn, ev); err != nil {
+		return err
+	}
+	if meta.emailDedupTTL > 0 {
+		if _, err := d.locker.acquire(ctx, completedKey, meta.emailDedupTTL); err != nil {
+			return err
+		}
+	}
+	metrics.RecordNotifyDelivery(ctx, metrics.OutcomeOK, string(ChannelDestination))
+	res.Delivered++
+	return nil
 }

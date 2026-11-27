@@ -40,6 +40,8 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/notification"
 	notificationpostgres "github.com/friendsofshopware/shopmon/api/internal/notification/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/organization"
+	"github.com/friendsofshopware/shopmon/api/internal/organization/destination"
+	destinationpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/destination/postgres"
 	organizationmail "github.com/friendsofshopware/shopmon/api/internal/organization/invitationmail"
 	organizationpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/postgres"
 	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
@@ -74,6 +76,31 @@ type TestEnv struct {
 	// Mail captures every email sent during the test, in place of real
 	// delivery. Use the mailertest assertion helpers against it.
 	Mail *mailertest.RecordingTransport
+	// Destinations captures notification posts in place of real delivery.
+	Destinations *DestinationRecorder
+}
+
+// DestinationRecorder records notification posts. Set Err to simulate delivery
+// rejecting the message.
+type DestinationRecorder struct {
+	mu    sync.Mutex
+	Posts []DestinationPost
+	Err   error
+}
+
+type DestinationPost struct {
+	DSN  string
+	Text string
+}
+
+func (r *DestinationRecorder) Post(_ context.Context, dsn, text string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.Err != nil {
+		return r.Err
+	}
+	r.Posts = append(r.Posts, DestinationPost{DSN: dsn, Text: text})
+	return nil
 }
 
 // shared holds the singleton Redis container shared across tests. Postgres is
@@ -141,6 +168,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	}
 
 	mailRecorder := mailertest.NewRecordingTransport("")
+	destinationRecorder := &DestinationRecorder{}
 	mailSender, err := mail.NewServiceWithTransport(mailRecorder, "noreply@shopmon.test", "", cfg.FrontendURL)
 	if err != nil {
 		t.Fatalf("create mail service: %v", err)
@@ -224,6 +252,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Deployments:   deploymentService,
 		Catalog:       catalogService,
 		SSO:           ssoService,
+		Destinations:  destination.NewService(destinationpostgres.NewRepository(q), organizationAuthorizer, destinationRecorder, cfg.AppSecret),
 		Account:       accountReadModel,
 		Admin:         adminReadModel,
 		Environments:  environmentReadModel,
@@ -272,12 +301,13 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	})
 
 	return &TestEnv{
-		Pool:    pool,
-		Queries: q,
-		Handler: h,
-		Server:  srv,
-		Cfg:     cfg,
-		Mail:    mailRecorder,
+		Pool:         pool,
+		Queries:      q,
+		Handler:      h,
+		Server:       srv,
+		Cfg:          cfg,
+		Mail:         mailRecorder,
+		Destinations: destinationRecorder,
 	}
 }
 

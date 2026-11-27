@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/notification"
 )
 
 // PreferenceResolver decides which channels a recipient receives a given event
@@ -60,20 +61,33 @@ func (r queryResolver) Channels(ctx context.Context, rec Recipient, ev Event, de
 // channelEnabled resolves the effective enabled state for a channel by walking
 // the scope chain from most to least specific; the first matching row wins.
 // When no row matches, the channel defaults to enabled.
-func channelEnabled(prefs []queries.NotificationPreference, ch ChannelName, ev Event) bool {
+func channelEnabled(rows []queries.NotificationPreference, ch ChannelName, ev Event) bool {
+	prefs := make([]notification.Preference, 0, len(rows))
+	for _, p := range rows {
+		prefs = append(prefs, notification.Preference{ScopeType: p.ScopeType, ScopeID: p.ScopeID, EventType: p.EventType, Channel: p.Channel, Enabled: p.Enabled})
+	}
+	return preferenceEnabled(prefs, ch, ev)
+}
+
+// preferenceEnabled is shared by personal channels and team destinations. The
+// owner is resolved before this function; preferences from different owners
+// must never be combined.
+func preferenceEnabled(prefs []notification.Preference, ch ChannelName, ev Event) bool {
 	type scope struct {
 		scopeType string
 		scopeID   string
 		eventType string
 	}
-	chain := []scope{
-		{string(ScopeEnvironment), ev.ScopeID, string(ev.Type)},
-		{string(ScopeEnvironment), ev.ScopeID, ""},
+	chain := []scope{}
+	if ev.ScopeType == ScopeEnvironment && ev.ScopeID != "" {
+		chain = append(chain, scope{string(ScopeEnvironment), ev.ScopeID, string(ev.Type)}, scope{string(ScopeEnvironment), ev.ScopeID, ""})
+	}
+	chain = append(chain, []scope{
 		{string(ScopeOrganization), ev.OrgID, string(ev.Type)},
 		{string(ScopeOrganization), ev.OrgID, ""},
 		{string(ScopeGlobal), "", string(ev.Type)},
 		{string(ScopeGlobal), "", ""},
-	}
+	}...)
 
 	for _, s := range chain {
 		for i := range prefs {

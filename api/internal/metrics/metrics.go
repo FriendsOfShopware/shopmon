@@ -32,8 +32,9 @@ const (
 
 // Channel values for notify delivery. Matches notify.ChannelName.
 const (
-	ChannelEmail = "email"
-	ChannelInApp = "in_app"
+	ChannelEmail       = "email"
+	ChannelInApp       = "in_app"
+	ChannelDestination = "destination"
 )
 
 var (
@@ -158,10 +159,10 @@ func NormalizeMailOutcome(outcome string) string {
 	}
 }
 
-// NormalizeNotifyChannel maps arbitrary strings onto email|in_app|unknown.
+// NormalizeNotifyChannel maps arbitrary strings onto email|in_app|destination|unknown.
 func NormalizeNotifyChannel(channel string) string {
 	switch channel {
-	case ChannelEmail, ChannelInApp:
+	case ChannelEmail, ChannelInApp, ChannelDestination:
 		return channel
 	default:
 		return OutcomeUnknown

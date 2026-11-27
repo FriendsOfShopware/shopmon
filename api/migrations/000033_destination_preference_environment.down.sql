@@ -1,0 +1,1 @@
+ALTER TABLE destination_notification_preference DROP COLUMN environment_id;

@@ -1097,6 +1097,19 @@ export type Notification = {
     userId: string;
 };
 
+export type NotificationDestination = {
+    connectionError: boolean;
+    id: string;
+    name: string;
+    provider: string;
+    summary: string;
+};
+
+export type NotificationDestinationStatus = {
+    canManage: boolean;
+    destinations: Array<NotificationDestination>;
+};
+
 export type NotificationEventType = {
     defaultChannels: Array<string>;
     type: string;
@@ -1201,6 +1214,14 @@ export type ResetPasswordRequest = {
 
 export type RevokeSessionRequest = {
     sessionId: string;
+};
+
+export type SaveNotificationDestinationRequest = {
+    /**
+     * Notification DSN. Leave empty on update to keep existing credentials.
+     */
+    dsn: string;
+    name: string;
 };
 
 export type ScheduledTask = {
@@ -5477,6 +5498,409 @@ export type GetOrganizationEnvironmentsResponses = {
 
 export type GetOrganizationEnvironmentsResponse = GetOrganizationEnvironmentsResponses[keyof GetOrganizationEnvironmentsResponses];
 
+export type ListNotificationDestinationsData = {
+    body?: never;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations';
+};
+
+export type ListNotificationDestinationsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type ListNotificationDestinationsError = ListNotificationDestinationsErrors[keyof ListNotificationDestinationsErrors];
+
+export type ListNotificationDestinationsResponses = {
+    /**
+     * OK
+     */
+    200: NotificationDestinationStatus;
+};
+
+export type ListNotificationDestinationsResponse = ListNotificationDestinationsResponses[keyof ListNotificationDestinationsResponses];
+
+export type CreateNotificationDestinationData = {
+    body: SaveNotificationDestinationRequest;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations';
+};
+
+export type CreateNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type CreateNotificationDestinationError = CreateNotificationDestinationErrors[keyof CreateNotificationDestinationErrors];
+
+export type CreateNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type CreateNotificationDestinationResponse = CreateNotificationDestinationResponses[keyof CreateNotificationDestinationResponses];
+
+export type DeleteNotificationDestinationData = {
+    body?: never;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}';
+};
+
+export type DeleteNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteNotificationDestinationError = DeleteNotificationDestinationErrors[keyof DeleteNotificationDestinationErrors];
+
+export type DeleteNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteNotificationDestinationResponse = DeleteNotificationDestinationResponses[keyof DeleteNotificationDestinationResponses];
+
+export type UpdateNotificationDestinationData = {
+    body: SaveNotificationDestinationRequest;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}';
+};
+
+export type UpdateNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type UpdateNotificationDestinationError = UpdateNotificationDestinationErrors[keyof UpdateNotificationDestinationErrors];
+
+export type UpdateNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateNotificationDestinationResponse = UpdateNotificationDestinationResponses[keyof UpdateNotificationDestinationResponses];
+
+export type DeleteDestinationNotificationPreferenceData = {
+    body?: never;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: {
+        scopeType?: string;
+        scopeId?: string;
+        eventType?: string;
+        channel?: string;
+    };
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/preferences';
+};
+
+export type DeleteDestinationNotificationPreferenceErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteDestinationNotificationPreferenceError = DeleteDestinationNotificationPreferenceErrors[keyof DeleteDestinationNotificationPreferenceErrors];
+
+export type DeleteDestinationNotificationPreferenceResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteDestinationNotificationPreferenceResponse = DeleteDestinationNotificationPreferenceResponses[keyof DeleteDestinationNotificationPreferenceResponses];
+
+export type GetDestinationNotificationPreferencesData = {
+    body?: never;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/preferences';
+};
+
+export type GetDestinationNotificationPreferencesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetDestinationNotificationPreferencesError = GetDestinationNotificationPreferencesErrors[keyof GetDestinationNotificationPreferencesErrors];
+
+export type GetDestinationNotificationPreferencesResponses = {
+    /**
+     * OK
+     */
+    200: Array<NotificationPreference>;
+};
+
+export type GetDestinationNotificationPreferencesResponse = GetDestinationNotificationPreferencesResponses[keyof GetDestinationNotificationPreferencesResponses];
+
+export type SetDestinationNotificationPreferenceData = {
+    body: NotificationPreferenceInput;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/preferences';
+};
+
+export type SetDestinationNotificationPreferenceErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type SetDestinationNotificationPreferenceError = SetDestinationNotificationPreferenceErrors[keyof SetDestinationNotificationPreferenceErrors];
+
+export type SetDestinationNotificationPreferenceResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SetDestinationNotificationPreferenceResponse = SetDestinationNotificationPreferenceResponses[keyof SetDestinationNotificationPreferenceResponses];
+
+export type TestNotificationDestinationData = {
+    body?: never;
+    path: {
+        orgId: string;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/notification-destinations/{destinationId}/test';
+};
+
+export type TestNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type TestNotificationDestinationError = TestNotificationDestinationErrors[keyof TestNotificationDestinationErrors];
+
+export type TestNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type TestNotificationDestinationResponse = TestNotificationDestinationResponses[keyof TestNotificationDestinationResponses];
+
 export type GetOrganizationShopsData = {
     body?: never;
     path: {
@@ -5797,6 +6221,269 @@ export type DeleteApiKeyResponses = {
 };
 
 export type DeleteApiKeyResponse = DeleteApiKeyResponses[keyof DeleteApiKeyResponses];
+
+export type ListShopNotificationDestinationsData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations';
+};
+
+export type ListShopNotificationDestinationsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type ListShopNotificationDestinationsError = ListShopNotificationDestinationsErrors[keyof ListShopNotificationDestinationsErrors];
+
+export type ListShopNotificationDestinationsResponses = {
+    /**
+     * OK
+     */
+    200: NotificationDestinationStatus;
+};
+
+export type ListShopNotificationDestinationsResponse = ListShopNotificationDestinationsResponses[keyof ListShopNotificationDestinationsResponses];
+
+export type CreateShopNotificationDestinationData = {
+    body: SaveNotificationDestinationRequest;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations';
+};
+
+export type CreateShopNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type CreateShopNotificationDestinationError = CreateShopNotificationDestinationErrors[keyof CreateShopNotificationDestinationErrors];
+
+export type CreateShopNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type CreateShopNotificationDestinationResponse = CreateShopNotificationDestinationResponses[keyof CreateShopNotificationDestinationResponses];
+
+export type DeleteShopNotificationDestinationData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}';
+};
+
+export type DeleteShopNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteShopNotificationDestinationError = DeleteShopNotificationDestinationErrors[keyof DeleteShopNotificationDestinationErrors];
+
+export type DeleteShopNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteShopNotificationDestinationResponse = DeleteShopNotificationDestinationResponses[keyof DeleteShopNotificationDestinationResponses];
+
+export type UpdateShopNotificationDestinationData = {
+    body: SaveNotificationDestinationRequest;
+    path: {
+        orgId: string;
+        shopId: number;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}';
+};
+
+export type UpdateShopNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type UpdateShopNotificationDestinationError = UpdateShopNotificationDestinationErrors[keyof UpdateShopNotificationDestinationErrors];
+
+export type UpdateShopNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateShopNotificationDestinationResponse = UpdateShopNotificationDestinationResponses[keyof UpdateShopNotificationDestinationResponses];
+
+export type TestShopNotificationDestinationData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+        destinationId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/notification-destinations/{destinationId}/test';
+};
+
+export type TestShopNotificationDestinationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type TestShopNotificationDestinationError = TestShopNotificationDestinationErrors[keyof TestShopNotificationDestinationErrors];
+
+export type TestShopNotificationDestinationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type TestShopNotificationDestinationResponse = TestShopNotificationDestinationResponses[keyof TestShopNotificationDestinationResponses];
 
 export type GetPackagesTokensData = {
     body?: never;

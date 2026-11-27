@@ -183,3 +183,17 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
+
+func TestSecretHTTPClientDoesNotTraceCredentialURLs(t *testing.T) {
+	client := NewSecretHTTPClient(0)
+	ua, ok := client.Transport.(*userAgentTransport)
+	require.True(t, ok)
+	// The protected dialer is wrapped only by the User-Agent transport. There
+	// must be no otelhttp transport that could emit the credential-bearing URL.
+	transport, ok := ua.base.(*http.Transport)
+	require.True(t, ok)
+	require.Nil(t, transport.Proxy)
+	_, err := transport.DialContext(t.Context(), "tcp", "127.0.0.1:443")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "blocked connection")
+}
