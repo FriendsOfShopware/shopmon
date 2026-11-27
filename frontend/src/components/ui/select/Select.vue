@@ -1,9 +1,9 @@
-<script setup lang="ts">
-import type { SelectRootEmits, SelectRootProps } from "reka-ui";
+<script setup lang="ts" generic="T extends AcceptableValue = string">
+import type { AcceptableValue, SelectRootEmits, SelectRootProps } from "reka-ui";
 import { SelectRoot, useForwardPropsEmits } from "reka-ui";
 
-const props = defineProps<SelectRootProps>();
-const emits = defineEmits<SelectRootEmits>();
+const props = defineProps<SelectRootProps<T> & { id?: string }>();
+const emits = defineEmits<SelectRootEmits<T>>();
 
 const forwarded = useForwardPropsEmits(props, emits);
 </script>

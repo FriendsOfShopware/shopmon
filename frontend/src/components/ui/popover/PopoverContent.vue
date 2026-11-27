@@ -10,7 +10,12 @@ defineOptions({
 });
 
 const props = withDefaults(
-  defineProps<PopoverContentProps & { class?: HTMLAttributes["class"] }>(),
+  defineProps<
+    PopoverContentProps &
+      /* @vue-ignore */ Omit<HTMLAttributes, "class"> & {
+        class?: HTMLAttributes["class"];
+      }
+  >(),
   {
     align: "center",
     sideOffset: 4,

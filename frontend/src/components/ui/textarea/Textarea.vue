@@ -5,17 +5,17 @@ import { cn } from "@/lib/utils";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
-  defaultValue?: string | number;
-  modelValue?: string | number;
+  defaultValue?: string;
+  modelValue?: string;
 }>();
 
-const emits = defineEmits<{
-  (e: "update:modelValue", payload: string | number): void;
+const emit = defineEmits<{
+  (e: "update:modelValue", payload: string): void;
 }>();
 
-const modelValue = useVModel(props, "modelValue", emits, {
+const modelValue = useVModel(props, "modelValue", emit, {
   passive: true,
-  defaultValue: props.defaultValue,
+  defaultValue: props.defaultValue ?? "",
 });
 </script>
 

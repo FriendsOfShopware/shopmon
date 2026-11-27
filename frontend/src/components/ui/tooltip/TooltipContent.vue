@@ -10,7 +10,12 @@ defineOptions({
 });
 
 const props = withDefaults(
-  defineProps<TooltipContentProps & { class?: HTMLAttributes["class"] }>(),
+  defineProps<
+    TooltipContentProps &
+      /* @vue-ignore */ Omit<HTMLAttributes, "class"> & {
+        class?: HTMLAttributes["class"];
+      }
+  >(),
   {
     sideOffset: 4,
   },

@@ -14,6 +14,13 @@ defineOptions({
 const props = defineProps<
   ListboxFilterProps & {
     class?: HTMLAttributes["class"];
+    placeholder?: string;
+    role?: HTMLAttributes["role"];
+    onKeydown?: (event: KeyboardEvent) => void;
+    "aria-label"?: string;
+    "aria-autocomplete"?: HTMLAttributes["aria-autocomplete"];
+    "aria-expanded"?: HTMLAttributes["aria-expanded"];
+    "aria-controls"?: string;
   }
 >();
 

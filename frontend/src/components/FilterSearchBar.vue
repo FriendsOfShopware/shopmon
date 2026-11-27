@@ -1,12 +1,12 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends string">
 import { Input } from "@/components/ui/input";
 
 defineProps<{
-  filters: { label: string; value: string }[];
+  filters: { label: string; value: T }[];
   searchPlaceholder?: string;
 }>();
 
-const filter = defineModel<string>("filter", { required: true });
+const filter = defineModel<T>("filter", { required: true });
 const search = defineModel<string>("search", { required: true });
 </script>
 
